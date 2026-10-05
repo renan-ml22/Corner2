@@ -1,6 +1,6 @@
 import 'server-only'
 import { SignJWT, jwtVerify } from 'jose'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 
 export const SESSION_COOKIE = 'corner_session'
 const SESSION_DAYS = 7
@@ -39,9 +39,12 @@ export async function createSession(userId: string) {
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000)
   const token = await encrypt({ userId, expiresAt: expiresAt.toISOString() })
   const cookieStore = await cookies()
+  // `Secure` só quando a requisição chegou por HTTPS: em http:// (ex.: celular na rede local)
+  // o navegador descartaria o cookie e o login nunca "pegaria".
+  const proto = (await headers()).get('x-forwarded-proto')?.split(',')[0].trim()
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: proto === 'https',
     expires: expiresAt,
     sameSite: 'lax',
     path: '/',
