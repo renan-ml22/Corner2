@@ -1,4 +1,10 @@
-export default function PerfilPage() {
+import { logout } from "@/app/actions/auth";
+import { getCurrentUser } from "@/lib/dal";
+
+export default async function PerfilPage() {
+  const user = await getCurrentUser();
+  const initial = user.name.charAt(0).toUpperCase();
+
   return (
     <main className="page-container">
       <header>
@@ -7,10 +13,10 @@ export default function PerfilPage() {
       </header>
 
       <section className="surface-card profile-header">
-        <div className="avatar">R</div>
+        <div className="avatar">{initial}</div>
         <div>
-          <h2>Renan Lopes</h2>
-          <p>Treinando desde janeiro de 2026</p>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
         </div>
       </section>
 
@@ -23,6 +29,12 @@ export default function PerfilPage() {
           <li>Notificacoes <span>Ativadas</span></li>
         </ul>
       </section>
+
+      <form action={logout} style={{ marginTop: 24 }}>
+        <button type="submit" className="surface-card logout-button">
+          <i className="ph ph-sign-out" aria-hidden="true" /> Sair da conta
+        </button>
+      </form>
     </main>
   );
 }

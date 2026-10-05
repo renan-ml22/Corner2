@@ -1,0 +1,434 @@
+/* Tela de login — Corner
+   Cores da marca: corner vermelho oklch(0.63 0.21 25) · corner azul oklch(0.62 0.17 258) */
+
+@property --beam {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.page {
+  --red: oklch(0.63 0.21 25);
+  --blue: oklch(0.62 0.17 258);
+  --glass: oklch(0.2 0.02 275 / 0.55);
+  --line: oklch(1 0 0 / 0.08);
+
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+/* ── Fundo: aurora + cordas do ringue + granulado ─────────── */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.blobRed {
+  top: -35vmax;
+  left: -30vmax;
+  background: radial-gradient(circle, oklch(0.63 0.21 25 / 0.55), transparent 65%);
+  animation: driftA 18s ease-in-out infinite alternate;
+}
+
+.blobBlue {
+  bottom: -38vmax;
+  right: -30vmax;
+  background: radial-gradient(circle, oklch(0.62 0.17 258 / 0.6), transparent 65%);
+  animation: driftB 22s ease-in-out infinite alternate;
+}
+
+@keyframes driftA {
+  to { transform: translate(12vmax, 8vmax) scale(1.1); }
+}
+
+@keyframes driftB {
+  to { transform: translate(-10vmax, -12vmax) scale(1.15); }
+}
+
+.ropes {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: min(70vw, 560px);
+  height: min(70vw, 560px);
+  opacity: 0.16;
+}
+
+.ropes path {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: ropeDraw 2.4s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards;
+}
+
+.ropes path:nth-child(1) { stroke: var(--red); }
+.ropes path:nth-child(2) { stroke: #e9e9ed; animation-delay: 0.35s; }
+.ropes path:nth-child(3) { stroke: var(--blue); animation-delay: 0.5s; }
+
+@keyframes ropeDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  gap: 36px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.wordmark {
+  margin-top: 22px;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  background: linear-gradient(100deg, #f4f2f2 30%, oklch(0.8 0.1 25) 50%, #f4f2f2 70%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 4s ease-in-out 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  50%, 100% { background-position: -50% 0; }
+}
+
+.tagline {
+  margin-top: 10px;
+  max-width: 30ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-neutral-300);
+  text-wrap: pretty;
+}
+
+.corners {
+  display: none;
+  gap: 18px;
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--color-neutral-400);
+}
+
+.corners span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dotRed,
+.dotBlue {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.dotRed { background: var(--red); }
+.dotBlue { background: var(--blue); }
+
+/* ── Cartão em vidro com borda de luz ─────────────────────── */
+.card {
+  position: relative;
+  isolation: isolate;
+  padding: 28px 22px 24px;
+  border-radius: 28px;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: 0 30px 60px -20px oklch(0 0 0 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.06);
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s both;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    conic-gradient(from var(--beam), transparent 0 62%, var(--red) 75%, var(--blue) 88%, transparent 100%),
+    linear-gradient(var(--line), var(--line));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: beam 7s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes beam {
+  to { --beam: 360deg; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--color-neutral-400);
+}
+
+/* ── Formulário ───────────────────────────────────────────── */
+.form {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.field {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background:
+    linear-gradient(var(--color-neutral-800), var(--color-neutral-800)) padding-box,
+    linear-gradient(var(--line), var(--line)) border-box;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+.field:focus-within {
+  background:
+    linear-gradient(var(--color-neutral-800), var(--color-neutral-800)) padding-box,
+    linear-gradient(110deg, var(--red), var(--blue)) border-box;
+  box-shadow: 0 0 0 4px oklch(0.63 0.21 25 / 0.12), 0 8px 24px -8px oklch(0.62 0.17 258 / 0.35);
+}
+
+.fieldIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--color-neutral-400);
+  transition: color 0.2s;
+  pointer-events: none;
+}
+
+.field:focus-within .fieldIcon {
+  color: var(--color-text);
+}
+
+.input {
+  width: 100%;
+  height: 58px;
+  padding: 22px 48px 6px 48px;
+  border: 0;
+  border-radius: 16px;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 16px; /* evita zoom no iOS */
+  caret-color: var(--red);
+}
+
+.input:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-text);
+  box-shadow: inset 0 0 0 100px var(--color-neutral-800);
+  transition: background-color 9999s;
+}
+
+.label {
+  position: absolute;
+  left: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--color-neutral-400);
+  pointer-events: none;
+  transform-origin: left center;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.18s;
+}
+
+.input:focus + .label,
+.input:not(:placeholder-shown) + .label,
+.input:-webkit-autofill + .label {
+  transform: translateY(-118%) scale(0.75);
+  color: var(--color-neutral-300);
+}
+
+.reveal {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-neutral-400);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reveal:hover { background: var(--color-neutral-700); color: var(--color-text); }
+.reveal:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.hint,
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.hint {
+  margin-top: -4px;
+  color: oklch(0.82 0.13 85);
+}
+
+.error {
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: oklch(0.85 0.08 25);
+  background: oklch(0.63 0.21 25 / 0.12);
+  border: 1px solid oklch(0.63 0.21 25 / 0.3);
+  animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.error i { font-size: 18px; color: var(--red); }
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(3px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+
+/* ── Botão principal ──────────────────────────────────────── */
+.submit {
+  position: relative;
+  overflow: hidden;
+  margin-top: 6px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25));
+  color: #f4f2f2;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 12px 28px -8px oklch(0.63 0.21 25 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.25);
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+
+.submit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, oklch(1 0 0 / 0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.7s;
+}
+
+.submit:hover:not(:disabled)::after { transform: translateX(120%); }
+.submit:hover:not(:disabled) { box-shadow: 0 16px 34px -8px oklch(0.63 0.21 25 / 0.75), inset 0 1px 0 oklch(1 0 0 / 0.25); }
+.submit:hover:not(:disabled) i { transform: translateX(3px); }
+.submit i { transition: transform 0.2s; }
+.submit:active:not(:disabled) { transform: scale(0.98); }
+.submit:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.submit:disabled { cursor: progress; filter: saturate(0.8) brightness(0.92); }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid oklch(1 0 0 / 0.35);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Telas largas: marca à esquerda, formulário à direita ─── */
+@media (min-width: 900px) {
+  .shell {
+    max-width: 960px;
+    grid-template-columns: 1fr 420px;
+    align-items: center;
+    gap: 80px;
+  }
+
+  .brand {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .wordmark { font-size: 64px; }
+  .tagline { font-size: 17px; }
+  .corners { display: flex; }
+  .card { padding: 36px 32px 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob,
+  .wordmark,
+  .card::before,
+  .brand,
+  .card,
+  .error {
+    animation: none;
+  }
+  .ropes path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

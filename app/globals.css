@@ -379,6 +379,23 @@ li:last-child > .checklist-item {
   font-size: 0.78rem;
 }
 
+.logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 1rem;
+  color: oklch(0.75 0.15 25);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: var(--surface-raised);
+}
+
 @media (min-width: 640px) {
   .page-container {
     padding-top: 3rem;

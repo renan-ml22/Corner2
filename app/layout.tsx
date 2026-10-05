@@ -1,9 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { CornerProvider } from "@/components/CornerProvider";
-import BottomNav from "@/components/BottomNav";
-import AppSheets from "@/components/AppSheets";
-import Toast from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "Corner",
@@ -29,14 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
         <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
       </head>
-      <body>
-        <CornerProvider>
-          <div className="app-main">{children}</div>
-          <BottomNav />
-          <AppSheets />
-          <Toast />
-        </CornerProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

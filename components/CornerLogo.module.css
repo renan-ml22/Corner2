@@ -1,0 +1,65 @@
+.mark {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: linear-gradient(160deg, #232532, #161826);
+  box-shadow: var(--shadow-lg), inset 0 0 0 1px oklch(1 0 0 / 0.07);
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glove {
+  position: absolute;
+  color: oklch(0.63 0.21 25);
+  transform: rotate(-35deg);
+  filter: drop-shadow(0 6px 10px oklch(0 0 0 / 0.45));
+}
+
+/* ── Animação de entrada ─────────────────────────────── */
+.animated .rope {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: drawRope 0.9s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.animated .post {
+  transform-origin: 24px 24px;
+  transform: scale(0);
+  animation: postIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s forwards;
+}
+
+.animated .glove {
+  opacity: 0;
+  animation: gloveIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.75s forwards;
+}
+
+@keyframes drawRope {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes postIn {
+  to { transform: scale(1); }
+}
+
+@keyframes gloveIn {
+  0%   { opacity: 0; transform: translate(40%, 40%) rotate(10deg) scale(0.6); }
+  60%  { opacity: 1; transform: translate(-4%, -4%) rotate(-42deg) scale(1.06); }
+  100% { opacity: 1; transform: rotate(-35deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated .rope,
+  .animated .post,
+  .animated .glove {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+    transform: none;
+  }
+  .animated .glove { transform: rotate(-35deg); }
+}
