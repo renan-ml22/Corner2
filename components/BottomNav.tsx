@@ -33,7 +33,7 @@ export default function BottomNav() {
       {tabBtn(TABS[0])}
       {tabBtn(TABS[1])}
       <div style={{ display: 'grid', placeItems: 'center' }}>
-        <button onClick={openRegister} aria-label="Registrar treino" style={{ width: 58, height: 58, borderRadius: 20, border: 0, marginTop: -26, cursor: 'pointer', background: 'linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25))', color: '#f4f2f2', fontSize: 28, display: 'grid', placeItems: 'center', boxShadow: '0 10px 24px oklch(0.63 0.21 25 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.25)' }}>
+        <button onClick={() => openRegister()} aria-label="Registrar treino" style={{ width: 58, height: 58, borderRadius: 20, border: 0, marginTop: -26, cursor: 'pointer', background: 'linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25))', color: '#f4f2f2', fontSize: 28, display: 'grid', placeItems: 'center', boxShadow: '0 10px 24px oklch(0.63 0.21 25 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.25)' }}>
           <i className="ph-bold ph-plus" />
         </button>
       </div>

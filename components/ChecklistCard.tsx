@@ -1,30 +1,38 @@
-const exercises = [
-  { name: "Mobilidade e ativacao", detail: "5 min", checked: true },
-  { name: "Agachamento goblet", detail: "4 x 10", checked: true },
-  { name: "Remada unilateral", detail: "3 x 12", checked: false },
-  { name: "Prancha", detail: "3 x 40s", checked: false },
-];
+interface ChecklistItem {
+  id: string;
+  label: string;
+}
 
-export default function ChecklistCard() {
+interface ChecklistCardProps {
+  titulo: string;
+  subtitulo: string;
+  icone: string;
+  itens: ChecklistItem[];
+  marcados: Record<string, boolean>;
+  onToggle: (id: string) => void;
+}
+
+export default function ChecklistCard({ titulo, subtitulo, icone, itens, marcados, onToggle }: ChecklistCardProps) {
+  const feitos = itens.filter(i => marcados[i.id]).length;
+
   return (
-    <section className="surface-card checklist-card" aria-label="Checklist do treino">
+    <section className="surface-card checklist-card" aria-label={`Checklist: ${titulo}`}>
       <div className="checklist-header">
         <div className="checklist-title">
-          <div className="checklist-icon" aria-hidden="true">↗</div>
+          <div className="checklist-icon" aria-hidden="true"><i className={`ph-fill ${icone}`} /></div>
           <div>
-            <h3>Forca e estabilidade</h3>
-            <p>Treino de hoje · 32 min</p>
+            <h3>{titulo}</h3>
+            <p>{subtitulo}</p>
           </div>
         </div>
-        <span className="checklist-count">2/4</span>
+        <span className="checklist-count">{feitos}/{itens.length}</span>
       </div>
       <ul className="checklist-items">
-        {exercises.map((exercise) => (
-          <li key={exercise.name}>
+        {itens.map(item => (
+          <li key={item.id}>
             <label className="checklist-item">
-              <input type="checkbox" defaultChecked={exercise.checked} />
-              <span>{exercise.name}</span>
-              <span>{exercise.detail}</span>
+              <input type="checkbox" checked={!!marcados[item.id]} onChange={() => onToggle(item.id)} />
+              <span>{item.label}</span>
             </label>
           </li>
         ))}

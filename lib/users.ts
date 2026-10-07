@@ -18,7 +18,10 @@ interface StoredUser extends User {
 // Quando houver banco de dados, troque esta função por uma consulta.
 function loadUsers(): StoredUser[] {
   const { AUTH_TEST_EMAIL, AUTH_TEST_NAME, AUTH_TEST_PASSWORD_HASH } = process.env
-  if (!AUTH_TEST_EMAIL || !AUTH_TEST_PASSWORD_HASH) return []
+  if (!AUTH_TEST_EMAIL || !AUTH_TEST_PASSWORD_HASH) {
+    console.error('[auth] AUTH_TEST_EMAIL/AUTH_TEST_PASSWORD_HASH não definidos — nenhum usuário pode entrar. Configure as variáveis de ambiente (veja .env.local).')
+    return []
+  }
   return [{
     id: 'u_test',
     email: AUTH_TEST_EMAIL.trim().toLowerCase(),

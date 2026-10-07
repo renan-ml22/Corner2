@@ -1,5 +1,6 @@
 import { logout } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/dal";
+import PreferenciasCard from "@/components/PreferenciasCard";
 
 export default async function PerfilPage() {
   const user = await getCurrentUser();
@@ -20,15 +21,8 @@ export default async function PerfilPage() {
         </div>
       </section>
 
-      <div className="section-heading"><h2>Preferencias</h2></div>
-      <section className="surface-card">
-        <ul className="settings-list">
-          <li>Objetivo <span>Forca e saude</span></li>
-          <li>Frequencia <span>4x por semana</span></li>
-          <li>Duracao media <span>35 minutos</span></li>
-          <li>Notificacoes <span>Ativadas</span></li>
-        </ul>
-      </section>
+      <div className="section-heading"><h2>Preferências</h2></div>
+      <PreferenciasCard />
 
       <form action={logout} style={{ marginTop: 24 }}>
         <button type="submit" className="surface-card logout-button">

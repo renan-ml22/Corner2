@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react'
 import { useCorner, CAT_LABELS, RegType } from './CornerProvider'
+import { PLANOS, resumoRounds } from '@/data/planos'
 
 const RED = 'oklch(0.63 0.21 25)'
 const MUTED = 'var(--color-neutral-400)'
@@ -45,7 +46,7 @@ function Stepper({ label, value, unit, min, max, onChange }: { label: string; va
 }
 
 export default function AppSheets() {
-  const { sheet, setSheet, closeSheet, regType, setRegType, rounds, setRounds, roundMin, setRoundMin, rpe, setRpe, saveWorkout, elapsed, showToast, autoAdjust, adjustAccepted, setAdjustAccepted } = useCorner()
+  const { sheet, setSheet, closeSheet, regType, setRegType, rounds, setRounds, roundMin, setRoundMin, rpe, setRpe, saveWorkout, elapsed, showToast, autoAdjust, adjustAccepted, setAdjustAccepted, planoAtivo, escolherPlano } = useCorner()
 
   if (sheet === 'type') {
     return (
@@ -151,6 +152,42 @@ export default function AppSheets() {
               <p style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Você treinou 5 dias seguidos. Continue assim!</p>
             </div>
           </div>
+        </div>
+      </SheetFrame>
+    )
+  }
+
+  if (sheet === 'planos') {
+    const escolher = (id: string, nome: string) => {
+      if (planoAtivo?.planoId === id) { closeSheet(); return }
+      if (planoAtivo && !window.confirm(`Trocar para o plano ${nome}? O plano atual será substituído e a semana 1 começa agora.`)) return
+      escolherPlano(id)
+      closeSheet()
+      showToast(`Plano ${nome} ativado`)
+    }
+    return (
+      <SheetFrame title="Escolher plano" onClose={closeSheet}>
+        <p style={{ fontSize: 14, color: MUTED, marginBottom: 14 }}>A semana 1 começa nesta segunda-feira.</p>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {PLANOS.map(p => {
+            const ativo = planoAtivo?.planoId === p.id
+            return (
+              <button key={p.id} onClick={() => escolher(p.id, p.nome)} aria-pressed={ativo} style={{ display: 'grid', gap: 8, padding: 16, borderRadius: 16, cursor: 'pointer', textAlign: 'left', color: 'var(--color-text)', background: 'var(--color-neutral-800)', border: `1px solid ${ativo ? RED : 'transparent'}` }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontSize: 17, fontWeight: 650 }}>{p.nome}</span>
+                  {ativo
+                    ? <span style={{ fontSize: 12, fontWeight: 600, color: RED, display: 'inline-flex', alignItems: 'center', gap: 4 }}><i className="ph-fill ph-check-circle" /> Ativo</span>
+                    : <span className="nivel-badge">{p.nivelLabel}</span>}
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--color-neutral-300)', lineHeight: 1.45 }}>{p.resumo}</span>
+                <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  <span className="chip"><i className="ph ph-calendar-blank" /> {p.semanas} semanas</span>
+                  <span className="chip"><i className="ph ph-repeat" /> {p.diasPorSemana}× por semana</span>
+                  <span className="chip"><i className="ph ph-timer" /> {resumoRounds(p)}</span>
+                </span>
+              </button>
+            )
+          })}
         </div>
       </SheetFrame>
     )
