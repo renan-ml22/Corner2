@@ -29,8 +29,8 @@ export const STATUS_CARGA_TEXTO: Record<StatusCarga, { titulo: string; texto: st
   alta: { titulo: 'Carga alta demais', texto: 'O salto é grande e aumenta o risco de lesão. Reduza o volume ou a intensidade.', icone: 'ph-warning-octagon' },
 }
 
-/** Devolve `null` quando ainda não há histórico suficiente (menos de duas semanas). */
-export function calcularCarga(historico: WorkoutEntry[], hoje: Date): Carga | null {
+/** Carga dos últimos 7 dias e média das semanas anteriores; `null` com menos de duas semanas de histórico. */
+function medirCarga(historico: WorkoutEntry[], hoje: Date): { aguda: number; cronica: number } | null {
   if (historico.length === 0) return null
   const fim = somarDias(inicioDoDia(hoje), 1)
   const primeiro = historico.reduce((m, t) => Math.min(m, new Date(t.data).getTime()), Infinity)
@@ -43,12 +43,27 @@ export function calcularCarga(historico: WorkoutEntry[], hoje: Date): Carga | nu
   for (let k = 1; k <= anteriores; k++) {
     total += somaCarga(historico, somarDias(fim, -7 * (k + 1)), somarDias(fim, -7 * k))
   }
-  const cronica = total / anteriores
-  if (cronica === 0) return null
+  return { aguda, cronica: total / anteriores }
+}
+
+/**
+ * Devolve `null` quando ainda não há histórico suficiente (menos de duas semanas)
+ * ou quando as semanas anteriores estão zeradas (veja `voltouDePausa`).
+ */
+export function calcularCarga(historico: WorkoutEntry[], hoje: Date): Carga | null {
+  const medida = medirCarga(historico, hoje)
+  if (!medida || medida.cronica === 0) return null
+  const { aguda, cronica } = medida
 
   const razao = aguda / cronica
   const status: StatusCarga = razao < 0.8 ? 'baixa' : razao <= 1.3 ? 'ideal' : razao <= 1.5 ? 'atencao' : 'alta'
   return { aguda: Math.round(aguda), cronica: Math.round(cronica), razao, status }
+}
+
+/** Treinou nos últimos 7 dias depois de semanas sem treinar: não há média para comparar, mas o salto é o risco. */
+export function voltouDePausa(historico: WorkoutEntry[], hoje: Date): boolean {
+  const medida = medirCarga(historico, hoje)
+  return !!medida && medida.cronica === 0 && medida.aguda > 0
 }
 
 /** Carga total por semana (segunda a domingo) nas últimas `n` semanas. */
@@ -88,10 +103,10 @@ export function sugerirAjuste(c: Checkin | null, tipo: RegType, rounds: number):
     return { ...base, nivel: 'descanso', tipo, rounds: 0, titulo: 'Hoje é dia de descansar', motivo: 'Seu corpo pede recuperação. Treinar assim aumenta o risco de lesão e rende pouco. Descanse, durma bem e hidrate-se.' }
   }
   if (score < 3 || c.dor >= 4) {
-    return { ...base, nivel: 'leve', tipo: tipo === 'spa' ? 'tec' : tipo, rounds: Math.max(2, Math.round(rounds * 0.5)), titulo: 'Faça um treino leve', motivo: tipo === 'spa' ? 'Sparring não é indicado nesse estado. Troque por técnica leve, com metade dos rounds.' : 'Reduza para metade dos rounds e trabalhe a 50% do esforço.' }
+    return { ...base, nivel: 'leve', tipo: tipo === 'spa' ? 'tec' : tipo, rounds: Math.min(rounds, Math.max(2, Math.round(rounds * 0.5))), titulo: 'Faça um treino leve', motivo: tipo === 'spa' ? 'Sparring não é indicado nesse estado. Troque por técnica leve, com metade dos rounds.' : 'Reduza para metade dos rounds e trabalhe a 50% do esforço.' }
   }
   if (score < 3.7) {
-    return { ...base, nivel: 'reduzir', tipo, rounds: Math.max(2, Math.round(rounds * 0.75)), titulo: 'Reduza um pouco o volume', motivo: 'Você está um pouco abaixo do ideal. Diminuir cerca de 25% dos rounds mantém o estímulo sem sobrecarregar.' }
+    return { ...base, nivel: 'reduzir', tipo, rounds: Math.min(rounds, Math.max(2, Math.round(rounds * 0.75))), titulo: 'Reduza um pouco o volume', motivo: 'Você está um pouco abaixo do ideal. Diminuir cerca de 25% dos rounds mantém o estímulo sem sobrecarregar.' }
   }
   return { ...base, nivel: 'normal', tipo, rounds, titulo: 'Você está pronto', motivo: 'Sono, energia e dor estão em boa condição. Siga o treino como planejado.' }
 }
@@ -137,11 +152,17 @@ export function gerarAlertas({ historico, lesoes, sessaoHojeTipo, metaSemanal, h
   }
 
   // Lesões ativas
-  for (const l of lesoes.filter(x => !x.resolvidaEm && x.intensidade >= 3)) {
+  // Cabeça e pescoço alertam mesmo com intensidade 1-2: queixa leve ali pode ser o início de algo sério.
+  for (const l of lesoes.filter(x => !x.resolvidaEm && (x.intensidade >= 3 || x.regiao === 'cabeca'))) {
+    const leveNaCabeca = l.intensidade < 3
     alertas.push({
       id: `lesao-${l.id}`, nivel: l.intensidade >= 4 ? 'critico' : 'atencao', icone: 'ph-bandaids',
       titulo: `Lesão ativa: ${REGIOES[l.regiao]} (${l.intensidade}/5)`,
-      texto: l.intensidade >= 4 ? 'Evite golpear com carga e procure um fisioterapeuta ou médico antes de voltar ao treino pesado.' : 'Adapte o treino para poupar essa região e acompanhe. Se piorar, procure um profissional.',
+      texto: l.intensidade >= 4
+        ? 'Evite golpear com carga e procure um fisioterapeuta ou médico antes de voltar ao treino pesado.'
+        : leveNaCabeca
+          ? 'Mesmo leve, dor na cabeça ou no pescoço pede cuidado: evite sparring até passar e procure atendimento se houver tontura, náusea ou visão turva.'
+          : 'Adapte o treino para poupar essa região e acompanhe. Se piorar, procure um profissional.',
     })
   }
 
@@ -149,6 +170,11 @@ export function gerarAlertas({ historico, lesoes, sessaoHojeTipo, metaSemanal, h
   const ultimoSparring = ordenado.find(t => t.tipo === 'spa')
   if (sessaoHojeTipo === 'spa' && ultimoSparring && horasDesde(ultimoSparring.data) < 48) {
     alertas.push({ id: 'sparring-intervalo', nivel: 'atencao', icone: 'ph-timer', titulo: 'Intervalo curto entre sparrings', texto: 'O ideal é esperar ao menos 48 horas entre sparrings. Considere trocar o de hoje por técnica leve.' })
+  }
+
+  // Retorno depois de uma pausa (sem média anterior, o alerta de carga não consegue medir o salto)
+  if (voltouDePausa(historico, hoje)) {
+    alertas.push({ id: 'retorno-pausa', nivel: 'atencao', icone: 'ph-arrow-u-up-right', titulo: 'Voltando de uma pausa', texto: 'Você ficou algumas semanas sem treinar. Volte aos poucos: menos rounds e esforço moderado, e aumente de uma semana para outra.' })
   }
 
   // Carga subindo rápido
@@ -190,11 +216,12 @@ export interface ResumoCabeca {
 }
 
 export function resumoCabeca(historico: WorkoutEntry[], hoje: Date, dias = 30): ResumoCabeca {
-  const recentes = treinosEntre(historico, somarDias(inicioDoDia(hoje), -(dias - 1)), somarDias(inicioDoDia(hoje), 1)).filter(t => t.tipo === 'spa')
+  // Impactos contam em qualquer treino (mesmo critério do alerta de cabeça); `sparrings` conta só os de sparring.
+  const recentes = treinosEntre(historico, somarDias(inicioDoDia(hoje), -(dias - 1)), somarDias(inicioDoDia(hoje), 1))
   const fortes = recentes.filter(t => t.sparring?.cabeca === 'fortes')
   const ultimo = fortes.sort((a, b) => b.data.localeCompare(a.data))[0]
   return {
-    sparrings: recentes.length,
+    sparrings: recentes.filter(t => t.tipo === 'spa').length,
     leves: recentes.filter(t => t.sparring?.cabeca === 'leves').length,
     fortes: fortes.length,
     ultimoForte: ultimo ? new Date(ultimo.data) : null,

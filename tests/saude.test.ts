@@ -166,7 +166,7 @@ describe('calcularCarga', () => {
     expect(c.cronica).toBe(100)
   })
 
-  it('devolve null quando a crônica é zero, mesmo com carga aguda alta (comportamento atual)', () => {
+  it('devolve null para o cartão de carga quando a crônica é zero, mesmo com carga aguda alta (o retorno de pausa vira alerta próprio)', () => {
     // primeiro treino há 15 dias, fora da janela da única semana anterior (7 a 13 dias atrás)
     const h = [treinoComCarga(15, 100), treinoComCarga(1, 300)]
     expect(calcularCarga(h, HOJE)).toBeNull()
@@ -391,8 +391,8 @@ describe('sugerirAjuste', () => {
     expect(sugerirAjuste(checkin({ sono: 3, energia: 3, dor: 3 }), 'tec', 6)!.score).toBe(3)
   })
 
-  // Suspeito de bug: a sugestão "reduzir/leve" pode AUMENTAR o volume por causa do piso de 2 rounds.
-  it.fails('uma sugestão de redução nunca passa dos rounds planejados (plano com 1 round)', () => {
+  // O piso de 2 rounds não pode fazer a sugestão de redução aumentar o volume planejado.
+  it('uma sugestão de redução nunca passa dos rounds planejados (plano com 1 round)', () => {
     const a = sugerirAjuste(checkin({ sono: 3, energia: 3, dor: 3 }), 'tec', 1)!
     expect(a.nivel).toBe('reduzir')
     expect(a.rounds).toBeLessThanOrEqual(1)
@@ -488,8 +488,27 @@ describe('gerarAlertas', () => {
       expect(a[1].titulo).toBe('Lesão ativa: Cabeça / pescoço (5/5)')
     })
 
-    it('lesões de intensidade 1 e 2 não alertam (comportamento atual)', () => {
+    it('lesões de intensidade 1 e 2 fora da cabeça não alertam', () => {
       expect(alertas({ lesoes: [lesao({ id: 'a', intensidade: 1 }), lesao({ id: 'b', intensidade: 2 })] })).toEqual([])
+    })
+
+    it('lesão leve (1 ou 2) na cabeça/pescoço alerta como atenção e orienta evitar sparring', () => {
+      for (const intensidade of [1, 2]) {
+        const a = alertas({ lesoes: [lesao({ id: 'c', regiao: 'cabeca', intensidade })] })
+        expect(a).toHaveLength(1)
+        expect(a[0]).toMatchObject({ id: 'lesao-c', nivel: 'atencao', titulo: `Lesão ativa: Cabeça / pescoço (${intensidade}/5)` })
+        expect(a[0].texto).toContain('sparring')
+      }
+    })
+
+    it('lesão leve na cabeça já resolvida não alerta', () => {
+      expect(alertas({ lesoes: [lesao({ regiao: 'cabeca', intensidade: 1, resolvidaEm: '2026-10-10' })] })).toEqual([])
+    })
+
+    it('lesão de intensidade 3 na cabeça mantém o texto de adaptar o treino (não duplica o alerta)', () => {
+      const a = alertas({ lesoes: [lesao({ regiao: 'cabeca', intensidade: 3 })] })
+      expect(a).toHaveLength(1)
+      expect(a[0].nivel).toBe('atencao')
     })
 
     it('lesão resolvida não alerta, mesmo forte', () => {
@@ -534,6 +553,33 @@ describe('gerarAlertas', () => {
     it('usa o sparring mais recente, mesmo que haja treino de outro tipo depois', () => {
       const h = [sparring({ data: isoHorasAtras(40) }), treino({ tipo: 'tec', data: isoHorasAtras(5) })]
       expect(ids(alertas({ sessaoHojeTipo: 'spa', historico: h }))).toContain('sparring-intervalo')
+    })
+  })
+
+  describe('retorno depois de uma pausa', () => {
+    // primeiro treino há 15 dias; nada entre 7 e 13 dias atrás (crônica 0); treino pesado agora
+    const retorno = [treinoComCarga(15, 100), treinoComCarga(1, 300)]
+
+    it('treinar depois de semanas sem treinar gera alerta de atenção para voltar aos poucos', () => {
+      const a = alertas({ historico: retorno }).find(x => x.id === 'retorno-pausa')!
+      expect(a.nivel).toBe('atencao')
+      expect(a.texto).toContain('aos poucos')
+    })
+
+    it('não duplica com o alerta de carga (que exige crônica maior que zero)', () => {
+      expect(ids(alertas({ historico: retorno }))).not.toContain('carga')
+    })
+
+    it('sem treino na semana atual não alerta: não há o que moderar', () => {
+      expect(ids(alertas({ historico: [treinoComCarga(15, 100)] }))).not.toContain('retorno-pausa')
+    })
+
+    it('com treinos nas semanas anteriores não é retorno de pausa', () => {
+      expect(ids(alertas({ historico: [treinoComCarga(13, 100), treinoComCarga(1, 100)] }))).not.toContain('retorno-pausa')
+    })
+
+    it('histórico curto demais (menos de 14 dias) não alerta', () => {
+      expect(ids(alertas({ historico: [treinoComCarga(1, 300)] }))).not.toContain('retorno-pausa')
     })
   })
 
@@ -749,12 +795,21 @@ describe('resumoCabeca', () => {
     expect(r.ultimoForte?.getTime()).toBe(new Date(recente).getTime())
   })
 
-  it('considera só sparring: outros tipos ficam de fora, mesmo com impacto registrado', () => {
+  it('impacto registrado em treino que não é sparring também conta (mesmo critério do alerta de cabeça)', () => {
+    const forte = isoDiasAtras(1)
     const h = [
-      treino({ tipo: 'tec', data: isoDiasAtras(1), sparring: { intensidade: 'forte', cabeca: 'fortes' } }),
+      treino({ tipo: 'tec', data: forte, sparring: { intensidade: 'forte', cabeca: 'fortes' } }),
       treino({ tipo: 'con', data: isoDiasAtras(2) }),
     ]
-    expect(resumoCabeca(h, HOJE)).toEqual({ sparrings: 0, leves: 0, fortes: 0, ultimoForte: null })
+    const r = resumoCabeca(h, HOJE)
+    expect(r).toMatchObject({ sparrings: 0, leves: 0, fortes: 1 })
+    expect(r.ultimoForte?.getTime()).toBe(new Date(forte).getTime())
+  })
+
+  it('o resumo e o alerta de cabeça concordam sobre a pancada forte mais recente', () => {
+    const h = [treino({ tipo: 'tec', data: isoDiasAtras(2), sparring: { intensidade: 'forte', cabeca: 'fortes' } })]
+    expect(resumoCabeca(h, HOJE).fortes).toBe(1)
+    expect(ids(alertas({ historico: h }))).toContain('cabeca-recente')
   })
 
   it('sparring sem detalhes conta como sparring, mas sem impacto', () => {
