@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { useCorner } from "@/components/CornerProvider";
+import { useHidratado } from "@/hooks/useEntidade";
+import { useHistorico } from "@/hooks/useHistorico";
+import { usePreferencias } from "@/hooks/usePreferencias";
+import { useCheckins, useLesoes, usePesos } from "@/hooks/useSaude";
+import { useToast } from "@/hooks/useToast";
 import GraficoPeso from "@/components/GraficoPeso";
 import { deChave, diferencaDias, formatarDataCurta } from "@/lib/datas";
 import { prontidao, resumoCabeca } from "@/lib/saude";
@@ -11,10 +15,13 @@ import { REGIOES, type RegiaoCorpo } from "@/lib/tipos";
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
 
 export default function SaudeCliente() {
-  const {
-    pronto, historico, pesos, registrarPeso, removerPeso, lesoes, adicionarLesao, resolverLesao, removerLesao,
-    checkins, config, atualizarConfig, showToast,
-  } = useCorner();
+  const pronto = useHidratado();
+  const { historico } = useHistorico();
+  const { pesos, registrarPeso, removerPeso } = usePesos();
+  const { lesoes, adicionarLesao, resolverLesao, removerLesao } = useLesoes();
+  const { checkins } = useCheckins();
+  const { config, atualizarConfig } = usePreferencias();
+  const showToast = useToast();
 
   const [kgTexto, setKgTexto] = useState("");
   const [erroPeso, setErroPeso] = useState("");

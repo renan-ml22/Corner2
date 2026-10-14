@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useCorner } from "@/components/CornerProvider";
+import { usePlano } from "@/hooks/usePlano";
+import { usePreferencias } from "@/hooks/usePreferencias";
 import {
   AQUECIMENTO, BANDAGEM, COMBINACOES, DEFESAS, DESAQUECIMENTO, GOLPES, NOTACAO_CORPO, maoDaFrente, maoDeTras,
   type PassoGuia,
@@ -38,7 +39,8 @@ function Passos({ titulo, passos, icone }: { titulo: string; passos: PassoGuia[]
 }
 
 export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
-  const { config, plano } = useCorner();
+  const { config } = usePreferencias();
+  const { plano } = usePlano();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const meuNivel = nivelDoAtleta(plano, config.experiencia);
   const [filtro, setFiltro] = useState<Nivel | "todos">(meuNivel);

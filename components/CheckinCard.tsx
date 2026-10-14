@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useCorner } from "./CornerProvider";
+import { useCheckins } from "@/hooks/useSaude";
+import { useToast } from "@/hooks/useToast";
 import { prontidao } from "@/lib/saude";
 
 type Campo = "sono" | "energia" | "dor";
@@ -13,7 +14,8 @@ const CAMPOS: { id: Campo; rotulo: string; baixo: string; alto: string }[] = [
 ];
 
 export default function CheckinCard() {
-  const { checkinHoje, registrarCheckin, showToast } = useCorner();
+  const { checkinHoje, registrarCheckin } = useCheckins();
+  const showToast = useToast();
   const [valores, setValores] = useState<Partial<Record<Campo, number>>>({});
   const [refazendo, setRefazendo] = useState(false);
 

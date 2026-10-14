@@ -2,13 +2,21 @@
 
 import Link from "next/link";
 import { ChangeEvent, useState } from "react";
-import { useCorner } from "./CornerProvider";
+import { useHidratado } from "@/hooks/useEntidade";
+import { usePlano } from "@/hooks/usePlano";
+import { usePreferencias } from "@/hooks/usePreferencias";
+import { useToast } from "@/hooks/useToast";
+import { usePainelAcoes } from "./PainelProvider";
 import { chaveDia } from "@/lib/datas";
 import { pedirPermissaoNotificacao } from "@/lib/notificar";
 import type { Postura } from "@/lib/tipos";
 
 export default function PreferenciasCard() {
-  const { pronto, config, atualizarConfig, plano, exportarDados, importarDados, openOnboarding, showToast } = useCorner();
+  const pronto = useHidratado();
+  const { config, atualizarConfig, exportarDados, importarDados } = usePreferencias();
+  const { plano } = usePlano();
+  const { openOnboarding } = usePainelAcoes();
+  const showToast = useToast();
   const [permissao, setPermissao] = useState<string>(() => (typeof Notification === "undefined" ? "indisponivel" : Notification.permission));
 
   if (!pronto) return <div className="skeleton" />;

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useCorner } from "@/components/CornerProvider";
+import { usePainelAcoes } from "@/components/PainelProvider";
+import { useHidratado } from "@/hooks/useEntidade";
+import { useHistorico } from "@/hooks/useHistorico";
 import { formatarDataCurta, nomeDoMes, somarDias } from "@/lib/datas";
 import { CAT_ICONS, CAT_LABELS, IMPACTO_LABEL, INTENSIDADE_LABEL, TIPOS } from "@/lib/tipos";
 import { calcularCarga, STATUS_CARGA_TEXTO } from "@/lib/saude";
@@ -15,7 +17,9 @@ function formatarMinutos(min: number): string {
 }
 
 export default function ProgressoPage() {
-  const { pronto, historico, openRegister } = useCorner();
+  const pronto = useHidratado();
+  const { historico } = useHistorico();
+  const { openRegister } = usePainelAcoes();
   const [barraAtiva, setBarraAtiva] = useState<number | null>(null);
 
   if (!pronto) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;

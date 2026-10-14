@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
-import { useCorner } from "@/components/CornerProvider";
+import { usePainelAcoes } from "@/components/PainelProvider";
+import { useHidratado } from "@/hooks/useEntidade";
+import { usePlano } from "@/hooks/usePlano";
+import { usePreferencias } from "@/hooks/usePreferencias";
 import { PREPARO_SEG, useCronometro } from "@/hooks/useCronometro";
 import { focoDosRounds, maoDaFrente, maoDeTras } from "@/data/tecnicas";
 import { CAT_LABELS } from "@/lib/tipos";
@@ -23,7 +26,10 @@ export default function TreinoCliente() {
 }
 
 function Cronometro({ params }: { params: ParamsTreino }) {
-  const { pronto, plano, config, openRegister } = useCorner();
+  const pronto = useHidratado();
+  const { plano } = usePlano();
+  const { config } = usePreferencias();
+  const { openRegister } = usePainelAcoes();
   const roundSeg = Math.max(3, Math.round(params.minPorRound * 60));
   const c = useCronometro({ rounds: params.rounds, roundSeg, descansoSeg: params.descansoSeg });
   const focos = useMemo(() => focoDosRounds(params.tipo, params.rounds, params.nivel), [params.tipo, params.rounds, params.nivel]);

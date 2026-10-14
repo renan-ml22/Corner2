@@ -5,7 +5,13 @@ import ChecklistCard from "@/components/ChecklistCard";
 import CheckinCard from "@/components/CheckinCard";
 import SessaoCard from "@/components/SessaoCard";
 import StreakCard from "@/components/StreakCard";
-import { useCorner } from "@/components/CornerProvider";
+import { usePainelAcoes } from "@/components/PainelProvider";
+import { useHidratado } from "@/hooks/useEntidade";
+import { useHistorico } from "@/hooks/useHistorico";
+import { usePlano } from "@/hooks/usePlano";
+import { usePreferencias } from "@/hooks/usePreferencias";
+import { useUsuario } from "@/hooks/useRepositorio";
+import { useAlertas, useCheckins } from "@/hooks/useSaude";
 import { formatarDataLonga, nomeDoMes } from "@/lib/datas";
 import { sugerirAjuste } from "@/lib/saude";
 import { nivelDoAtleta, urlTreino } from "@/lib/sessao";
@@ -16,10 +22,14 @@ import {
 } from "@/lib/treinos";
 
 export default function HojePage() {
-  const {
-    pronto, usuario, historico, plano, planoAtivo, config, checklistHoje, toggleChecklist, reag, alertas, checkinHoje,
-    ajusteAplicado, aplicarAjuste, openRegister, openPlanos, openNotif, openOnboarding,
-  } = useCorner();
+  const pronto = useHidratado();
+  const usuario = useUsuario();
+  const { historico } = useHistorico();
+  const { plano, planoAtivo, checklistHoje, toggleChecklist, reag } = usePlano();
+  const { config } = usePreferencias();
+  const alertas = useAlertas();
+  const { checkinHoje, ajusteAplicado, aplicarAjuste } = useCheckins();
+  const { openRegister, openPlanos, openNotif, openOnboarding } = usePainelAcoes();
 
   if (!pronto) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
 

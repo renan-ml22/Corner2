@@ -2,7 +2,11 @@
 
 import { ReactNode, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useCorner } from './CornerProvider'
+import { usePlano } from '@/hooks/usePlano'
+import { usePreferencias } from '@/hooks/usePreferencias'
+import { useAlertas } from '@/hooks/useSaude'
+import { useToast } from '@/hooks/useToast'
+import { usePainelAcoes, usePainelEstado } from './PainelProvider'
 import { PLANOS, getPlano, resumoRounds, type Plano } from '@/data/planos'
 import { cargaDaSessao } from '@/lib/saude'
 import { nivelDoAtleta, urlTreino } from '@/lib/sessao'
@@ -79,7 +83,10 @@ function recomendarPlano(exp: Experiencia, obj: Objetivo): Plano {
 }
 
 function Onboarding() {
-  const { closeSheet, atualizarConfig, escolherPlano, openPlanos, showToast } = useCorner()
+  const { closeSheet, openPlanos } = usePainelAcoes()
+  const { atualizarConfig } = usePreferencias()
+  const { escolherPlano } = usePlano()
+  const showToast = useToast()
   const [passo, setPasso] = useState(0)
   const [postura, setPostura] = useState<Postura>('ortodoxo')
   const [exp, setExp] = useState<Experiencia>('ate1')
@@ -169,10 +176,15 @@ function Onboarding() {
 
 export default function AppSheets() {
   const router = useRouter()
+  const { setSheet, closeSheet } = usePainelAcoes()
   const {
-    sheet, setSheet, closeSheet, regType, setRegType, rounds, setRounds, roundMin, setRoundMin, rpe, setRpe, extras, setExtras,
-    saveWorkout, elapsed, ultimoSalvo, viaCronometro, showToast, planoAtivo, plano, config, escolherPlano, alertas,
-  } = useCorner()
+    sheet, regType, setRegType, rounds, setRounds, roundMin, setRoundMin, rpe, setRpe, extras, setExtras,
+    saveWorkout, elapsed, ultimoSalvo, viaCronometro,
+  } = usePainelEstado()
+  const showToast = useToast()
+  const { planoAtivo, plano, escolherPlano } = usePlano()
+  const { config } = usePreferencias()
+  const alertas = useAlertas()
 
   if (sheet === 'onboarding') return <Onboarding />
 

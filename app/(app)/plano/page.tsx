@@ -2,14 +2,24 @@
 
 import { useState } from "react";
 import SessaoCard from "@/components/SessaoCard";
-import { useCorner } from "@/components/CornerProvider";
+import { usePainelAcoes } from "@/components/PainelProvider";
+import { useHidratado } from "@/hooks/useEntidade";
+import { useHistorico } from "@/hooks/useHistorico";
+import { usePlano } from "@/hooks/usePlano";
+import { usePreferencias } from "@/hooks/usePreferencias";
+import { useToast } from "@/hooks/useToast";
 import { sessoesDaSemana } from "@/data/planos";
 import { formatarDataCurta, somarDias } from "@/lib/datas";
 import { nivelDoAtleta, urlTreino } from "@/lib/sessao";
 import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComStatus, type SessaoComStatus } from "@/lib/treinos";
 
 export default function PlanoPage() {
-  const { pronto, plano, planoAtivo, historico, reag, reagendar, config, openPlanos, openRegister, encerrarPlano, showToast } = useCorner();
+  const pronto = useHidratado();
+  const { plano, planoAtivo, reag, reagendar, encerrarPlano } = usePlano();
+  const { historico } = useHistorico();
+  const { config } = usePreferencias();
+  const { openPlanos, openRegister } = usePainelAcoes();
+  const showToast = useToast();
   // null = acompanhar a semana atual
   const [semanaEscolhida, setSemanaEscolhida] = useState<number | null>(null);
 

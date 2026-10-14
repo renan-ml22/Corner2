@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCorner } from './CornerProvider'
+import { usePainelAcoes } from './PainelProvider'
 
 const RED = 'oklch(0.63 0.21 25)'
 const MUTED = 'var(--color-neutral-400)'
@@ -16,7 +16,7 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const { openRegister } = useCorner()
+  const { openRegister } = usePainelAcoes()
 
   // O cronômetro ocupa a tela inteira: sem barra de navegação por cima.
   if (pathname.startsWith('/treino')) return null
