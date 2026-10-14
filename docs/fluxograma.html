@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Corner — Fluxograma do aplicativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<style>
+  @page { size: 297mm 210mm; margin: 0; }
+  :root {
+    --bg: #0e0f17; --surface: #16182a; --surface2: #1e2030; --line: #2c2e3d; --line2: #3f4150;
+    --text: #e9e9ed; --muted: #a3a5b5; --dim: #7a7c8c;
+    --red: oklch(0.63 0.21 25); --red2: oklch(0.66 0.21 25); --blue: oklch(0.62 0.17 258);
+    --green: #75d69a; --amber: oklch(0.8 0.14 85);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pg { position: relative; width: 297mm; height: 210mm; overflow: hidden; break-after: page; background: var(--bg); }
+  .pg:last-child { break-after: auto; }
+  .pg::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 50% at 8% 0%, oklch(0.62 0.17 258 / 0.13), transparent 70%), radial-gradient(50% 45% at 96% 100%, oklch(0.63 0.21 25 / 0.12), transparent 70%); }
+
+  /* ── Logo ── */
+  .logo { position: relative; flex: none; overflow: hidden; background: linear-gradient(160deg, #232532, #161826); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.07), 0 10px 30px rgba(0,0,0,.45); }
+  .logo-in { position: absolute; left: 0; top: 0; width: 148px; height: 148px; transform-origin: 0 0; }
+  .logo-in svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .logo-in i { position: absolute; left: 67px; top: 65px; font-size: 64px; color: var(--red); transform: rotate(-35deg); filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); }
+
+  /* ── Capa ── */
+  .capa .cordas { position: absolute; right: -10px; bottom: -10px; width: 640px; height: 640px; opacity: .5; }
+  .capa .luva { position: absolute; right: 120px; top: 70px; font-size: 330px; color: var(--red); opacity: .07; transform: rotate(-35deg); }
+  .capa .conteudo { position: absolute; left: 90px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 0; }
+  .capa h1 { margin-top: 34px; font-size: 118px; font-weight: 800; letter-spacing: -0.045em; line-height: 1; background: linear-gradient(100deg, #f4f2f2 25%, oklch(0.82 0.1 25) 60%, oklch(0.8 0.1 258)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .capa .tipo { margin-top: 22px; font-size: 30px; font-weight: 600; letter-spacing: -0.02em; }
+  .capa .tag { margin-top: 12px; max-width: 520px; font-size: 17px; line-height: 1.5; color: var(--muted); }
+  .capa .corners { display: flex; gap: 22px; margin-top: 34px; font-size: 13px; color: var(--muted); }
+  .capa .corners span { display: inline-flex; align-items: center; gap: 8px; }
+  .capa .corners i { width: 12px; height: 12px; border-radius: 4px; display: block; }
+  .capa .rodape { position: absolute; left: 90px; bottom: 44px; right: 90px; display: flex; justify-content: space-between; font-size: 12.5px; color: var(--dim); }
+
+  /* ── Cabeçalho e rodapé das páginas ── */
+  .cab { position: absolute; left: 40px; right: 40px; top: 24px; display: flex; align-items: center; gap: 14px; }
+  .cab h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .cab p { margin-top: 2px; font-size: 12.5px; color: var(--muted); }
+  .cab .sec { margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .filete { position: absolute; left: 40px; right: 40px; top: 84px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--blue)); opacity: .75; }
+  .rod { position: absolute; left: 40px; right: 40px; bottom: 18px; display: flex; justify-content: space-between; font-size: 10.5px; color: var(--dim); }
+
+  /* ── Nós do fluxograma ── */
+  .no { position: absolute; z-index: 2; display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px 10px; font-size: 12px; line-height: 1.32; color: var(--text); }
+  .tx { width: 100%; }
+  .no small { display: block; margin-top: 2px; font-size: 10.3px; line-height: 1.3; color: var(--muted); font-weight: 400; }
+  .no b { font-weight: 700; }
+  .no i.ic { margin-right: 6px; font-size: 15px; vertical-align: -2px; }
+  .ini { border-radius: 999px; font-weight: 700; color: #fff; background: linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25)); box-shadow: 0 8px 20px -8px oklch(0.63 0.21 25 / .7); }
+  .ini small { color: #ffe0dc; }
+  .fim { border-radius: 999px; font-weight: 700; color: #c6f3d9; background: rgba(117, 214, 154, .12); border: 1.5px solid var(--green); }
+  .proc { border-radius: 12px; background: var(--surface); border: 1px solid var(--line2); }
+  .tela { border-radius: 14px; background: var(--surface); border: 1px solid var(--line2); border-top: 3px solid var(--red); }
+  .acao { border-radius: 16px; font-weight: 700; color: #fff; background: linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25)); box-shadow: 0 10px 22px -10px oklch(0.63 0.21 25 / .8); }
+  .sis { border-radius: 12px; background: oklch(0.62 0.17 258 / .14); border: 1px solid oklch(0.62 0.17 258 / .6); }
+  .round { border-radius: 14px; background: oklch(0.63 0.21 25 / .16); border: 1.5px solid var(--red); }
+  .descanso { border-radius: 14px; background: oklch(0.62 0.17 258 / .18); border: 1.5px solid var(--blue); }
+  .crit { border-radius: 12px; background: oklch(0.63 0.21 25 / .14); border: 1px solid oklch(0.63 0.21 25 / .7); }
+  .dado { border-radius: 10px / 14px; background: var(--surface2); border: 1.5px dashed var(--dim); }
+  .plan { border-radius: 12px; background: transparent; border: 1.5px dashed var(--line2); color: var(--muted); }
+  .dec { padding: 0 26px; }
+  .dec svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; overflow: visible; }
+  .dec span { position: relative; font-weight: 600; font-size: 11.6px; }
+  .dec span small { font-weight: 400; }
+  .lista { flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line2); }
+  .lista h4 { font-size: 12.5px; font-weight: 700; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .lista ul { list-style: none; display: grid; gap: 5px; width: 100%; }
+  .lista li { position: relative; padding-left: 13px; font-size: 11.2px; line-height: 1.35; color: #d3d4dc; }
+  .lista li::before { content: ""; position: absolute; left: 0; top: 5.5px; width: 5px; height: 5px; border-radius: 50%; background: var(--dim); }
+  .lista li small { display: inline; color: var(--muted); font-size: 10.5px; }
+  .lista.l-red { border-left: 4px solid var(--red); } .lista.l-red li::before { background: var(--red); }
+  .lista.l-amber { border-left: 4px solid var(--amber); } .lista.l-amber li::before { background: var(--amber); }
+  .lista.l-blue { border-left: 4px solid var(--blue); } .lista.l-blue li::before { background: var(--blue); }
+  .lista.l-top { border-top: 3px solid var(--red); }
+  .nota { padding: 0; font-size: 11px; font-style: italic; color: var(--muted); justify-content: flex-start; text-align: left; }
+  .rot { position: absolute; z-index: 3; transform: translate(-50%, -50%); padding: 1px 7px; border-radius: 99px; font-size: 10px; font-weight: 700; background: var(--bg); border: 1px solid var(--line2); color: var(--muted); white-space: nowrap; }
+  .rot.sim { color: var(--green); border-color: rgba(117,214,154,.5); } .rot.nao { color: oklch(0.78 0.13 25); border-color: oklch(0.63 0.21 25 / .55); }
+  svg.cx { position: absolute; inset: 0; width: 1122px; height: 794px; z-index: 1; overflow: visible; }
+
+  /* ── Legenda ── */
+  .leg { position: absolute; left: 58px; right: 58px; display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; font-size: 11px; color: var(--muted); z-index: 2; }
+  .leg > div { display: flex; align-items: center; gap: 8px; }
+  .leg .m { width: 34px; height: 20px; flex: none; position: relative; }
+  .leg .m.pill { border-radius: 99px; background: linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25)); }
+  .leg .m.fimm { border-radius: 99px; background: rgba(117,214,154,.12); border: 1.5px solid var(--green); }
+  .leg .m.tl { border-radius: 6px; background: var(--surface); border: 1px solid var(--line2); border-top: 3px solid var(--red); }
+  .leg .m.sy { border-radius: 6px; background: oklch(0.62 0.17 258 / .14); border: 1px solid oklch(0.62 0.17 258 / .6); }
+  .leg .m.dd { border-radius: 4px / 7px; background: var(--surface2); border: 1.5px dashed var(--dim); }
+  .leg .m.pl { border-radius: 6px; border: 1.5px dashed var(--line2); }
+  .leg .m.rr { border-radius: 6px; background: oklch(0.63 0.21 25 / .16); border: 1.5px solid var(--red); }
+  .leg .m.db { border-radius: 6px; background: oklch(0.62 0.17 258 / .18); border: 1.5px solid var(--blue); }
+  .leg .m.di svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="doc"></div>
+
+<!-- Pontas de seta (compartilhadas entre as páginas) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="seta-g" viewBox="0 0 10 10" refX="8.6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9 z" fill="#9a9cac"/></marker>
+    <marker id="seta-r" viewBox="0 0 10 10" refX="8.6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9 z" fill="oklch(0.7 0.2 25)"/></marker>
+    <marker id="seta-b" viewBox="0 0 10 10" refX="8.6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9 z" fill="oklch(0.72 0.15 258)"/></marker>
+  </defs>
+</svg>
+
+<script>
+const TOTAL = 8
+const doc = document.getElementById('doc')
+const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+
+const logo = s => `<div class="logo" style="width:${s}px;height:${s}px;border-radius:${s * 0.243}px"><div class="logo-in" style="transform:scale(${s / 148})">
+  <svg viewBox="0 0 120 120"><path d="M120 24 H24 V120" fill="none" stroke="oklch(0.63 0.21 25)" stroke-width="5" stroke-linecap="round"/><path d="M120 36 H36 V120" fill="none" stroke="#e9e9ed" stroke-opacity="0.85" stroke-width="5" stroke-linecap="round"/><path d="M120 48 H48 V120" fill="none" stroke="oklch(0.62 0.17 258)" stroke-width="5" stroke-linecap="round"/><circle cx="24" cy="24" r="11" fill="oklch(0.63 0.21 25)"/><circle cx="24" cy="24" r="4" fill="#161826"/></svg>
+  <i class="ph-fill ph-boxing-glove"></i></div></div>`
+
+// ── Capa ──────────────────────────────────────────────────────
+doc.insertAdjacentHTML('beforeend', `
+<section class="pg capa">
+  <svg class="cordas" viewBox="0 0 400 400"><g fill="none" stroke-width="3" stroke-linecap="round"><path d="M400 120 H120 V400" stroke="oklch(0.63 0.21 25)"/><path d="M400 160 H160 V400" stroke="#e9e9ed"/><path d="M400 200 H200 V400" stroke="oklch(0.62 0.17 258)"/></g></svg>
+  <div class="conteudo">
+    ${logo(150)}
+    <h1>Corner</h1>
+    <div class="tipo">Fluxograma do aplicativo</div>
+    <p class="tag">Seu treino de boxe, planejado entre um round e outro. Como cada tela, regra e decisão do app funciona, do login ao registro do treino.</p>
+    <div class="corners"><span><i style="background:var(--red)"></i>Corner vermelho · ações e rounds</span><span><i style="background:var(--blue)"></i>Corner azul · decisões e descanso</span></div>
+  </div>
+  <div class="rodape"><span>Versão do documento · ${hoje} · ${TOTAL} páginas</span></div>
+</section>`)
+
+// ── Motor de fluxogramas ──────────────────────────────────────
+function pagina(n, secao, titulo, sub) {
+  const el = document.createElement('section'); el.className = 'pg'
+  el.innerHTML = `<div class="cab">${logo(38)}<div><h2>${titulo}</h2><p>${sub}</p></div><div class="sec">${secao}</div></div><div class="filete"></div>
+    <svg class="cx"></svg><div class="rod"><span>Corner · Fluxograma do aplicativo</span><span>${n} / ${TOTAL}</span></div>`
+  doc.appendChild(el)
+  const svg = el.querySelector('svg.cx'), nos = {}, ligs = []
+
+  const no = (id, tipo, x, y, w, h, html) => {
+    const d = document.createElement('div'); d.className = `no ${tipo}`
+    d.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`
+    if (tipo === 'dec') {
+      d.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polygon points="${w / 2},1.5 ${w - 1.5},${h / 2} ${w / 2},${h - 1.5} 1.5,${h / 2}" fill="oklch(0.62 0.17 258 / .15)" stroke="oklch(0.62 0.17 258)" stroke-width="1.6"/></svg><span>${html}</span>`
+    } else if (tipo.startsWith('lista') || tipo === 'nota') d.innerHTML = html
+    else d.innerHTML = `<div class="tx">${html}</div>` // um único filho: o texto e o <small> empilham, em vez de ficar lado a lado
+    el.appendChild(d); nos[id] = { x, y, w, h }
+    return d
+  }
+  const lista = (id, x, y, w, h, titulo, itens, cor = '') => no(id, `lista ${cor}`, x, y, w, h, `<h4>${titulo}</h4><ul>${itens.map(i => `<li>${i}</li>`).join('')}</ul>`)
+  const liga = (a, b, o = {}) => ligs.push({ a, b, ...o })
+  const ancora = (n, lado) => ({ l: [n.x, n.y + n.h / 2], r: [n.x + n.w, n.y + n.h / 2], t: [n.x + n.w / 2, n.y], b: [n.x + n.w / 2, n.y + n.h] }[lado])
+
+  const rota = (l) => {
+    const A = nos[l.a], B = nos[l.b], de = l.de ?? 'r', para = l.para ?? 'l'
+    const s = ancora(A, de), e = ancora(B, para)
+    if (l.via) return [s, ...l.via, e]
+    const hS = de === 'l' || de === 'r', hE = para === 'l' || para === 'r'
+    if (hS && hE) { if (s[1] === e[1]) return [s, e]; const mx = l.mid ?? (s[0] + e[0]) / 2; return [s, [mx, s[1]], [mx, e[1]], e] }
+    if (!hS && !hE) { if (s[0] === e[0]) return [s, e]; const my = l.mid ?? (s[1] + e[1]) / 2; return [s, [s[0], my], [e[0], my], e] }
+    if (hS && !hE) return [s, [e[0], s[1]], e]
+    return [s, [s[0], e[1]], e]
+  }
+  const arredondar = (p, r = 10) => {
+    const pts = p.filter((q, i) => i === 0 || q[0] !== p[i - 1][0] || q[1] !== p[i - 1][1])
+    let d = `M${pts[0][0]} ${pts[0][1]}`
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], [x2, y2] = pts[i + 1]
+      const l1 = Math.hypot(x1 - x0, y1 - y0), l2 = Math.hypot(x2 - x1, y2 - y1), rr = Math.min(r, l1 / 2, l2 / 2)
+      d += ` L${x1 - (x1 - x0) / l1 * rr} ${y1 - (y1 - y0) / l1 * rr} Q${x1} ${y1} ${x1 + (x2 - x1) / l2 * rr} ${y1 + (y2 - y1) / l2 * rr}`
+    }
+    const u = pts[pts.length - 1]; return d + ` L${u[0]} ${u[1]}`
+  }
+  const desenhar = () => {
+    for (const l of ligs) {
+      const pts = rota(l), cor = l.cor ?? 'g'
+      const stroke = { g: '#9a9cac', r: 'oklch(0.7 0.2 25)', b: 'oklch(0.72 0.15 258)' }[cor]
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      p.setAttribute('d', arredondar(pts)); p.setAttribute('fill', 'none'); p.setAttribute('stroke', stroke); p.setAttribute('stroke-width', '1.7')
+      if (l.tracejado) p.setAttribute('stroke-dasharray', '5 4')
+      if (!l.sem) p.setAttribute('marker-end', `url(#seta-${cor})`)
+      svg.appendChild(p)
+      if (l.rot) {
+        const [x0, y0] = pts[0], [x1, y1] = pts[1], len = Math.hypot(x1 - x0, y1 - y0) || 1
+        const pos = l.rotPos ?? [x0 + (x1 - x0) / len * Math.min(24, len / 2), y0 + (y1 - y0) / len * Math.min(24, len / 2)]
+        const t = document.createElement('div'); t.className = `rot ${/^sim/i.test(l.rot) ? 'sim' : /^n[ãa]o/i.test(l.rot) ? 'nao' : ''}`
+        t.style.left = pos[0] + 'px'; t.style.top = pos[1] + 'px'; t.textContent = l.rot; el.appendChild(t)
+      }
+    }
+  }
+  return { el, no, lista, liga, desenhar, legenda: y => legenda(el, y) }
+}
+
+function legenda(el, y) {
+  el.insertAdjacentHTML('beforeend', `<div class="leg" style="top:${y}px">
+    <div><span class="m pill"></span>Início / ação principal</div>
+    <div><span class="m tl"></span>Tela do app</div>
+    <div><span class="m sy"></span>Ação do sistema</div>
+    <div><span class="m di"><svg viewBox="0 0 34 20"><polygon points="17,1 33,10 17,19 1,10" fill="oklch(0.62 0.17 258 / .15)" stroke="oklch(0.62 0.17 258)" stroke-width="1.5"/></svg></span>Decisão</div>
+    <div><span class="m dd"></span>Dados no aparelho</div>
+    <div><span class="m rr"></span>Round</div>
+    <div><span class="m db"></span>Descanso</div>
+    <div><span class="m fimm"></span>Fim do fluxo</div>
+    <div><span class="m pl"></span>Planejado (ainda não existe)</div>
+  </div>`)
+}
+
+const ic = n => `<i class="ph-fill ph-${n} ic"></i>`
+
+// ── 2 · Mapa do app ───────────────────────────────────────────
+{
+  const p = pagina(2, '01 · Visão geral', 'Mapa do aplicativo', 'Por onde o usuário entra e para onde cada aba leva.')
+  p.no('ini', 'ini', 48, 124, 120, 44, 'Abrir o app')
+  p.no('d1', 'dec', 205, 104, 150, 84, 'Sessão ativa?')
+  p.no('login', 'tela', 205, 226, 150, 52, 'Tela de login<small>e-mail e senha</small>')
+  p.no('barra', 'tela', 700, 114, 240, 64, 'Barra inferior<small>4 abas + botão “+”</small>')
+  p.liga('ini', 'd1'); p.liga('d1', 'barra', { rot: 'Sim' }); p.liga('d1', 'login', { de: 'b', para: 't', rot: 'Não' })
+  p.no('nl', 'nota', 372, 238, 230, 30, 'Depois de entrar, o app abre na tela Hoje.')
+  const xs = [58, 262, 466, 670, 874]
+  const abas = [['hoje', 'tela', 'house', 'Hoje'], ['plano', 'tela', 'calendar-dots', 'Plano'], ['mais', 'acao', 'plus', 'Botão “+”<small style="color:#ffe0dc">registrar treino</small>'], ['prog', 'tela', 'chart-line-up', 'Progresso'], ['perfil', 'tela', 'user-circle', 'Perfil']]
+  abas.forEach(([id, tp, ico, nome], i) => { p.no(id, tp, xs[i], 300, 190, 54, `${ic(ico)}${nome}`); p.liga('barra', id, { de: 'b', para: 't' }) })
+  const L = (id, i, t, it, h = 250) => { p.lista('l' + id, xs[i], 386, 190, h, t, it, 'l-top'); p.liga(id, 'l' + id, { de: 'b', para: 't' }) }
+  L('hoje', 0, 'O dia de treino', ['Check-in e ajuste do dia', 'Sequência semanal e meta', 'Treino de hoje com checklist', 'Iniciar cronômetro de rounds', 'Próxima sessão', 'Sino de alertas'])
+  L('plano', 1, 'O plano', ['Plano ativo e progresso', 'Próximo treino em destaque', 'Semanas navegáveis', 'Mudar o dia de uma sessão', 'Escolher ou trocar de plano', 'Encerrar plano'])
+  L('mais', 2, 'Registro rápido', ['Tipo do treino', 'Rounds, minutos e RPE', 'Extras do sparring', 'Anotações', 'Resumo do treino salvo'])
+  L('prog', 3, 'Evolução', ['Resumo do mês', 'Rounds por semana', 'Carga de treino', 'Treinos por tipo', 'Histórico completo'])
+  L('perfil', 4, 'Conta e ferramentas', ['Postura, meta e lembretes', 'Saúde e corpo', 'Biblioteca técnica', 'Perfil de atleta', 'Backup dos dados', 'Sair da conta'])
+  p.legenda(682); p.desenhar()
+}
+
+// ── 3 · Entrada e perfil ──────────────────────────────────────
+{
+  const p = pagina(3, '02 · Primeiro acesso', 'Entrada e perfil de atleta', 'Do login até ter um plano ativo e uma meta semanal.')
+  p.no('ini', 'ini', 40, 130, 110, 44, 'Abrir o app')
+  p.no('d1', 'dec', 178, 110, 150, 84, 'Sessão válida?')
+  p.no('login', 'tela', 372, 124, 140, 56, 'Tela de login<small>e-mail e senha</small>')
+  p.no('d2', 'dec', 558, 110, 164, 84, 'E-mail e senha corretos?')
+  p.no('cria', 'sis', 766, 124, 150, 56, 'Cria a sessão<small>cookie seguro · 7 dias</small>')
+  p.no('hoje', 'tela', 950, 124, 120, 56, 'Tela Hoje')
+  p.no('erro', 'proc', 566, 246, 148, 50, 'Erro: “E-mail ou senha incorretos”')
+  p.liga('ini', 'd1'); p.liga('d1', 'login', { rot: 'Não' }); p.liga('login', 'd2'); p.liga('d2', 'cria', { rot: 'Sim' }); p.liga('cria', 'hoje')
+  p.liga('d1', 'hoje', { de: 't', para: 't', via: [[253, 100], [1010, 100]], rot: 'Sim', rotPos: [300, 100] })
+  p.liga('d2', 'erro', { de: 'b', para: 't', rot: 'Não' }); p.liga('erro', 'login', { de: 'l', para: 'b', cor: 'r' })
+
+  p.no('d3', 'dec', 935, 236, 150, 84, 'Perfil de atleta já feito?')
+  p.liga('hoje', 'd3', { de: 'b', para: 't' })
+  p.no('pronto', 'fim', 740, 256, 160, 44, 'Segue para o treino')
+  p.liga('d3', 'pronto', { de: 'l', para: 'r', rot: 'Sim' })
+
+  const y = 400
+  p.no('conv', 'tela', 40, y, 135, 60, 'Convite<small>“Monte seu perfil”</small>')
+  p.no('s1', 'tela', 205, y, 135, 60, '1 · Postura<small>ortodoxo ou canhoto</small>')
+  p.no('s2', 'tela', 370, y, 135, 60, '2 · Experiência<small>nunca a +3 anos</small>')
+  p.no('s3', 'tela', 535, y, 135, 60, '3 · Objetivo<small>condic. · técnica · competir</small>')
+  p.no('s4', 'tela', 700, y, 135, 60, '4 · Dias por semana<small>de 2 a 6</small>')
+  p.no('rec', 'sis', 865, y - 4, 205, 68, 'Recomenda um plano<small>experiência + objetivo</small>')
+  p.liga('d3', 'conv', { de: 'b', para: 't', rot: 'Não', rotPos: [1010, 340] })
+  ;[['conv', 's1'], ['s1', 's2'], ['s2', 's3'], ['s3', 's4'], ['s4', 'rec']].forEach(([a, b]) => p.liga(a, b))
+
+  p.no('ativa', 'sis', 865, 540, 205, 70, 'Ativar o plano<small>semana 1 começa na segunda · meta = dias escolhidos</small>')
+  p.no('outros', 'tela', 640, 540, 170, 70, 'Ver os 4 planos<small>escolher outro</small>')
+  p.no('fim', 'fim', 760, 668, 230, 44, 'Hoje com plano e meta')
+  p.liga('rec', 'ativa', { de: 'b', para: 't', rot: 'Aceita', rotPos: [967, 500] }); p.liga('rec', 'outros', { de: 'b', para: 't', rot: 'Prefere outro', via: [[967, 480], [725, 480]], rotPos: [830, 480] })
+  p.liga('ativa', 'fim', { de: 'b', para: 't', via: [[967, 640], [875, 640]] }); p.liga('outros', 'fim', { de: 'b', para: 't', via: [[725, 640], [875, 640]] })
+
+  p.lista('planos', 40, 508, 520, 200, 'Os 4 planos de treino', [
+    '<b>Fundamentos</b> · iniciante · 4 semanas · 3× por semana <small>shadowboxing, depois saco e manopla</small>',
+    '<b>Base Aeróbica</b> · intermediário · 6 semanas · 4× <small>condicionamento: saco, corda, circuito</small>',
+    '<b>Técnica Avançada</b> · interm./avançado · 4 semanas · 4× <small>combinações, defesa e 1 sparring técnico</small>',
+    '<b>Pré-competição</b> · avançado · 6 semanas · 5× <small>2 sparrings por semana e semana final de polimento</small>',
+    '<small>Regra: até 1 ano → Fundamentos · condicionamento → Base Aeróbica · competir com +3 anos → Pré-competição · demais → Técnica Avançada.</small>',
+  ], 'l-top')
+  p.desenhar()
+}
+
+// ── 4 · Hoje: check-in e escolha do treino ────────────────────
+{
+  const p = pagina(4, '03 · Dia de treino', 'Hoje: check-in e escolha do treino', 'Como o corpo do dia ajusta o treino, antes de começar.')
+  const x = 285, w = 230
+  p.no('ini', 'ini', x, 108, w, 40, 'Abrir a tela Hoje')
+  p.no('chk', 'tela', x, 172, w, 52, 'Check-in diário<small>sono · energia · dor (notas de 1 a 5)</small>')
+  p.no('pro', 'sis', x, 248, w, 52, 'Calcula a prontidão<small>(sono + energia + (6 − dor)) ÷ 3</small>')
+  p.lista('faixas', 600, 124, 380, 190, 'Faixas de prontidão e ajuste sugerido', [
+    '<b>3,7 ou mais</b> · Normal <small>treino como planejado</small>',
+    '<b>3,0 a 3,7</b> · Reduzir <small>75% dos rounds</small>',
+    '<b>2,3 a 3,0 (ou dor 4)</b> · Leve <small>metade dos rounds; sparring vira técnica</small>',
+    '<b>Abaixo de 2,3 (ou dor 5)</b> · Descanso <small>o treino do dia é pulado</small>',
+  ], 'l-blue')
+  p.no('d4', 'dec', x, 324, w, 84, 'Aceitar o ajuste sugerido?')
+  p.no('aj', 'sis', 600, 336, 250, 60, 'Usa o treino ajustado<small>menos rounds, outro tipo ou descanso</small>')
+  p.no('d5', 'dec', x, 436, w, 84, 'Há sessão hoje?<small>plano ou sugestão</small>')
+  p.no('desc', 'proc', 40, 448, 190, 60, 'Dia de descanso<small>treino extra é opcional (registro manual)</small>')
+  p.no('d6', 'dec', x, 548, w, 84, 'Como quer treinar?')
+  p.no('crono', 'round', 30, 560, 170, 60, 'Cronômetro de rounds<small>tela cheia · pág. 5</small>')
+  p.no('manual', 'tela', 600, 560, 250, 60, 'Registro sem cronômetro<small>ver pág. 6</small>')
+  p.liga('ini', 'chk', { de: 'b', para: 't' }); p.liga('chk', 'pro', { de: 'b', para: 't' }); p.liga('pro', 'faixas', { de: 'r', para: 'l', tracejado: true, sem: true })
+  p.liga('pro', 'd4', { de: 'b', para: 't' })
+  p.liga('d4', 'aj', { rot: 'Sim' }); p.liga('d4', 'd5', { de: 'b', para: 't', rot: 'Não: mantém o plano', rotPos: [400, 422] })
+  p.liga('aj', 'd5', { de: 'b', para: 'r', via: [[725, 478]] })
+  p.liga('d5', 'desc', { de: 'l', para: 'r', rot: 'Não' }); p.liga('d5', 'd6', { de: 'b', para: 't', rot: 'Sim' })
+  p.liga('d6', 'crono', { de: 'l', para: 'r', rot: 'Cronômetro', cor: 'r', rotPos: [242, 590] })
+  p.liga('d6', 'manual', { de: 'r', para: 'l', rot: 'Manual', rotPos: [558, 590] })
+  p.lista('dica', 600, 660, 380, 70, 'Regra de segurança', ['O ajuste só vale depois que você aceita e vale apenas no dia. Um novo check-in recomeça a decisão.'], 'l-amber')
+  p.desenhar()
+}
+
+// ── 5 · Cronômetro ────────────────────────────────────────────
+{
+  const p = pagina(5, '04 · Treino guiado', 'Cronômetro de rounds', 'Preparo, rounds e descansos com sino, aviso dos 10 segundos e foco de cada round.')
+  p.no('ini', 'ini', 36, 168, 140, 44, 'Iniciar com cronômetro')
+  p.no('prep', 'tela', 204, 156, 170, 68, 'Preparação<small>plano dos rounds · bandagem · protetor · água</small>')
+  p.no('com', 'proc', 402, 164, 120, 52, 'Começar<small>10 s de preparo</small>')
+  p.no('rnd', 'round', 556, 148, 190, 84, '<span><b>Round n</b><small>sino ×1 · foco do round<br>matraca aos 10 s finais</small></span>')
+  p.no('ult', 'dec', 786, 148, 150, 84, 'Último round?')
+  p.no('desc', 'descanso', 556, 296, 190, 84, '<span><b>Descanso</b><small>sino ×2 ao entrar · bips 3-2-1<br>mostra o foco do próximo round</small></span>')
+  p.no('fimc', 'sis', 960, 160, 120, 60, 'Sino ×3<small>resumo do treino</small>')
+  p.no('reg', 'tela', 890, 296, 190, 66, 'Registrar o treino<small>duração real · ver pág. 6</small>')
+  p.liga('ini', 'prep'); p.liga('prep', 'com'); p.liga('com', 'rnd', { cor: 'r' }); p.liga('rnd', 'ult')
+  p.liga('ult', 'desc', { de: 'b', para: 'r', via: [[861, 338]], rot: 'Não' })
+  p.liga('desc', 'rnd', { de: 't', para: 'b', cor: 'b', rot: 'próximo round', rotPos: [651, 264] })
+  p.liga('ult', 'fimc', { rot: 'Sim' }); p.liga('fimc', 'reg', { de: 'b', para: 't' })
+  p.lista('ctrl', 36, 440, 330, 200, 'Controles durante o treino', [
+    '<b>Pausar / retomar</b> <small>congela o relógio</small>',
+    '<b>Pular fase</b> <small>vai para a próxima etapa</small>',
+    '<b>Encerrar</b> <small>pede confirmação; o resumo mostra só os rounds completos</small>',
+    '<b>Sem round completo</b> <small>não há o que registrar</small>',
+    '<b>Tela acesa</b> <small>automática enquanto o treino roda</small>',
+  ], 'l-red')
+  p.lista('tempo', 392, 440, 330, 200, 'Como o tempo é medido', [
+    'Usa o <b>relógio do aparelho</b>, não conta “ticks”: fica correto mesmo se o navegador atrasar o timer',
+    'Sons <b>sintetizados</b> no aparelho (sem arquivos de áudio) e vibração no celular',
+    'Em segundo plano o navegador pode silenciar os sons: mantenha o app aberto',
+  ], 'l-blue')
+  p.lista('foco', 748, 440, 322, 200, 'O que é o “foco do round”', [
+    '<b>Técnica</b>: round 1 aquecimento; depois uma combinação por round, adequada ao seu nível; último round livre',
+    '<b>Condicionamento</b>: ritmo constante, picos de intensidade, volume',
+    '<b>Sparring</b>: estudar o parceiro, aplicar combinação e defesa, controle no fim',
+  ], 'l-amber')
+  p.desenhar()
+}
+
+// ── 6 · Registro do treino ────────────────────────────────────
+{
+  const p = pagina(6, '05 · Registro', 'Registro do treino', 'O que é perguntado, onde é salvo e o que o app atualiza em seguida.')
+  p.no('ini', 'ini', 40, 156, 120, 44, 'Registrar treino')
+  p.no('tipo', 'tela', 186, 144, 150, 68, 'Tipo<small>Técnica · Condic. · Sparring</small>')
+  p.no('det', 'tela', 362, 144, 170, 68, 'Detalhes<small>rounds · minutos · RPE de 1 a 10</small>')
+  p.no('dsp', 'dec', 562, 134, 130, 88, 'É sparring?')
+  p.no('ext', 'tela', 730, 144, 200, 68, 'Extras do sparring<small>intensidade · pancadas na cabeça · parceiro</small>')
+  p.no('not', 'tela', 562, 270, 130, 56, 'Anotações<small>opcional</small>')
+  p.no('sal', 'sis', 562, 372, 130, 52, 'Salvar treino')
+  p.no('dh', 'dec', 552, 460, 150, 88, 'Pancadas fortes na cabeça?')
+  p.no('av', 'crit', 270, 476, 230, 60, '<span><b>Aviso na hora</b><small>evitar sparring por 7 dias · sintomas → médico</small></span>')
+  p.no('fim', 'fim', 552, 590, 150, 44, 'Treino registrado')
+  p.no('his', 'dado', 760, 359, 310, 78, '<span><b>Histórico no aparelho</b><small>data · tipo · rounds · minutos · RPE · duração · sessão do plano · detalhes do sparring · nota</small></span>')
+  p.lista('atu', 760, 470, 310, 190, 'O app atualiza em seguida', [
+    'Checklist da sessão de hoje fica marcado',
+    'A sessão do plano vira <b>Feita</b>',
+    'Sequência de semanas na meta',
+    'Carga de treino e gráfico de rounds',
+    'Alertas: carga, sparring, cabeça',
+  ], 'l-blue')
+  p.nota = null
+  p.liga('ini', 'tipo'); p.liga('tipo', 'det'); p.liga('det', 'dsp'); p.liga('dsp', 'ext', { rot: 'Sim' })
+  p.liga('dsp', 'not', { de: 'b', para: 't', rot: 'Não' }); p.liga('ext', 'not', { de: 'b', para: 'r', via: [[830, 298]] })
+  p.liga('not', 'sal', { de: 'b', para: 't' }); p.liga('sal', 'dh', { de: 'b', para: 't' })
+  p.liga('dh', 'av', { de: 'l', para: 'r', rot: 'Sim', cor: 'r' }); p.liga('dh', 'fim', { de: 'b', para: 't', rot: 'Não' })
+  p.liga('av', 'fim', { de: 'b', para: 'l', via: [[385, 612]], cor: 'r' })
+  p.liga('sal', 'his', { de: 'r', para: 'l', cor: 'b' }); p.liga('his', 'atu', { de: 'b', para: 't', cor: 'b' })
+  p.no('dica', 'nota', 40, 236, 330, 40, 'Vindo de uma sessão do plano ou do cronômetro, o app abre direto em “Detalhes”, com os valores já preenchidos.')
+  p.desenhar()
+}
+
+// ── 7 · Saúde e alertas ───────────────────────────────────────
+{
+  const p = pagina(7, '06 · Cuidado com o corpo', 'Saúde e alertas', 'Quais dados alimentam as regras e como viram avisos no sino da tela Hoje.')
+  const dados = [['Histórico de treinos', 'RPE, rounds, sparring, impactos'], ['Check-in diário', 'sono, energia e dor'], ['Lesões e dores', 'região e intensidade (1 a 5)'], ['Peso e categoria', 'evolução e meta']]
+  dados.forEach(([t, s], i) => { p.no('d' + i, 'dado', 40, 118 + i * 84, 210, 62, `<span><b>${t}</b><small>${s}</small></span>`) })
+  p.lista('motor', 310, 118, 270, 280, 'Motor de regras', [
+    '<b>Carga</b> = RPE × minutos de rounds',
+    '<b>Carga aguda</b> (últimos 7 dias) ÷ <b>média das 4 semanas anteriores</b> <small>(precisa de 2 semanas de histórico)</small>',
+    '<b>Prontidão</b> do check-in',
+    '<b>Pancadas na cabeça</b> nos últimos 14 dias',
+    '<b>Lesões ativas</b> com intensidade 3 ou mais',
+    '<b>Intervalo</b> entre sparrings (mínimo de 48 h)',
+    '<b>Último treino</b> com RPE 9 ou 10',
+    '<b>Meta semanal</b> de treinos',
+  ], 'l-blue')
+  dados.forEach((_, i) => p.liga('d' + i, 'motor', { de: 'r', para: 'l', cor: 'b' }))
+  p.lista('crit', 650, 118, 290, 118, 'Crítico', ['Pancadas fortes na cabeça há menos de 7 dias', 'Lesão ativa 4 ou 5 de 5', 'Carga acima de 1,5× a média'], 'l-red')
+  p.lista('ate', 650, 256, 290, 150, 'Atenção', ['Pancadas fortes há 7 a 14 dias', 'Lesão ativa 3 de 5', 'Sparring com menos de 48 h de intervalo', 'Carga entre 1,3× e 1,5×', 'Último treino com RPE 9 ou 10'], 'l-amber')
+  p.lista('inf', 650, 426, 290, 90, 'Informação', ['Meta da semana batida', 'Meta apertada: faltam treinos e poucos dias'], 'l-blue')
+  ;['crit', 'ate', 'inf'].forEach(id => p.liga('motor', id, { de: 'r', para: 'l' }))
+  p.no('sino', 'tela', 980, 262, 100, 96, `<span>${ic('bell')}<br><b>Sino</b><small>contador na tela Hoje</small></span>`)
+  ;['crit', 'ate', 'inf'].forEach(id => p.liga(id, 'sino', { de: 'r', para: 'l', cor: id === 'crit' ? 'r' : 'g' }))
+  p.lista('faixas', 40, 560, 1030, 138, 'Faixas da carga (razão entre a carga dos últimos 7 dias e a média anterior)', [
+    '<b>Abaixo de 0,8×</b> · abaixo do seu normal <small>tudo bem se foi descanso planejado</small>',
+    '<b>0,8× a 1,3×</b> · faixa ideal <small>compatível com o que seu corpo já tolera</small>',
+    '<b>1,3× a 1,5×</b> · subindo rápido <small>evite aumentar mais na semana</small>',
+    '<b>Acima de 1,5×</b> · alta demais <small>aumenta o risco de lesão: reduza volume ou intensidade</small>',
+  ], 'l-top')
+  p.no('av', 'nota', 40, 520, 1030, 24, 'Estes avisos ajudam a acompanhar, mas não substituem a avaliação de um médico ou fisioterapeuta.')
+  p.desenhar()
+}
+
+// ── 8 · Dados, backup e offline ───────────────────────────────
+{
+  const p = pagina(8, '07 · Infraestrutura', 'Dados, backup e uso offline', 'Onde ficam os dados, como protegê-los e o que funciona sem internet.')
+  p.lista('ls', 40, 118, 280, 252, 'O que fica no aparelho', [
+    'Histórico de treinos', 'Plano ativo e semana 1', 'Configurações: postura, meta, lembrete', 'Check-ins diários', 'Lesões e dores', 'Peso e categoria', 'Sessões remarcadas', 'Checklist do dia',
+    '<small>Guardado no navegador, separado por usuário.</small>',
+  ], 'l-top')
+  p.no('exp', 'sis', 380, 126, 200, 54, 'Exportar backup<small>arquivo JSON</small>')
+  p.no('imp', 'tela', 380, 214, 200, 54, 'Importar backup<small>escolher o arquivo</small>')
+  p.no('dv', 'dec', 380, 296, 200, 84, 'Arquivo válido?<small>tudo é conferido antes</small>')
+  p.no('subs', 'sis', 380, 412, 200, 54, 'Substitui os dados<small>do aparelho</small>')
+  p.no('erro', 'proc', 380, 500, 200, 54, 'Mostra o erro<small>nada é alterado</small>')
+  p.liga('ls', 'exp', { de: 'r', para: 'l' }); p.liga('ls', 'imp', { de: 'r', para: 'l' })
+  p.liga('imp', 'dv', { de: 'b', para: 't' }); p.liga('dv', 'subs', { de: 'b', para: 't', rot: 'Sim' })
+  p.liga('dv', 'erro', { de: 'r', para: 'r', via: [[620, 338], [620, 527]], rot: 'Não', rotPos: [604, 338] })
+
+  p.lista('dica', 40, 400, 280, 110, 'Dica', ['Baixe um backup de vez em quando, principalmente antes de trocar de celular ou limpar o navegador.'], 'l-amber')
+  p.no('sw', 'sis', 700, 126, 370, 54, 'Service worker<small>guarda cópias do app no aparelho</small>')
+  p.no('di', 'dec', 760, 214, 250, 90, 'Sem internet:<br>a tela já foi aberta antes?')
+  p.no('vis', 'tela', 700, 346, 170, 62, 'Abre do aparelho<small>funciona até o cronômetro</small>')
+  p.no('nev', 'proc', 900, 346, 170, 62, 'Página offline<small>“Você está sem conexão”</small>')
+  p.liga('sw', 'di', { de: 'b', para: 't' }); p.liga('di', 'vis', { de: 'b', para: 't', rot: 'Sim', via: [[885, 330], [785, 330]], rotPos: [840, 330] }); p.liga('di', 'nev', { de: 'b', para: 't', via: [[885, 330], [985, 330]], rot: 'Não', rotPos: [940, 330] })
+  p.no('sai', 'crit', 700, 440, 370, 54, '<span><b>Sair da conta</b><small>apaga as cópias guardadas: nada fica no aparelho depois do logout</small></span>')
+  p.lista('prox', 700, 520, 370, 168, 'Próximas etapas', [
+    '<b>Conta com banco de dados</b> e sincronização entre aparelhos <small>precisa de provedor e credenciais</small>',
+    '<b>Notificações push</b> com o app fechado <small>depende da conta acima</small>',
+    '<b>Testes automatizados</b> das regras de cálculo',
+  ], '')
+  p.desenhar()
+}
+</script>
+</body>
+</html>

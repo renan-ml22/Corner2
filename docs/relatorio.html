@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Corner — Relatório de modificações e plano de melhorias</title>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  @page { size: 210mm 297mm; margin: 0; }
+  :root {
+    --bg: #0e0f17; --surface: #16182a; --surface2: #1e2030; --line: #2c2e3d; --line2: #3f4150;
+    --text: #e9e9ed; --muted: #a3a5b5; --dim: #7a7c8c;
+    --red: oklch(0.63 0.21 25); --blue: oklch(0.62 0.17 258); --green: #75d69a; --amber: oklch(0.8 0.14 85);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pg { position: relative; width: 210mm; height: 297mm; overflow: hidden; break-after: page; background: var(--bg); }
+  .pg:last-child { break-after: auto; }
+  .pg::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 40% at 0% 0%, oklch(0.62 0.17 258 / 0.12), transparent 70%), radial-gradient(60% 35% at 100% 100%, oklch(0.63 0.21 25 / 0.11), transparent 70%); }
+
+  .logo { position: relative; flex: none; overflow: hidden; background: linear-gradient(160deg, #232532, #161826); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.07), 0 10px 30px rgba(0,0,0,.45); }
+  .logo-in { position: absolute; left: 0; top: 0; width: 148px; height: 148px; transform-origin: 0 0; }
+  .logo-in svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .logo-in i { position: absolute; left: 67px; top: 65px; font-size: 64px; color: var(--red); transform: rotate(-35deg); filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); }
+
+  /* Capa */
+  .capa svg.cordas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .capa .bloco { position: absolute; left: 262px; top: 290px; right: 60px; }
+  .capa h1 { margin-top: 30px; font-size: 104px; font-weight: 800; letter-spacing: -0.045em; line-height: 1; background: linear-gradient(100deg, #f4f2f2 25%, oklch(0.82 0.1 25) 60%, oklch(0.8 0.1 258)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .capa .tipo { margin-top: 20px; font-size: 27px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+  .capa .tag { margin-top: 12px; font-size: 14.5px; line-height: 1.55; color: var(--muted); max-width: 400px; }
+  .capa .metas { margin-top: 26px; display: grid; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .capa .metas span { display: flex; align-items: center; gap: 9px; } .capa .metas i { font-size: 16px; }
+  .capa .nums { position: absolute; left: 262px; right: 60px; bottom: 70px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .capa .nums div { padding: 13px 14px; border-radius: 14px; background: oklch(0.2 0.02 275 / .7); border: 1px solid var(--line); }
+  .capa .nums b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
+  .capa .nums span { font-size: 11px; color: var(--muted); }
+  .capa .rodape { position: absolute; left: 262px; right: 60px; bottom: 30px; font-size: 11px; color: var(--dim); }
+
+  /* Páginas */
+  .cab { position: absolute; left: 48px; right: 48px; top: 28px; display: flex; align-items: center; gap: 12px; }
+  .cab .t { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .cab .s { margin-left: auto; font-size: 11px; color: var(--dim); }
+  .filete { position: absolute; left: 48px; right: 48px; top: 74px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--red), var(--blue)); opacity: .75; }
+  .rod { position: absolute; left: 48px; right: 48px; bottom: 22px; display: flex; justify-content: space-between; font-size: 10.5px; color: var(--dim); }
+  .corpo { position: absolute; left: 48px; right: 48px; top: 96px; bottom: 56px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+
+  h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+  h2 small { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--red); }
+  h3 { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  p.lead { font-size: 13px; line-height: 1.6; color: var(--muted); }
+  p, li { font-size: 12px; line-height: 1.5; color: #d3d4dc; }
+  b { font-weight: 700; color: var(--text); }
+  .m { color: var(--muted); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .kpi { padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line2); border-top: 3px solid var(--red); }
+  .kpi.b { border-top-color: var(--blue); } .kpi.g { border-top-color: var(--green); } .kpi.a { border-top-color: var(--amber); }
+  .kpi b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .kpi span { display: block; margin-top: 6px; font-size: 11px; line-height: 1.35; color: var(--muted); }
+
+  .card { padding: 13px 15px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line2); }
+  .card.r { border-left: 4px solid var(--red); } .card.b { border-left: 4px solid var(--blue); } .card.a { border-left: 4px solid var(--amber); } .card.g { border-left: 4px solid var(--green); }
+  .card h3 { margin-bottom: 5px; display: flex; align-items: center; gap: 7px; } .card h3 i { font-size: 16px; }
+  .card ul { list-style: none; display: grid; gap: 4px; } .card li { position: relative; padding-left: 13px; }
+  .card li::before { content: ""; position: absolute; left: 0; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--dim); }
+  .card.r li::before { background: var(--red); } .card.b li::before { background: var(--blue); } .card.a li::before { background: var(--amber); } .card.g li::before { background: var(--green); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--line2); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  th { padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); background: var(--surface2); }
+  td { padding: 8px 10px; vertical-align: top; font-size: 11.2px; line-height: 1.42; color: #d3d4dc; border-top: 1px solid var(--line); }
+  td b { color: var(--text); } td small { color: var(--muted); font-size: 10.3px; }
+  td code, .tree, code { font-family: 'Cascadia Mono', Consolas, 'Courier New', monospace; font-size: 10.3px; color: #c8d6ff; }
+
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; white-space: nowrap; border: 1px solid; }
+  .chip.alta { color: oklch(0.8 0.13 25); border-color: oklch(0.63 0.21 25 / .6); background: oklch(0.63 0.21 25 / .14); }
+  .chip.media { color: var(--amber); border-color: oklch(0.8 0.14 85 / .55); background: oklch(0.8 0.14 85 / .12); }
+  .chip.baixa { color: oklch(0.8 0.1 258); border-color: oklch(0.62 0.17 258 / .6); background: oklch(0.62 0.17 258 / .14); }
+  .chip.ok { color: var(--green); border-color: rgba(117,214,154,.5); background: rgba(117,214,154,.1); }
+  .chip.no { color: oklch(0.8 0.13 25); border-color: oklch(0.63 0.21 25 / .6); background: oklch(0.63 0.21 25 / .12); }
+  .chip.wip { color: var(--amber); border-color: oklch(0.8 0.14 85 / .55); background: oklch(0.8 0.14 85 / .12); }
+
+  .tl { position: relative; display: grid; gap: 9px; padding-left: 26px; }
+  .tl::before { content: ""; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(var(--red), var(--blue)); border-radius: 2px; }
+  .tl .it { position: relative; padding: 11px 14px; border-radius: 13px; background: var(--surface); border: 1px solid var(--line2); }
+  .tl .it::before { content: ""; position: absolute; left: -24px; top: 15px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 3px solid var(--red); }
+  .tl .it:nth-child(even)::before { border-color: var(--blue); }
+  .tl .it h3 { display: flex; gap: 8px; align-items: baseline; } .tl .it h3 span { font-size: 10.5px; font-weight: 700; color: var(--red); letter-spacing: .05em; white-space: nowrap; }
+  .tl .it p { margin-top: 3px; }
+
+  .tree { padding: 12px 14px; border-radius: 12px; background: #0b0c13; border: 1px solid var(--line2); line-height: 1.55; white-space: pre; }
+  .tree em { font-style: normal; color: var(--muted); }
+  .nota { font-size: 10.8px; color: var(--muted); font-style: italic; line-height: 1.5; }
+  .camadas { display: grid; gap: 6px; }
+  .camadas div { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line2); font-size: 11.2px; }
+  .camadas b { font-size: 11.5px; } .camadas .c1 { border-left: 4px solid var(--red); } .camadas .c2 { border-left: 4px solid oklch(0.7 0.15 25); } .camadas .c3 { border-left: 4px solid var(--amber); } .camadas .c4 { border-left: 4px solid oklch(0.68 0.14 200); } .camadas .c5 { border-left: 4px solid var(--blue); }
+  .z { display: flex; flex-direction: column; gap: 14px; }
+  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } .cols3 .card h3 { color: var(--text); }
+</style>
+</head>
+<body>
+<div id="doc"></div>
+<script>
+const TOTAL = 12
+const doc = document.getElementById('doc')
+const data = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+const logo = s => `<div class="logo" style="width:${s}px;height:${s}px;border-radius:${s * 0.243}px"><div class="logo-in" style="transform:scale(${s / 148})">
+  <svg viewBox="0 0 120 120"><path d="M120 24 H24 V120" fill="none" stroke="oklch(0.63 0.21 25)" stroke-width="5" stroke-linecap="round"/><path d="M120 36 H36 V120" fill="none" stroke="#e9e9ed" stroke-opacity="0.85" stroke-width="5" stroke-linecap="round"/><path d="M120 48 H48 V120" fill="none" stroke="oklch(0.62 0.17 258)" stroke-width="5" stroke-linecap="round"/><circle cx="24" cy="24" r="11" fill="oklch(0.63 0.21 25)"/><circle cx="24" cy="24" r="4" fill="#161826"/></svg>
+  <i class="ph-fill ph-boxing-glove"></i></div></div>`
+const pagina = (n, secao, html) => doc.insertAdjacentHTML('beforeend', `<section class="pg">
+  <div class="cab">${logo(34)}<span class="t">Corner · Relatório</span><span class="s">${secao}</span></div><div class="filete"></div>
+  <div class="corpo">${html}</div>
+  <div class="rod"><span>Corner · Relatório de modificações e plano de melhorias</span><span>${n} / ${TOTAL}</span></div></section>`)
+const chip = (t, c) => `<span class="chip ${c}">${t}</span>`
+
+/* ── 1 · Capa ─────────────────────────────────────────────── */
+doc.insertAdjacentHTML('beforeend', `<section class="pg capa">
+  <svg class="cordas" viewBox="0 0 794 1123" preserveAspectRatio="none"><g fill="none" stroke-width="5" stroke-linecap="round"><path d="M794 112 H112 V1123" stroke="oklch(0.63 0.21 25)"/><path d="M794 160 H160 V1123" stroke="#e9e9ed" stroke-opacity=".85"/><path d="M794 208 H208 V1123" stroke="oklch(0.62 0.17 258)"/></g><circle cx="112" cy="112" r="36" fill="oklch(0.63 0.21 25)"/><circle cx="112" cy="112" r="13" fill="#161826"/></svg>
+  <div class="bloco">
+    ${logo(132)}
+    <h1>Corner</h1>
+    <div class="tipo">Relatório de modificações<br>e plano de melhorias</div>
+    <p class="tag">O que foi construído, o que deu errado e foi corrigido, como está o código hoje e o que fazer em seguida, no processo e na estrutura.</p>
+    <div class="metas">
+      <span><i class="ph-fill ph-calendar-check" style="color:var(--red)"></i>Sessão de trabalho de 05 e 06 de outubro de 2026</span>
+      <span><i class="ph-fill ph-git-branch" style="color:var(--blue)"></i>Base: commit d396703 + alterações ainda não enviadas</span>
+      <span><i class="ph-fill ph-globe" style="color:var(--green)"></i>corner2.vercel.app · github.com/renan-ml22/Corner2</span>
+    </div>
+  </div>
+  <div class="nums"><div><b>8</b><span>telas no app</span></div><div><b>47</b><span>arquivos de código · ~5.400 linhas</span></div><div><b>48</b><span>verificações de navegador passando</span></div></div>
+  <div class="rodape">Documento gerado em ${data}</div>
+</section>`)
+
+/* ── 2 · Resumo executivo ─────────────────────────────────── */
+pagina(2, '01 · Resumo', `
+  <h2><small>Visão geral</small>Resumo executivo</h2>
+  <p class="lead">O Corner começou a sessão como um conjunto de telas com dados fixos. Terminou como um app com acesso protegido por login, dados reais gravados no aparelho, planos de treino, cronômetro de rounds, biblioteca técnica, acompanhamento de carga e saúde e uso offline.</p>
+  <div class="kpis">
+    <div class="kpi"><b>8</b><span>telas: Hoje, Plano, Progresso, Perfil, Treino, Técnicas, Saúde e Login</span></div>
+    <div class="kpi b"><b>4</b><span>planos de treino prontos, de iniciante a pré-competição</span></div>
+    <div class="kpi g"><b>48</b><span>verificações de navegador passando (scripts descartáveis)</span></div>
+    <div class="kpi a"><b>0</b><span>testes automatizados guardados no repositório</span></div>
+  </div>
+  <table>
+    <tr><th style="width:34%">Onde está</th><th>O que contém</th><th style="width:15%">Situação</th></tr>
+    <tr><td><b>GitHub e Vercel</b><br><small>commit d396703</small></td><td>Login, planos, registro de treino salvo, telas Hoje, Plano, Progresso e Perfil com dados reais.</td><td>${chip('Enviado', 'ok')}</td></tr>
+    <tr><td><b>Só no seu computador</b><br><small>44 arquivos pendentes</small></td><td>Cronômetro, biblioteca técnica, saúde e carga, alertas, perfil de atleta, reagendar sessão, backup, lembrete, modo offline, ícones, fluxograma e este relatório.</td><td>${chip('Não enviado', 'wip')}</td></tr>
+    <tr><td><b>Ainda não existe</b></td><td>Conta com banco de dados e sincronização, notificações push, testes automatizados no repositório.</td><td>${chip('Planejado', 'baixa')}</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="card g"><h3><i class="ph-fill ph-check-circle" style="color:var(--green)"></i>O que está sólido</h3><ul><li>Typecheck, lint e build passam</li><li>Regras de cálculo isoladas em módulos puros</li><li>Dados do usuário validados antes de usar</li><li>Login seguro, verificado em produção</li></ul></div>
+    <div class="card a"><h3><i class="ph-fill ph-warning" style="color:var(--amber)"></i>O que merece atenção</h3><ul><li>Nenhum teste automático guardado no projeto</li><li>3 vulnerabilidades nas dependências (1 crítica)</li><li>Dados só ficam no aparelho do usuário</li><li>Segunda fase ainda não publicada nem testada em celular</li></ul></div>
+  </div>
+`)
+
+/* ── 3 · Linha do tempo ───────────────────────────────────── */
+pagina(3, '02 · Cronologia', `
+  <h2><small>O que aconteceu, em ordem</small>Linha do tempo da sessão</h2>
+  <div class="tl">
+    <div class="it"><h3><span>05/10</span>Base visual e navegação</h3><p>Aplicado o script de UX enviado por você. Ele estava incompleto (faltava o componente de painéis), então criei o que faltava. Barra inferior com botão “+”, tokens de cor do tema escuro e remoção da barra de status falsa de iPhone.</p></div>
+    <div class="it"><h3><span>05/10</span>Login moderno e seguro</h3><p>Tela com logo animada, aurora de fundo e cartão de vidro. Sessão em cookie protegido, proteção de rotas, usuário de teste e senha guardada só como hash.</p></div>
+    <div class="it"><h3><span>05–06/10</span>Acesso na Vercel</h3><p>O login funcionava no computador e falhava no site publicado. Três causas diferentes, corrigidas em sequência (ver página 5).</p></div>
+    <div class="it"><h3><span>06/10</span>Funcionalidades reais</h3><p>Persistência no aparelho, 4 planos de treino, telas dinâmicas e registro salvo. Enviado ao GitHub no commit d396703.</p></div>
+    <div class="it"><h3><span>06/10</span>Revisão como especialista em boxe</h3><p>Apontadas 5 lacunas: cronômetro de rounds, conteúdo técnico, carga e recuperação, saúde específica do boxe e base técnica do app.</p></div>
+    <div class="it"><h3><span>06/10</span>Implementação das lacunas</h3><p>Cronômetro, biblioteca técnica, check-in e alertas, saúde, perfil de atleta, reagendamento, backup, lembrete e modo offline. Testado de ponta a ponta em navegador.</p></div>
+    <div class="it"><h3><span>06/10</span>Práticas de trabalho definidas</h3><p>TDD, subagentes em tarefas grandes e auditoria antes de entregas. Levantamento do estado real do projeto.</p></div>
+    <div class="it"><h3><span>06/10</span>Documentação</h3><p>Fluxograma do app em PDF (8 páginas) e este relatório, ambos na pasta <code>docs/</code>.</p></div>
+  </div>
+`)
+
+/* ── 4 · Implementações: fundação e acesso ───────────────── */
+pagina(4, '03 · Implementações', `
+  <h2><small>Parte 1</small>Fundação e acesso</h2>
+  <p class="lead">A base visual e o login foram feitos primeiro, porque tudo o que vem depois depende de saber quem é o usuário e de uma identidade visual consistente.</p>
+  <table>
+    <tr><th style="width:22%">Item</th><th>O que foi feito</th><th style="width:27%">Arquivos principais</th></tr>
+    <tr><td><b>Identidade visual</b></td><td>Tokens de cor do tema escuro, vermelho e azul dos dois corners, ícones Phosphor, área segura em celulares com entalhe.</td><td><code>globals.css</code>, <code>layout.tsx</code></td></tr>
+    <tr><td><b>Navegação</b></td><td>Barra inferior com 4 abas e botão “+” central, que abre o registro de treino em painel deslizante.</td><td><code>BottomNav.tsx</code>, <code>AppSheets.tsx</code></td></tr>
+    <tr><td><b>Login</b></td><td>Logo animada (cordas se desenham, luva entra), fundo com aurora, cartão de vidro com borda de luz, rótulos flutuantes, mostrar senha, aviso de Caps Lock, erro com tremida e botão com estado de carregamento. Respeita “reduzir movimento”.</td><td><code>(auth)/login/*</code>, <code>CornerLogo.tsx</code></td></tr>
+    <tr><td><b>Sessão</b></td><td>Token assinado (JWT) em cookie <code>httpOnly</code>, 7 dias. Marcado como seguro só quando a conexão é HTTPS.</td><td><code>lib/session.ts</code></td></tr>
+    <tr><td><b>Proteção de rotas</b></td><td>Verificação rápida em <code>proxy.ts</code> e verificação definitiva no servidor, perto dos dados (camada de acesso).</td><td><code>proxy.ts</code>, <code>lib/dal.ts</code></td></tr>
+    <tr><td><b>Usuário de teste</b></td><td>Definido por variáveis de ambiente. A senha existe só como hash com sal; a comparação leva o mesmo tempo para e-mail inexistente e senha errada.</td><td><code>lib/users.ts</code>, <code>.env.local</code></td></tr>
+  </table>
+  <div class="grid2">
+    <div class="card r"><h3><i class="ph-fill ph-shield-check" style="color:var(--red)"></i>Decisões de segurança</h3><ul><li>Segredos fora do git (<code>.env.local</code> ignorado)</li><li>Senha nunca em texto, nem no código</li><li>Dois níveis de checagem de sessão</li><li>Sair da conta apaga também as cópias offline</li></ul></div>
+    <div class="card b"><h3><i class="ph-fill ph-paint-brush" style="color:var(--blue)"></i>Decisões de design</h3><ul><li>Cores, ícones e logo do artefato original do Corner</li><li>Erros por formas e texto, não só por cor</li><li>Campos com 16 px para evitar zoom no iPhone</li><li>Animações desligam com “reduzir movimento”</li></ul></div>
+  </div>
+`)
+
+/* ── 5 · Problemas e correções ───────────────────────────── */
+pagina(5, '04 · Correções', `
+  <h2><small>O que deu errado</small>Problemas encontrados e corrigidos</h2>
+  <table>
+    <tr><th style="width:27%">Problema</th><th style="width:33%">Causa</th><th>Correção</th></tr>
+    <tr><td><b>Script do usuário não compilava</b></td><td>Importava um componente que não existia e citava um segundo script não enviado.</td><td>Componente criado; layout dividido em grupos de rotas.</td></tr>
+    <tr><td><b>“E-mail ou senha incorretos” só na Vercel</b></td><td>O <code>.env.local</code> não vai ao GitHub, então o site publicado não tinha nenhum usuário.</td><td>4 variáveis cadastradas na Vercel e novo deploy. Log de aviso quando faltarem.</td></tr>
+    <tr><td><b>Login aceito mas voltava ao login</b></td><td>Cookie marcado como seguro em acesso por HTTP (IP da rede): o navegador o descartava.</td><td>Seguro apenas quando a conexão é HTTPS. Testado por IP, localhost e modo dev.</td></tr>
+    <tr><td><b>“This page couldn’t load” após deploy</b></td><td>Aba antiga misturava a página nova com a versão anterior do site.</td><td>Fechar as abas e recarregar sem cache. Login real em produção verificado.</td></tr>
+    <tr><td><b>Pacote do Next alterado</b></td><td>Um <code>npm install</code> rodou dentro da pasta de documentação do Next.</td><td>Pacote reinstalado limpo; dependências no <code>package.json</code> certo.</td></tr>
+    <tr><td><b>Build quebrado após mover rotas</b></td><td>Cache de tipos do modo dev apontava para pastas antigas.</td><td>Cache apagado; build e tipos passam.</td></tr>
+    <tr><td><b>Alertas nunca apareciam</b></td><td>A tela de notificações não tinha botão que a abrisse, e o “ajuste” era texto fixo.</td><td>Substituída por alertas calculados, com sino na tela Hoje.</td></tr>
+    <tr><td><b>Ícone do app dava erro 404</b></td><td>Manifesto apontava para arquivos de ícone inexistentes.</td><td>Ícones gerados a partir da logo (192, 512, versão recortável e iPhone).</td></tr>
+    <tr><td><b>Botão “+” enviava dado errado</b></td><td>O evento do clique era passado no lugar das opções do treino (pego pelo typecheck).</td><td>Chamada corrigida.</td></tr>
+  </table>
+  <p class="nota">Nos testes de navegador também apareceu um problema só do ambiente de teste: o Chrome sem tela não grava cache em pastas com nome curto do Windows (<code>RENAN~1</code>). O app não tinha defeito; o teste passou a usar uma pasta comum.</p>
+`)
+
+/* ── 6 · Implementações: funcionalidades reais ───────────── */
+pagina(6, '03 · Implementações', `
+  <h2><small>Parte 2</small>Funcionalidades reais</h2>
+  <p class="lead">Do protótipo com dados fixos para um app que lembra o que você fez. Tudo ficou no aparelho, sem banco de dados externo, como combinado.</p>
+  <table>
+    <tr><th style="width:22%">Item</th><th>O que foi feito</th></tr>
+    <tr><td><b>Persistência</b></td><td>Hook <code>useStorage</code>: guarda no navegador, valida o que lê (dado corrompido não derruba o app), sincroniza entre abas e evita erro de hidratação. Chaves separadas por usuário.</td></tr>
+    <tr><td><b>4 planos de treino</b></td><td>Fundamentos (iniciante, 4 sem.), Base Aeróbica (6 sem.), Técnica Avançada (4 sem.) e Pré-competição (6 sem.). Cada sessão tem dia, tipo, rounds, descanso, descrição e checklist; o conteúdo muda por fase, e a última semana do plano de competição é de polimento.</td></tr>
+    <tr><td><b>Tela Hoje</b></td><td>Sessão do dia com checklist próprio, próxima sessão, sequência calculada do histórico e sugestão quando não há plano. Dia de descanso quando o plano não tem sessão.</td></tr>
+    <tr><td><b>Tela Plano</b></td><td>Plano ativo com progresso, próximo treino em destaque, seletor de semana e status de cada sessão (feita, hoje, a fazer, não feita), cruzando com o histórico.</td></tr>
+    <tr><td><b>Tela Progresso</b></td><td>Resumo do mês, gráfico de rounds das últimas 8 semanas com leitura ao passar o mouse e tabela alternativa, treinos por tipo e histórico completo.</td></tr>
+    <tr><td><b>Registro de treino</b></td><td>Data, tipo, rounds, minutos, esforço percebido (RPE) e duração. Um treino feito em outro dia da semana vale para a sessão do mesmo tipo.</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="card b"><h3><i class="ph-fill ph-chart-line-up" style="color:var(--blue)"></i>Sequência</h3><p>Calculada em <b>semanas seguidas na meta</b>, não em dias: em um plano de 3 treinos por semana, uma sequência diária quebraria a cada dia de descanso.</p></div>
+    <div class="card a"><h3><i class="ph-fill ph-info" style="color:var(--amber)"></i>Duração do treino</h3><p>Sem cronômetro, a duração salva é o tempo gasto preenchendo o registro, não o treino em si. Por isso o app usa rounds × minutos para o tempo de trabalho.</p></div>
+  </div>
+`)
+
+/* ── 7 · Implementações: especialista ────────────────────── */
+pagina(7, '03 · Implementações', `
+  <h2><small>Parte 3</small>Melhorias de especialista em boxe</h2>
+  <p class="lead">Resposta às cinco lacunas apontadas na revisão. A conta com banco de dados ficou de fora, por depender de provedor e credenciais.</p>
+  <div class="grid2">
+    <div class="card r"><h3><i class="ph-fill ph-timer" style="color:var(--red)"></i>Cronômetro de rounds</h3><ul><li>Preparo de 10 s, rounds e descansos</li><li>Sino, matraca aos 10 s finais, bips 3-2-1 e vibração</li><li>Pausar, pular fase e encerrar com confirmação</li><li>Tela acesa; tempo pelo relógio do aparelho</li><li>Foco de cada round por tipo e nível</li><li>Registro com a duração real</li></ul></div>
+    <div class="card b"><h3><i class="ph-fill ph-books" style="color:var(--blue)"></i>Biblioteca técnica</h3><ul><li>6 golpes numerados e 6 defesas</li><li>18 combinações em 3 níveis</li><li>Guias de aquecimento, bandagem e desaquecimento</li><li>Postura ortodoxa ou canhota troca a mão da frente</li></ul></div>
+    <div class="card a"><h3><i class="ph-fill ph-gauge" style="color:var(--amber)"></i>Carga e recuperação</h3><ul><li>Check-in diário: sono, energia e dor</li><li>Ajuste sugerido do treino do dia, que você aceita ou não</li><li>Carga = esforço × minutos; últimos 7 dias contra a média anterior</li><li>Alertas: cabeça, lesões, sparrings seguidos, carga e meta</li></ul></div>
+    <div class="card g"><h3><i class="ph-fill ph-heartbeat" style="color:var(--green)"></i>Saúde do boxeador</h3><ul><li>Peso com gráfico e categoria; alerta de perda rápida</li><li>Lesões e dores por região</li><li>Sparring: intensidade, pancadas na cabeça, parceiro e notas</li><li>Aviso na hora após pancadas fortes</li></ul></div>
+    <div class="card r"><h3><i class="ph-fill ph-user-focus" style="color:var(--red)"></i>Personalização</h3><ul><li>Perfil de atleta em 5 passos, com plano recomendado</li><li>Mudar o dia de uma sessão</li><li>Meta semanal, postura e lembrete diário</li></ul></div>
+    <div class="card b"><h3><i class="ph-fill ph-cloud-slash" style="color:var(--blue)"></i>Base técnica</h3><ul><li>App instalável, com ícones da logo</li><li>Telas visitadas e cronômetro abrem offline</li><li>Backup em arquivo (exportar e importar, validado)</li><li>Sair da conta apaga as cópias offline</li></ul></div>
+  </div>
+  <div class="card a"><h3><i class="ph-fill ph-bell-simple" style="color:var(--amber)"></i>Limite conhecido do lembrete</h3><p>O lembrete só dispara com o app aberto. Avisar com o app fechado exige um servidor de notificações, que depende da conta com banco de dados.</p></div>
+`)
+
+/* ── 8 · Estrutura do código ─────────────────────────────── */
+pagina(8, '05 · Estrutura', `
+  <h2><small>Como o código está organizado</small>Estrutura do projeto</h2>
+  <div class="tree">corner2/
+├─ app/                          <em>19 arquivos · 2.777 linhas</em>
+│  ├─ (auth)/login/              <em>tela de login</em>
+│  ├─ (app)/                     <em>telas protegidas</em>
+│  │  ├─ hoje · plano · progresso · perfil
+│  │  ├─ treino/                 <em>cronômetro de rounds</em>
+│  │  ├─ tecnicas/               <em>biblioteca técnica</em>
+│  │  └─ saude/                  <em>peso, lesões, cabeça</em>
+│  ├─ actions/auth.ts            <em>login e logout (servidor)</em>
+│  └─ globals.css                <em>1.026 linhas</em>
+├─ components/                   <em>14 arquivos · 1.238 linhas</em>
+├─ lib/                          <em>10 arquivos · 782 linhas</em>
+├─ hooks/                        <em>useStorage · useCronometro</em>
+├─ data/                         <em>planos e técnicas (conteúdo)</em>
+├─ public/                       <em>sw.js · ícones · manifest · offline</em>
+├─ docs/                         <em>fluxograma e relatório</em>
+└─ proxy.ts                      <em>proteção das rotas</em></div>
+  <div class="camadas">
+    <div class="c1"><b>data</b><span>Conteúdo: planos e técnicas. Sem lógica de tela.</span></div>
+    <div class="c2"><b>lib</b><span>Regras de negócio puras: datas, treinos, carga, alertas, sessão. Sem React, fáceis de testar.</span></div>
+    <div class="c3"><b>hooks</b><span>Estado reutilizável: armazenamento local e cronômetro.</span></div>
+    <div class="c4"><b>components</b><span>Interface compartilhada e o estado global do app.</span></div>
+    <div class="c5"><b>app</b><span>Rotas e telas, que só montam as peças acima.</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card g"><h3><i class="ph-fill ph-thumbs-up" style="color:var(--green)"></i>Pontos fortes</h3><ul><li>Regras de cálculo separadas da interface</li><li>Tipos e validadores num só lugar</li><li>Dados de fora (armazenamento, backup) sempre validados</li></ul></div>
+    <div class="card a"><h3><i class="ph-fill ph-arrows-split" style="color:var(--amber)"></i>Pontos de concentração</h3><ul><li><code>CornerProvider.tsx</code>: 329 linhas e muitas responsabilidades</li><li><code>AppSheets.tsx</code>: 324 linhas e 84 estilos inline</li><li><code>globals.css</code>: 1.026 linhas para tudo</li></ul></div>
+  </div>
+`)
+
+/* ── 9 · Qualidade e verificação ─────────────────────────── */
+pagina(9, '06 · Qualidade', `
+  <h2><small>O que foi conferido e o que não foi</small>Qualidade e verificação</h2>
+  <table>
+    <tr><th style="width:36%">Verificação</th><th style="width:16%">Resultado</th><th>Observação</th></tr>
+    <tr><td><b>Typecheck</b> (TypeScript estrito)</td><td>${chip('Passa', 'ok')}</td><td>Sem erros em todo o projeto.</td></tr>
+    <tr><td><b>Lint</b> (ESLint)</td><td>${chip('Passa', 'ok')}</td><td>Sem avisos.</td></tr>
+    <tr><td><b>Build de produção</b></td><td>${chip('Passa', 'ok')}</td><td>Todas as rotas geradas.</td></tr>
+    <tr><td><b>48 verificações de navegador</b></td><td>${chip('Passam', 'ok')}</td><td>Scripts descartáveis, fora do repositório.</td></tr>
+    <tr><td><b>Testes automatizados no projeto</b></td><td>${chip('Não existe', 'no')}</td><td>Sem Vitest, Jest ou Playwright configurado.</td></tr>
+    <tr><td><b>Auditoria de dependências</b></td><td>${chip('3 achados', 'no')}</td><td>Next (crítica, via <code>next/og</code>, que o app não usa), sharp (alta) e source-map-js (alta).</td></tr>
+    <tr><td><b>Sons do cronômetro</b></td><td>${chip('Não ouvido', 'wip')}</td><td>Testado sem tela: o fluxo está certo, mas ninguém ouviu o sino num celular.</td></tr>
+    <tr><td><b>Segunda fase no ar</b></td><td>${chip('Não publicada', 'wip')}</td><td>Ainda não enviada ao GitHub nem à Vercel.</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="card b"><h3><i class="ph-fill ph-list-checks" style="color:var(--blue)"></i>O que as 48 verificações cobriram</h3><ul><li>Login, sair da conta e proteção das rotas</li><li>Perfil de atleta e plano recomendado</li><li>Check-in, ajuste do dia e reagendamento</li><li>Cronômetro: preparo, rounds, descanso, pausa e fim</li><li>Registro com duração real e dados de sparring</li><li>Alertas, saúde, peso, lesões e carga</li><li>Biblioteca, backup válido e inválido</li></ul></div>
+    <div class="card a"><h3><i class="ph-fill ph-wifi-slash" style="color:var(--amber)"></i>Modo offline e privacidade</h3><ul><li>Servidor desligado: Hoje e cronômetro abrem do aparelho</li><li>Tela nunca visitada mostra a página offline</li><li>Depois de sair da conta, o cache é apagado</li><li>Lembrete diário disparou com o app aberto</li></ul></div>
+  </div>
+  <p class="nota">As verificações de navegador provam o comportamento de hoje, mas não protegem o futuro: sem ficarem salvas no projeto, qualquer mudança nova pode quebrar algo sem ninguém perceber. Esse é o principal motivo da primeira sugestão da próxima página.</p>
+`)
+
+/* ── 10 · Sugestões: processo ────────────────────────────── */
+pagina(10, '07 · Sugestões', `
+  <h2><small>Melhorias esperadas · parte 1</small>Sugestões para o processo</h2>
+  <p class="lead">Combinados para o trabalho daqui para frente, com o ganho esperado de cada um.</p>
+  <table>
+    <tr><th style="width:26%">Sugestão</th><th>Melhoria esperada</th><th style="width:11%">Esforço</th><th style="width:12%">Prioridade</th></tr>
+    <tr><td><b>TDD com Vitest</b> nas regras puras (<code>lib/</code> e <code>data/</code>)</td><td>Rede de segurança: erro numa regra de carga, prontidão, datas ou sequência é pego na hora, antes de chegar ao usuário. O roteiro das 48 verificações vira teste permanente.</td><td>Médio<br><small>cerca de 1 dia</small></td><td>${chip('Alta', 'alta')}</td></tr>
+    <tr><td><b>Atualizar o Next</b></td><td>Fecha a vulnerabilidade crítica. Fazer em um commit separado, com build e teste logo depois.</td><td>Baixo a médio</td><td>${chip('Alta', 'alta')}</td></tr>
+    <tr><td><b>Auditoria antes de entregar</b> (o equivalente ao <code>/doctor</code>)</td><td>Typecheck, lint, build, auditoria de dependências e conferência de variáveis de ambiente antes de cada envio. Evita repetir o problema do login na Vercel.</td><td>Baixo</td><td>${chip('Alta', 'alta')}</td></tr>
+    <tr><td><b>Commits menores</b> e frequentes</td><td>Hoje há 44 arquivos pendentes (16 alterados e 28 novos). Commits por assunto facilitam revisar, desfazer e entender o histórico.</td><td>Baixo</td><td>${chip('Média', 'media')}</td></tr>
+    <tr><td><b>CI no GitHub</b> (Actions)</td><td>Roda typecheck, lint, testes e build a cada envio e bloqueia o que quebra. A Vercel só publica código que passou.</td><td>Baixo a médio</td><td>${chip('Média', 'media')}</td></tr>
+    <tr><td><b>Subagentes</b> em tarefas grandes</td><td>Um escreve o código, outro os testes, outro audita, em paralelo. Menos tempo de espera e uma segunda leitura independente.</td><td>Baixo</td><td>${chip('Média', 'media')}</td></tr>
+    <tr><td><b>Teste em celular real</b> a cada entrega</td><td>Pega o que o navegador sem tela não vê: som do sino, instalação do app, vibração (que não existe no iPhone) e a tela acesa.</td><td>Baixo</td><td>${chip('Média', 'media')}</td></tr>
+  </table>
+  <div class="cols3">
+    <div class="card r"><h3>Antes</h3><p>Entregas verificadas à mão, scripts de teste descartados, problemas de produção descobertos pelo usuário.</p></div>
+    <div class="card b"><h3>Depois</h3><p>Testes salvos, CI no GitHub, auditoria padronizada e commits pequenos.</p></div>
+    <div class="card g"><h3>Ganho</h3><p>Menos retrabalho, mudanças mais seguras e produção estável.</p></div>
+  </div>
+`)
+
+/* ── 11 · Sugestões: código ──────────────────────────────── */
+pagina(11, '07 · Sugestões', `
+  <h2><small>Melhorias esperadas · parte 2</small>Sugestões para a estrutura do código</h2>
+  <p class="lead">Mudanças que não alteram o que o usuário vê, mas deixam o código mais fácil de manter e de evoluir.</p>
+  <table>
+    <tr><th style="width:28%">Sugestão</th><th>Problema de hoje</th><th>Melhoria esperada</th><th style="width:12%">Prioridade</th></tr>
+    <tr><td><b>Dividir <code>CornerProvider</code></b> em partes menores (histórico, saúde, registro e painéis)</td><td>329 linhas: 9 blocos de dados guardados, painéis, backup e lembrete no mesmo lugar. Qualquer mudança no estado re-renderiza quem usa o contexto.</td><td>Leitura simples, menos re-renderização e testes por parte.</td><td>${chip('Média', 'media')}</td></tr>
+    <tr><td><b>Dividir <code>AppSheets</code></b>: um arquivo por painel, com CSS Module</td><td>324 linhas e 84 estilos inline misturados à lógica.</td><td>Estilo reaproveitável, painéis independentes e revisão mais fácil.</td><td>${chip('Média', 'media')}</td></tr>
+    <tr><td><b>Quebrar o <code>globals.css</code></b> em módulos por assunto</td><td>1.026 linhas globais: risco de uma regra afetar outra tela.</td><td>Estilos próximos do componente e remoção segura do que não é usado.</td><td>${chip('Baixa', 'baixa')}</td></tr>
+    <tr><td><b>Camada de dados única</b> (repositório) e versão do esquema</td><td>As telas conhecem o armazenamento local e suas chaves.</td><td>Trocar o armazenamento local por uma API sem mexer nas telas, e migrar dados antigos com segurança.</td><td>${chip('Alta', 'alta')}</td></tr>
+    <tr><td><b>Contrato de dados</b> com validação central</td><td>Os validadores estão em <code>lib/tipos.ts</code> e no provider.</td><td>Uma só fonte para o que é um treino válido, usada no armazenamento, no backup e na futura API.</td><td>${chip('Média', 'media')}</td></tr>
+    <tr><td><b>Acessibilidade e textos</b> revisados</td><td>Boa base (rótulos, foco, tabelas alternativas), mas sem revisão sistemática.</td><td>Checagem de contraste e navegação por teclado; textos num único lugar, abrindo caminho para outro idioma.</td><td>${chip('Baixa', 'baixa')}</td></tr>
+  </table>
+  <div class="grid2">
+    <div class="card b"><h3><i class="ph-fill ph-database" style="color:var(--blue)"></i>Por que a camada de dados é prioridade</h3><p>A conta com banco de dados é o próximo grande passo. Se as telas continuarem falando direto com o armazenamento do navegador, a troca vai mexer em quase todas. Com uma camada no meio, a troca fica em um ponto só.</p></div>
+    <div class="card a"><h3><i class="ph-fill ph-hand-pointing" style="color:var(--amber)"></i>Ordem sugerida</h3><ul><li>Primeiro os testes (rede de segurança)</li><li>Depois a camada de dados</li><li>Por fim dividir provider e painéis, com os testes protegendo</li></ul></div>
+  </div>
+`)
+
+/* ── 12 · Riscos e próximos passos ───────────────────────── */
+pagina(12, '08 · Próximos passos', `
+  <h2><small>O que vem a seguir</small>Riscos e próximos passos</h2>
+  <div class="grid2">
+    <div class="card r"><h3><i class="ph-fill ph-database" style="color:var(--red)"></i>Dados só no aparelho</h3><p>Trocar de celular ou limpar o navegador apaga o histórico. Hoje a proteção é o backup em arquivo. A solução definitiva é a conta com banco de dados.</p></div>
+    <div class="card r"><h3><i class="ph-fill ph-key" style="color:var(--red)"></i>Senha de teste exposta</h3><p>A senha do usuário de teste foi escrita na conversa. Antes de abrir o app a outras pessoas, troque-a e gere um novo hash e uma nova chave de sessão, também na Vercel.</p></div>
+    <div class="card a"><h3><i class="ph-fill ph-bug" style="color:var(--amber)"></i>Vulnerabilidades</h3><p>Três achados nas dependências, um crítico (Next). O app não usa o recurso afetado, mas a atualização deve ser feita.</p></div>
+    <div class="card a"><h3><i class="ph-fill ph-device-mobile" style="color:var(--amber)"></i>Segunda fase sem teste real</h3><p>Som, instalação do app e vibração ainda não foram vistos num celular. A vibração não existe no iPhone.</p></div>
+  </div>
+  <h3 style="margin-top:2px">Roteiro sugerido</h3>
+  <div class="cols3">
+    <div class="card r"><h3>Agora</h3><ul><li>Auditoria e envio da segunda fase</li><li>Instalar o Vitest e testar as regras de cálculo</li><li>Atualizar o Next</li><li>Trocar a senha de teste</li></ul></div>
+    <div class="card b"><h3>Em seguida</h3><ul><li>CI no GitHub</li><li>Camada de dados única</li><li>Testar no celular: som, instalação e tela acesa</li><li>Dividir provider e painéis</li></ul></div>
+    <div class="card g"><h3>Depois</h3><ul><li>Conta com banco de dados e sincronização</li><li>Notificações push com o app fechado</li><li>Cadastro de novos usuários</li></ul></div>
+  </div>
+  <div class="card b"><h3><i class="ph-fill ph-question" style="color:var(--blue)"></i>Decisão pendente</h3><p>Para avançar na conta com banco de dados, falta escolher o provedor (por exemplo, Supabase ou Neon) e criar as credenciais. Com isso definido, as notificações push e o cadastro de usuários passam a ser possíveis.</p></div>
+  <div class="card g"><h3><i class="ph-fill ph-files" style="color:var(--green)"></i>Documentos desta sessão</h3><ul><li><code>docs/Corner-Fluxograma.pdf</code>: o fluxo do app, em 8 páginas</li><li><code>docs/Corner-Relatorio.pdf</code>: este relatório</li><li><code>docs/fluxograma.html</code> e <code>docs/relatorio.html</code>: fontes editáveis</li></ul></div>
+`)
+
+/* ── Ajuste de escala: o corpo de cada página cresce até ocupar ~96% do espaço livre (títulos ficam fixos) ── */
+document.querySelectorAll('.corpo').forEach(c => {
+  const filhos = [...c.children]
+  const nTitulo = filhos[1] && filhos[1].matches('p.lead') ? 2 : 1
+  const z = document.createElement('div'); z.className = 'z'
+  filhos.slice(nTitulo).forEach(f => z.appendChild(f)); c.appendChild(z)
+  const livre = c.clientHeight - filhos.slice(0, nTitulo).reduce((s, f) => s + f.getBoundingClientRect().height + 14, 0)
+  for (let v = 1.32; v > 1; v -= 0.02) { z.style.zoom = v; if (z.getBoundingClientRect().height <= livre * 0.97) break }
+})
+</script>
+</body>
+</html>
