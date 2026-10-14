@@ -1,8 +1,9 @@
 name: CI
 
+# Roda em todo push, de qualquer branch: a regra da main exige o check `verificar` verde no commit
+# antes de aceitar o push, então o CI precisa rodar na branch de trabalho primeiro.
 on:
   push:
-    branches: [main]
   pull_request:
 
 # Uma execução por branch: um push novo cancela a anterior que ainda está rodando.
