@@ -12,6 +12,7 @@ import { sessoesDaSemana } from "@/data/planos";
 import { formatarDataCurta, somarDias } from "@/lib/datas";
 import { nivelDoAtleta, urlTreino } from "@/lib/sessao";
 import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComStatus, type SessaoComStatus } from "@/lib/treinos";
+import estilos from './plano.module.css'
 
 export default function PlanoPage() {
   const pronto = useHidratado();
@@ -75,8 +76,8 @@ export default function PlanoPage() {
         <h1 className="page-title">Plano de treino</h1>
       </header>
 
-      <section className="surface-card plano-hero" style={{ marginTop: 22 }}>
-        <div className="plano-hero-top">
+      <section className={`surface-card ${estilos.planoHero}`} style={{ marginTop: 22 }}>
+        <div className={estilos.planoHeroTop}>
           <div>
             <span className="nivel-badge">{plano.nivelLabel}</span>
             <h2>{plano.nome}</h2>
@@ -84,7 +85,7 @@ export default function PlanoPage() {
           </div>
           <button type="button" className="btn-ghost small" onClick={openPlanos}>Trocar</button>
         </div>
-        <div className="plano-progresso">
+        <div className={estilos.planoProgresso}>
           <span>{concluido ? "Plano concluído" : `Semana ${Math.max(semanaAtual, 1)} de ${plano.semanas}`}</span>
           <span>{feitas}/{total} sessões · {pct}%</span>
         </div>
@@ -98,7 +99,7 @@ export default function PlanoPage() {
         </>
       )}
 
-      <div className="week-selector" role="group" aria-label="Semana do plano">
+      <div className={estilos.weekSelector} role="group" aria-label="Semana do plano">
         <button type="button" onClick={() => setSemanaEscolhida(Math.max(1, semana - 1))} disabled={semana <= 1} aria-label="Semana anterior">
           <i className="ph-bold ph-caret-left" />
         </button>
@@ -111,7 +112,7 @@ export default function PlanoPage() {
         </button>
       </div>
 
-      <div className="sessao-list">
+      <div className={estilos.sessaoList}>
         {sessoes.map(item => {
           const aFazer = semana >= semanaAtual && (item.status === "hoje" || item.status === "futura");
           return (
@@ -129,7 +130,7 @@ export default function PlanoPage() {
 
       <button
         type="button"
-        className="link-danger"
+        className={estilos.linkDanger}
         onClick={() => {
           if (!window.confirm(`Encerrar o plano ${plano.nome}? Seus treinos registrados continuam salvos.`)) return;
           encerrarPlano(); setSemanaEscolhida(null); showToast("Plano encerrado");

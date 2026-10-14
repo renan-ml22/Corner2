@@ -1,0 +1,23 @@
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem;
+}
+
+.avatar {
+  display: grid;
+  width: 3.7rem;
+  height: 3.7rem;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--blue));
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.profileHeader p {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}

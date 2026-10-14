@@ -1,0 +1,129 @@
+.chartCard { padding: 1.1rem 0.9rem 0.8rem; }
+
+.barChart {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  height: 11rem;
+}
+
+.barCol {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+
+.barCol:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.barTrack {
+  position: relative;
+  display: flex;
+  flex: 1;
+  width: 100%;
+  max-width: 1.6rem;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+}
+
+.barFill {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: oklch(0.63 0.21 25 / 0.42);
+  transition: height 0.4s ease, background 0.15s;
+}
+
+.barCol:global(.atual) .barFill,
+.barCol:global(.ativa) .barFill { background: var(--red); }
+
+.barLabel { font-size: 0.65rem; }
+
+.barCol:global(.atual) .barLabel { color: var(--foreground); font-weight: 600; }
+
+.barTip {
+  position: absolute;
+  bottom: calc(100% - 0.6rem);
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  gap: 1px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--color-neutral-800);
+  color: var(--foreground);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.barTip small { color: var(--muted); font-size: 0.65rem; }
+
+.barCol:first-child .barTip { left: 0; transform: none; }
+
+.barCol:last-child .barTip { right: 0; left: auto; transform: none; }
+
+.tipoBars {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem;
+}
+
+.tipoRow {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr 1.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.tipoRowLabel { display: flex; align-items: center; gap: 0.45rem; }
+
+.tipoRowLabel i { color: var(--red); }
+
+.tipoRowTrack {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--border);
+}
+
+.tipoRowTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--red);
+  transition: width 0.4s ease;
+}
+
+.tipoRowValor { color: var(--foreground); font-weight: 700; text-align: right; }
+
+.notaTreino { font-style: italic; }
+
+.cargaCard { padding: 1.1rem; }
+
+.cargaTopo { display: flex; gap: 0.85rem; }
+
+.cargaTopo > i { flex: none; font-size: 1.6rem; }
+
+.cargaTopo strong { font-size: 1rem; }
+
+.cargaTopo p { margin-top: 0.2rem; color: var(--color-neutral-300); font-size: 0.82rem; line-height: 1.5; }
+
+.cargaIdeal .cargaTopo > i { color: var(--green); }
+
+.cargaBaixa .cargaTopo > i { color: var(--blue); }
+
+.cargaAtencao .cargaTopo > i { color: oklch(0.8 0.14 85); }
+
+.cargaAlta { border-color: color-mix(in oklch, var(--red) 50%, var(--border)); }
+
+.cargaAlta .cargaTopo > i { color: var(--red); }

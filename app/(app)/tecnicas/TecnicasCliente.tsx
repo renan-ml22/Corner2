@@ -10,6 +10,7 @@ import {
 } from "@/data/tecnicas";
 import { NIVEL_LABEL, type Nivel } from "@/data/planos";
 import { nivelDoAtleta } from "@/lib/sessao";
+import estilos from './tecnicas.module.css'
 
 export type Aba = "golpes" | "combinacoes" | "defesa" | "preparacao";
 
@@ -25,10 +26,10 @@ function Passos({ titulo, passos, icone }: { titulo: string; passos: PassoGuia[]
     <>
       <div className="section-heading"><h2><i className={`ph-fill ${icone}`} aria-hidden="true" style={{ color: "var(--red)", marginRight: 8 }} />{titulo}</h2></div>
       <section className="surface-card">
-        <ol className="passos">
+        <ol className={estilos.passos}>
           {passos.map((p, i) => (
             <li key={p.titulo}>
-              <span className="passo-num">{i + 1}</span>
+              <span className={estilos.passoNum}>{i + 1}</span>
               <div><strong>{p.titulo}</strong><p>{p.texto}</p></div>
             </li>
           ))}
@@ -55,7 +56,7 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
         <p className="muted-copy">Mão da frente: <strong>{maoDaFrente(config.postura)}</strong> · mão de trás: <strong>{maoDeTras(config.postura)}</strong> ({config.postura === "ortodoxo" ? "postura ortodoxa" : "postura canhota"}).</p>
       </header>
 
-      <div className="abas" role="tablist" aria-label="Seções da biblioteca">
+      <div className={estilos.abas} role="tablist" aria-label="Seções da biblioteca">
         {ABAS.map(a => (
           <button key={a.id} type="button" role="tab" id={`aba-${a.id}`} aria-selected={aba === a.id} aria-controls={`painel-${a.id}`} className={aba === a.id ? "ativa" : ""} onClick={() => setAba(a.id)}>
             {a.label}
@@ -67,10 +68,10 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
         {aba === "golpes" && (
           <>
             <div className="section-heading"><h2>Numeração dos golpes</h2></div>
-            <div className="lista-cards">
+            <div className={estilos.listaCards}>
               {GOLPES.map(g => (
-                <article key={g.numero} className="surface-card golpe-card">
-                  <span className="golpe-num" aria-hidden="true">{g.numero}</span>
+                <article key={g.numero} className={`surface-card ${estilos.golpeCard}`}>
+                  <span className={estilos.golpeNum} aria-hidden="true">{g.numero}</span>
                   <div>
                     <h3>{g.nome}</h3>
                     <p className="sessao-meta">{g.resumo}</p>
@@ -85,17 +86,17 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
 
         {aba === "combinacoes" && (
           <>
-            <div className="chips-filtro" role="group" aria-label="Filtrar por nível">
+            <div className={estilos.chipsFiltro} role="group" aria-label="Filtrar por nível">
               {(["todos", "iniciante", "intermediario", "avancado"] as const).map(n => (
                 <button key={n} type="button" aria-pressed={filtro === n} className={filtro === n ? "ativo" : ""} onClick={() => setFiltro(n)}>
                   {n === "todos" ? "Todas" : NIVEL_LABEL[n]}
                 </button>
               ))}
             </div>
-            <div className="lista-cards">
+            <div className={estilos.listaCards}>
               {combos.map(c => (
-                <article key={c.notacao} className="surface-card combo-card">
-                  <span className="combo-notacao">{c.notacao}</span>
+                <article key={c.notacao} className={`surface-card ${estilos.comboCard}`}>
+                  <span className={estilos.comboNotacao}>{c.notacao}</span>
                   <div>
                     <h3>{c.nome}</h3>
                     <p className="sessao-descricao" style={{ marginTop: 4 }}>{c.descricao}</p>
@@ -111,10 +112,10 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
         {aba === "defesa" && (
           <>
             <div className="section-heading"><h2>Defesa básica</h2></div>
-            <div className="lista-cards">
+            <div className={estilos.listaCards}>
               {DEFESAS.map(d => (
-                <article key={d.nome} className="surface-card golpe-card">
-                  <span className="golpe-num" aria-hidden="true"><i className="ph-fill ph-shield-check" /></span>
+                <article key={d.nome} className={`surface-card ${estilos.golpeCard}`}>
+                  <span className={estilos.golpeNum} aria-hidden="true"><i className="ph-fill ph-shield-check" /></span>
                   <div>
                     <h3>{d.nome}</h3>
                     <p className="sessao-meta">{d.resumo}</p>

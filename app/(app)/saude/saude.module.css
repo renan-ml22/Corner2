@@ -1,0 +1,20 @@
+.campoRotulo { display: block; margin: 0.9rem 0 0.4rem; color: var(--color-neutral-300); font-size: 0.82rem; }
+
+.erroTexto {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.detalhes { margin-top: 1rem; font-size: 0.85rem; }
+
+.detalhes summary { cursor: pointer; color: var(--color-neutral-300); }
+
+.detalhes :global(.historico-list) { margin-top: 0.5rem; }
+
+.acoesLinha { display: flex; gap: 0.4rem; }
+
+.cabecaCard { padding: 1.1rem; }

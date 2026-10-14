@@ -1,0 +1,76 @@
+.hojeHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.iconBtn {
+  position: relative;
+  display: grid;
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.iconBtn:hover { background: var(--surface-raised); }
+
+.iconBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.destaqueCta {
+  margin-top: 1.5rem;
+  border-color: color-mix(in oklch, var(--red) 45%, var(--border));
+  background: linear-gradient(150deg, color-mix(in oklch, var(--red) 12%, var(--surface)), var(--surface) 70%);
+}
+
+.destaqueCta > i:first-child { color: var(--red); }
+
+.ajusteCard {
+  display: flex;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+.ajusteCard > i { flex: none; font-size: 1.5rem; }
+
+.ajusteCard strong { font-size: 0.95rem; }
+
+.ajusteCard p { margin-top: 0.3rem; color: var(--color-neutral-300); font-size: 0.82rem; line-height: 1.5; }
+
+.ajusteCard .ajusteProposta { color: var(--foreground); font-weight: 600; }
+
+.ajusteCard :global(.btn-ghost) { margin-top: 0.7rem; }
+
+.ajusteCard.nivelReduzir { border-color: color-mix(in oklch, oklch(0.8 0.14 85) 50%, var(--border)); }
+
+.ajusteCard.nivelReduzir > i { color: oklch(0.8 0.14 85); }
+
+.ajusteCard.nivelLeve { border-color: color-mix(in oklch, var(--blue) 55%, var(--border)); }
+
+.ajusteCard.nivelLeve > i { color: var(--blue); }
+
+.ajusteCard.nivelDescanso { border-color: color-mix(in oklch, var(--red) 50%, var(--border)); }
+
+.ajusteCard.nivelDescanso > i { color: var(--red); }

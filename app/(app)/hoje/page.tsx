@@ -20,6 +20,10 @@ import {
   diasTreinadosNaSemana, proximaSessao, semanaAtualDoPlano, sequenciaDeSemanas,
   sessaoDeHoje, sugestaoSemPlano, treinosNaSemanaAtual,
 } from "@/lib/treinos";
+import estilos from './hoje.module.css'
+
+// Cada nível de ajuste sugerido tem a sua cor; "normal" não tem destaque.
+const CLASSE_NIVEL: Record<string, string> = { reduzir: estilos.nivelReduzir, leve: estilos.nivelLeve, descanso: estilos.nivelDescanso };
 
 export default function HojePage() {
   const pronto = useHidratado();
@@ -66,19 +70,19 @@ export default function HojePage() {
 
   return (
     <main className="page-container">
-      <header className="hoje-header">
+      <header className={estilos.hojeHeader}>
         <div>
           <p className="eyebrow">{formatarDataLonga(hoje)}</p>
           <h1 className="page-title">Bom treino, {primeiroNome}.</h1>
         </div>
-        <button type="button" className="icon-btn" onClick={openNotif} aria-label={avisos > 0 ? `Alertas: ${avisos} novos` : "Alertas"}>
+        <button type="button" className={estilos.iconBtn} onClick={openNotif} aria-label={avisos > 0 ? `Alertas: ${avisos} novos` : "Alertas"}>
           <i className="ph ph-bell" aria-hidden="true" />
-          {avisos > 0 && <span className="icon-badge" aria-hidden="true">{avisos}</span>}
+          {avisos > 0 && <span className={estilos.iconBadge} aria-hidden="true">{avisos}</span>}
         </button>
       </header>
 
       {!config.onboardingFeito && (
-        <button type="button" className="surface-card cta-card destaque-cta" onClick={openOnboarding}>
+        <button type="button" className={`surface-card cta-card ${estilos.destaqueCta}`} onClick={openOnboarding}>
           <i className="ph-fill ph-boxing-glove" aria-hidden="true" />
           <span><strong>Monte seu perfil de atleta</strong><small>Postura, experiência e o plano ideal para você, em 1 minuto.</small></span>
           <i className="ph-bold ph-caret-right" aria-hidden="true" />
@@ -88,12 +92,12 @@ export default function HojePage() {
       <div className="section-heading"><h2>Como você está</h2></div>
       <CheckinCard />
       {ajuste && ajuste.nivel !== "normal" && (
-        <section className={`surface-card ajuste-card nivel-${ajuste.nivel}`} aria-live="polite">
+        <section className={`surface-card ${estilos.ajusteCard} ${CLASSE_NIVEL[ajuste.nivel] ?? ''}`} aria-live="polite">
           <i className={`ph-fill ${ajuste.nivel === "descanso" ? "ph-moon-stars" : "ph-gauge"}`} aria-hidden="true" />
           <div>
             <strong>{ajuste.titulo}</strong>
             <p>{ajuste.motivo}</p>
-            {ajuste.nivel !== "descanso" && !ajusteAplicado && <p className="ajuste-proposta">Sugestão: {CAT_LABELS[ajuste.tipo]} com {ajuste.rounds} rounds.</p>}
+            {ajuste.nivel !== "descanso" && !ajusteAplicado && <p className={estilos.ajusteProposta}>Sugestão: {CAT_LABELS[ajuste.tipo]} com {ajuste.rounds} rounds.</p>}
             <button type="button" className="btn-ghost small" onClick={() => aplicarAjuste(!ajusteAplicado)}>
               {ajusteAplicado ? "Voltar ao treino do plano" : ajuste.nivel === "descanso" ? "Descansar hoje" : "Aplicar ajuste"}
             </button>

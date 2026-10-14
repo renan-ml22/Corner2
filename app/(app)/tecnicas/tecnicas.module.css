@@ -1,0 +1,105 @@
+.abas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-top: 1.5rem;
+  padding: 4px;
+  border-radius: 0.95rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.abas button {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.abas button:global(.ativa) { background: var(--surface-raised); color: var(--foreground); }
+
+.abas button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.chipsFiltro { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1.5rem 0 0.9rem; }
+
+.chipsFiltro button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chipsFiltro button:global(.ativo) { border-color: var(--red); background: color-mix(in oklch, var(--red) 18%, transparent); color: var(--foreground); }
+
+.listaCards { display: grid; gap: 0.7rem; }
+
+.golpeCard,
+.comboCard { display: flex; gap: 0.9rem; padding: 1rem 1.1rem; }
+
+.comboCard { align-items: center; }
+
+.golpeCard h3,
+.comboCard h3 { font-size: 0.95rem; }
+
+.golpeNum {
+  display: grid;
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: color-mix(in oklch, var(--red) 15%, transparent);
+  color: var(--red);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.comboNotacao {
+  flex: none;
+  min-width: 4.4rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.7rem;
+  background: var(--color-neutral-800);
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.comboCard > div { flex: 1; }
+
+.passos { list-style: none; }
+
+.passos li {
+  display: flex;
+  gap: 0.85rem;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.passos li:last-child { border-bottom: 0; }
+
+.passos strong { font-size: 0.9rem; }
+
+.passos p { margin-top: 0.2rem; color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
+
+.passoNum {
+  display: grid;
+  flex: none;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--blue) 20%, transparent);
+  color: #a9c4ff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}

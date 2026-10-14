@@ -6,8 +6,9 @@ import { useHidratado } from "@/hooks/useEntidade";
 import { useHistorico } from "@/hooks/useHistorico";
 import { formatarDataCurta, nomeDoMes, somarDias } from "@/lib/datas";
 import { CAT_ICONS, CAT_LABELS, IMPACTO_LABEL, INTENSIDADE_LABEL, TIPOS } from "@/lib/tipos";
-import { calcularCarga, STATUS_CARGA_TEXTO } from "@/lib/saude";
+import { calcularCarga, STATUS_CARGA_TEXTO, type StatusCarga } from "@/lib/saude";
 import { estatisticasDoMes, volumeSemanal } from "@/lib/treinos";
+import estilos from './progresso.module.css'
 
 function formatarMinutos(min: number): string {
   if (min < 60) return `${min} min`;
@@ -15,6 +16,8 @@ function formatarMinutos(min: number): string {
   const m = min % 60;
   return m ? `${h}h ${String(m).padStart(2, "0")}` : `${h}h`;
 }
+
+const CLASSE_CARGA: Record<StatusCarga, string> = { baixa: estilos.cargaBaixa, ideal: estilos.cargaIdeal, atencao: estilos.cargaAtencao, alta: estilos.cargaAlta };
 
 export default function ProgressoPage() {
   const pronto = useHidratado();
@@ -55,8 +58,8 @@ export default function ProgressoPage() {
         <h2>Rounds por semana</h2>
         <span>Últimas 8 semanas</span>
       </div>
-      <section className="surface-card chart-card">
-        <div className="bar-chart" onMouseLeave={() => setBarraAtiva(null)}>
+      <section className={`surface-card ${estilos.chartCard}`}>
+        <div className={estilos.barChart} onMouseLeave={() => setBarraAtiva(null)}>
           {semanas.map((s, i) => {
             const altura = s.rounds ? Math.max(4, (s.rounds / maxRounds) * 100) : 0;
             const rotulo = `Semana de ${formatarDataCurta(s.segunda)}: ${s.rounds} rounds em ${s.treinos} ${s.treinos === 1 ? "treino" : "treinos"}`;
@@ -64,20 +67,20 @@ export default function ProgressoPage() {
               <button
                 type="button"
                 key={i}
-                className={`bar-col${s.atual ? " atual" : ""}${barraAtiva === i ? " ativa" : ""}`}
+                className={`${estilos.barCol}${s.atual ? " atual" : ""}${barraAtiva === i ? " ativa" : ""}`}
                 onMouseEnter={() => setBarraAtiva(i)}
                 onFocus={() => setBarraAtiva(i)}
                 onBlur={() => setBarraAtiva(null)}
                 aria-label={rotulo}
               >
                 {(barraAtiva === i || (barraAtiva === null && s.atual && s.rounds > 0)) && (
-                  <span className="bar-tip" role="tooltip">
+                  <span className={estilos.barTip} role="tooltip">
                     <strong>{s.rounds} rounds</strong>
                     {barraAtiva === i && <small>{s.treinos} {s.treinos === 1 ? "treino" : "treinos"} · {formatarDataCurta(s.segunda)}</small>}
                   </span>
                 )}
-                <span className="bar-track"><span className="bar-fill" style={{ height: `${altura}%` }} /></span>
-                <span className="bar-label">{s.atual ? "Atual" : formatarDataCurta(s.segunda).split(" ")[0]}</span>
+                <span className={estilos.barTrack}><span className={estilos.barFill} style={{ height: `${altura}%` }} /></span>
+                <span className={estilos.barLabel}>{s.atual ? "Atual" : formatarDataCurta(s.segunda).split(" ")[0]}</span>
               </button>
             );
           })}
@@ -98,10 +101,10 @@ export default function ProgressoPage() {
         <h2>Carga de treino</h2>
         <span>Esforço × minutos</span>
       </div>
-      <section className={`surface-card carga-card${carga ? ` carga-${carga.status}` : ""}`}>
+      <section className={`surface-card ${estilos.cargaCard}${carga ? ` ${CLASSE_CARGA[carga.status]}` : ""}`}>
         {carga ? (
           <>
-            <div className="carga-topo">
+            <div className={estilos.cargaTopo}>
               <i className={`ph-fill ${STATUS_CARGA_TEXTO[carga.status].icone}`} aria-hidden="true" />
               <div>
                 <strong>{STATUS_CARGA_TEXTO[carga.status].titulo}</strong>
@@ -124,14 +127,14 @@ export default function ProgressoPage() {
         <h2>Treinos por tipo</h2>
         <span>Neste mês</span>
       </div>
-      <section className="surface-card tipo-bars">
+      <section className={`surface-card ${estilos.tipoBars}`}>
         {TIPOS.map(t => (
-          <div key={t} className="tipo-row">
-            <span className="tipo-row-label"><i className={`ph-fill ${CAT_ICONS[t]}`} aria-hidden="true" /> {CAT_LABELS[t]}</span>
-            <span className="tipo-row-track" aria-hidden="true">
+          <div key={t} className={estilos.tipoRow}>
+            <span className={estilos.tipoRowLabel}><i className={`ph-fill ${CAT_ICONS[t]}`} aria-hidden="true" /> {CAT_LABELS[t]}</span>
+            <span className={estilos.tipoRowTrack} aria-hidden="true">
               <span style={{ width: `${(mes.porTipo[t] / maxTipo) * 100}%` }} />
             </span>
-            <span className="tipo-row-valor">{mes.porTipo[t]}</span>
+            <span className={estilos.tipoRowValor}>{mes.porTipo[t]}</span>
           </div>
         ))}
       </section>
@@ -166,7 +169,7 @@ export default function ProgressoPage() {
                         {t.sparring.parceiro ? ` · com ${t.sparring.parceiro}` : ""}
                       </span>
                     )}
-                    {t.nota && <span className="nota-treino">“{t.nota}”</span>}
+                    {t.nota && <span className={estilos.notaTreino}>“{t.nota}”</span>}
                   </div>
                   <time dateTime={t.data}>
                     {formatarDataCurta(d)}

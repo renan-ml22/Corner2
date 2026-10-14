@@ -11,6 +11,7 @@ import GraficoPeso from "@/components/GraficoPeso";
 import { deChave, diferencaDias, formatarDataCurta } from "@/lib/datas";
 import { prontidao, resumoCabeca } from "@/lib/saude";
 import { REGIOES, type RegiaoCorpo } from "@/lib/tipos";
+import estilos from './saude.module.css'
 
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
 
@@ -83,7 +84,7 @@ export default function SaudeCliente() {
 
       {/* ── Pancadas na cabeça ─────────────────────────── */}
       <div className="section-heading"><h2>Pancadas na cabeça</h2><span>Últimos 30 dias</span></div>
-      <section className="surface-card cabeca-card">
+      <section className={`surface-card ${estilos.cabecaCard}`}>
         <div className="stat-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
           <div><p className="stat-label">Sparrings</p><p className="stat-value">{cabeca.sparrings}</p></div>
           <div><p className="stat-label">Leves</p><p className="stat-value">{cabeca.leves}</p></div>
@@ -103,7 +104,7 @@ export default function SaudeCliente() {
           <input className="field-input" inputMode="decimal" placeholder="Peso de hoje (kg)" value={kgTexto} onChange={e => setKgTexto(e.target.value)} aria-label="Peso de hoje em quilos" aria-invalid={erroPeso ? true : undefined} />
           <button type="submit" className="btn-primary" style={{ marginTop: 0, width: "auto" }}>Registrar</button>
         </form>
-        {erroPeso && <p role="alert" className="erro-texto">{erroPeso}</p>}
+        {erroPeso && <p role="alert" className={estilos.erroTexto}>{erroPeso}</p>}
         <div style={{ marginTop: 14 }}><GraficoPeso pesos={pesos} categoria={categoria} /></div>
 
         <form onSubmit={salvarCategoria} className="linha-form" style={{ marginTop: 14 }} noValidate>
@@ -116,12 +117,12 @@ export default function SaudeCliente() {
           </p>
         )}
         {perdaPct > 2 && (
-          <p role="alert" className="erro-texto" style={{ marginTop: 10 }}>
+          <p role="alert" className={estilos.erroTexto} style={{ marginTop: 10 }}>
             <i className="ph-fill ph-warning" aria-hidden="true" /> Você perdeu {fmt(perdaPct)}% do peso em cerca de uma semana. Cortes rápidos reduzem o rendimento e aumentam o risco de lesão e desidratação. Converse com seu treinador e um nutricionista.
           </p>
         )}
         {pesos.length > 0 && (
-          <details className="detalhes">
+          <details className={estilos.detalhes}>
             <summary>Ver registros ({pesos.length})</summary>
             <ul className="historico-list">
               {[...pesos].reverse().slice(0, 15).map(p => (
@@ -147,7 +148,7 @@ export default function SaudeCliente() {
                   <strong>{REGIOES[l.regiao]} · {l.intensidade}/5</strong>
                   <span>Desde {formatarDataCurta(deChave(l.inicio))}{l.nota ? ` · ${l.nota}` : ""}</span>
                 </div>
-                <div className="acoes-linha">
+                <div className={estilos.acoesLinha}>
                   <button type="button" className="btn-ghost small" onClick={() => { resolverLesao(l.id); showToast("Marcada como resolvida"); }}>Resolvida</button>
                   <button type="button" className="btn-ghost small" onClick={() => removerLesao(l.id)} aria-label={`Remover lesão em ${REGIOES[l.regiao]}`}>Remover</button>
                 </div>
@@ -158,11 +159,11 @@ export default function SaudeCliente() {
       )}
       <section className="surface-card form-card">
         <form onSubmit={salvarLesao} noValidate>
-          <label className="campo-rotulo" htmlFor="regiao">Onde dói?</label>
+          <label className={estilos.campoRotulo} htmlFor="regiao">Onde dói?</label>
           <select id="regiao" className="field-input" value={regiao} onChange={e => setRegiao(e.target.value as RegiaoCorpo)}>
             {(Object.keys(REGIOES) as RegiaoCorpo[]).map(r => <option key={r} value={r}>{REGIOES[r]}</option>)}
           </select>
-          <p className="campo-rotulo">Intensidade (1 = leve, 5 = forte)</p>
+          <p className={estilos.campoRotulo}>Intensidade (1 = leve, 5 = forte)</p>
           <div className="seg" role="radiogroup" aria-label="Intensidade da dor">
             {[1, 2, 3, 4, 5].map(n => (
               <button key={n} type="button" role="radio" aria-checked={intensidade === n} className={intensidade === n ? "ativo" : ""} onClick={() => setIntensidade(n)}>{n}</button>
@@ -172,7 +173,7 @@ export default function SaudeCliente() {
           <button type="submit" className="btn-primary">Registrar lesão</button>
         </form>
         {resolvidas.length > 0 && (
-          <details className="detalhes">
+          <details className={estilos.detalhes}>
             <summary>Histórico de lesões resolvidas ({resolvidas.length})</summary>
             <ul className="historico-list">
               {resolvidas.map(l => (
