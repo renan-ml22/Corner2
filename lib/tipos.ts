@@ -152,7 +152,7 @@ export function isCheckin(v: unknown): v is Checkin {
 }
 
 export function isLesao(v: unknown): v is Lesao {
-  return isObj(v) && isStr(v.id) && isStr(v.regiao) && v.regiao in REGIOES && isNum(v.intensidade) && isChave(v.inicio)
+  return isObj(v) && isStr(v.id) && isStr(v.regiao) && Object.hasOwn(REGIOES, v.regiao) && isNum(v.intensidade) && isChave(v.inicio)
 }
 
 export function isPesoRegistro(v: unknown): v is PesoRegistro {

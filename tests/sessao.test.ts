@@ -189,26 +189,24 @@ describe('lerParamsTreino', () => {
       expect(r.nivel).toBe('intermediario')
     })
 
-    // BUG (lib/sessao.ts:44-46): Number(null) === 0 é finito, então um parâmetro ausente
-    // é tratado como 0 e cai no MÍNIMO do intervalo, não no padrão declarado.
-    // Hoje: rounds=1, min=0.05, descanso=0. Esperado: 4, 3 e 60.
-    it.fails('rounds ausente usa o padrão de 4 rounds', () => {
+    // Number(null) === 0 é finito: sem tratamento, parâmetro ausente cairia no MÍNIMO do intervalo.
+    it('rounds ausente usa o padrão de 4 rounds', () => {
       expect(ler('').rounds).toBe(4)
     })
 
-    it.fails('minutos por round ausente usa o padrão de 3 minutos', () => {
+    it('minutos por round ausente usa o padrão de 3 minutos', () => {
       expect(ler('').minPorRound).toBe(3)
     })
 
-    it.fails('descanso ausente usa o padrão de 60 segundos', () => {
+    it('descanso ausente usa o padrão de 60 segundos', () => {
       expect(ler('').descansoSeg).toBe(60)
     })
 
-    it.fails('parâmetro numérico vazio (rounds=) usa o padrão', () => {
+    it('parâmetro numérico vazio (rounds=) usa o padrão', () => {
       expect(ler('rounds=').rounds).toBe(4)
     })
 
-    it.fails('uma URL totalmente vazia devolve todos os padrões', () => {
+    it('uma URL totalmente vazia devolve todos os padrões', () => {
       expect(ler('')).toEqual(PADRAO)
     })
   })

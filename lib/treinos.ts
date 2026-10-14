@@ -109,7 +109,8 @@ export function diasTreinadosNaSemana(historico: WorkoutEntry[], hoje: Date): bo
  * A semana atual só soma quando a meta já foi batida; enquanto não bate, ela não quebra a sequência.
  */
 export function sequenciaDeSemanas(historico: WorkoutEntry[], metaSemanal: number, hoje: Date): number {
-  const meta = Math.max(1, metaSemanal) // meta 0 faria o laço abaixo nunca parar
+  // Meta 0, negativa ou NaN (dado corrompido) faria o laço abaixo nunca parar.
+  const meta = Number.isNaN(metaSemanal) ? 1 : Math.max(1, metaSemanal)
   const segundaAtual = inicioDaSemana(hoje)
   const contagem = (segunda: Date) => treinosEntre(historico, segunda, somarDias(segunda, 7)).length
   let seq = contagem(segundaAtual) >= meta ? 1 : 0

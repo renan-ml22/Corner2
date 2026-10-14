@@ -248,9 +248,8 @@ describe('sessoesDaSemana: semana fora do intervalo', () => {
     expect(sessoesDaSemana(preCompeticao, NaN)).toEqual([])
   })
 
-  // BUG: sessões sem `semanas` valem para "todas" (planos.ts:289), inclusive semanas
-  // inexistentes. Em Base Aeróbica (6 semanas), semana 0 ou 99 devolve as 4 sessões.
-  it.fails.each([0, -1, 7, 99])('Base Aeróbica (6 semanas): semana %s devolve lista vazia', semana => {
+  // Sessões sem `semanas` valem para todas as semanas do plano, mas não para semanas inexistentes.
+  it.each([0, -1, 7, 99])('Base Aeróbica (6 semanas): semana %s devolve lista vazia', semana => {
     expect(sessoesDaSemana(baseAerobica, semana)).toEqual([])
   })
 })
@@ -345,7 +344,7 @@ describe('resumoRounds', () => {
     }
   })
 
-  it.fails('plano sem sessões não deveria exibir "Infinity" na tela', () => {
+  it('plano sem sessões não deveria exibir "Infinity" na tela', () => {
     const vazio: Plano = { ...fundamentos, sessoes: [] }
     expect(resumoRounds(vazio)).not.toMatch(/Infinity/)
   })

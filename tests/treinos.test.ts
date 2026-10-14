@@ -205,10 +205,8 @@ describe('sessoesComStatus', () => {
     expect(ids(sessoesComStatus(PLANO, ATIVO, 3, [], quarta))).toContain('a-dom')
   })
 
-  it('semana além do total do plano: só aparecem as sessões sem intervalo de semanas', () => {
-    // Caracterização: sessões sem `semanas` valem para qualquer número de semana, mesmo além do total.
-    const r = sessoesComStatus(PLANO, ATIVO, 9, [], quarta)
-    expect(ids(r)).toEqual(['a-seg', 'a-qua', 'a-sex'])
+  it('semana além do total do plano não tem sessões', () => {
+    expect(sessoesComStatus(PLANO, ATIVO, PLANO.semanas + 1, [], quarta)).toEqual([])
   })
 
   it('treino do mesmo tipo no mesmo dia marca a sessão como feita e guarda o treino', () => {
@@ -623,6 +621,12 @@ describe('sequenciaDeSemanas', () => {
     expect(sequenciaDeSemanas([], 0, hoje)).toBe(0)
     const h = [...semana('2026-10-12', 1), ...semana('2026-10-05', 1)]
     expect(sequenciaDeSemanas(h, 0, hoje)).toBe(2)
+  })
+
+  it('meta NaN (dado corrompido) é tratada como 1 e não trava o cálculo', () => {
+    const hoje = new Date(2026, 9, 14, 12)
+    expect(sequenciaDeSemanas([treino('2026-10-12')], NaN, hoje)).toBe(1)
+    expect(sequenciaDeSemanas([], NaN, hoje)).toBe(0)
   })
 
   it('meta negativa também é tratada como 1', () => {

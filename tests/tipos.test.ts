@@ -337,9 +337,8 @@ describe('isLesao', () => {
     expect(isLesao({ ...lesao(), intensidade: Infinity })).toBe(false)
   })
 
-  // BUG: `v.regiao in REGIOES` (tipos.ts:155) consulta a cadeia de protótipos,
-  // então nomes herdados de Object.prototype passam como região válida.
-  it.fails.each(['constructor', 'toString', 'hasOwnProperty', '__proto__'])(
+  // `in` consulta a cadeia de protótipos: nomes herdados de Object.prototype não podem valer como região.
+  it.each(['constructor', 'toString', 'hasOwnProperty', '__proto__'])(
     'rejeita região herdada do protótipo: %s',
     regiao => {
       expect(isLesao({ ...lesao(), regiao })).toBe(false)

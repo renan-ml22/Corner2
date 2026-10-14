@@ -284,6 +284,7 @@ export function getPlano(id: string | null | undefined): Plano | null {
 
 /** Sessões de uma semana do plano (1-based), ordenadas de segunda a domingo. */
 export function sessoesDaSemana(plano: Plano, semana: number): SessaoPlano[] {
+  if (semana < 1 || semana > plano.semanas) return []
   const ordem = (d: number) => (d === 0 ? 7 : d)
   return plano.sessoes
     .filter(s => !s.semanas || (semana >= s.semanas[0] && semana <= s.semanas[1]))
@@ -292,6 +293,7 @@ export function sessoesDaSemana(plano: Plano, semana: number): SessaoPlano[] {
 
 /** Faixa de rounds do plano, para exibição (ex.: "8–12 × 3 min"). */
 export function resumoRounds(plano: Plano): string {
+  if (plano.sessoes.length === 0) return 'sem sessões'
   const rounds = plano.sessoes.map(s => s.rounds)
   const min = Math.min(...rounds)
   const max = Math.max(...rounds)
