@@ -1,0 +1,59 @@
+.barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(70px + max(22px, env(safe-area-inset-bottom)));
+  padding: 0 12px max(22px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  background: oklch(0.2 0.02 275 / 0.82);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid oklch(1 0 0 / 0.06);
+  z-index: 4;
+}
+
+.aba {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--color-neutral-400);
+  text-decoration: none;
+}
+
+.ativa {
+  color: var(--color-red);
+}
+
+.aba i {
+  font-size: 24px;
+}
+
+.aba span {
+  font-size: 11px;
+}
+
+.centro {
+  display: grid;
+  place-items: center;
+}
+
+.registrar {
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  border: 0;
+  margin-top: -26px;
+  cursor: pointer;
+  background: linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25));
+  color: #f4f2f2;
+  font-size: 28px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 24px oklch(0.63 0.21 25 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.25);
+}

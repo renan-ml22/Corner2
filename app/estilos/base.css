@@ -1,0 +1,59 @@
+/* Corner — tokens de design (baseado no Nocturne dark), reset, animações e área do app */
+:root {
+  --color-bg: #0e0f17;
+  --color-surface: #16182a;
+  --color-text: #e9e9ed;
+  --color-neutral-300: #a3a5b5;
+  --color-neutral-400: #7a7c8c;
+  --color-neutral-500: #595b6a;
+  --color-neutral-600: #3f4150;
+  --color-neutral-700: #2c2e3d;
+  --color-neutral-800: #1e2030;
+  --color-red: oklch(0.63 0.21 25);
+  --color-green: oklch(0.72 0.15 150);
+  --font-body: -apple-system, 'Inter', system-ui, sans-serif;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+
+  /* Aliases usados pelas páginas atuais (até serem migradas) */
+  --background: var(--color-bg);
+  --surface: var(--color-surface);
+  --surface-raised: var(--color-neutral-800);
+  --border: var(--color-neutral-700);
+  --foreground: var(--color-text);
+  --muted: var(--color-neutral-400);
+  --red: var(--color-red);
+  --blue: oklch(0.62 0.17 258);
+  --green: var(--color-green);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+a { color: inherit; text-decoration: none; }
+button, input { font-family: inherit; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes pop {
+  0%  { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); }
+  100%{ transform: scale(1); opacity: 1; }
+}
+
+.app-main {
+  min-height: 100vh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: calc(70px + max(22px, env(safe-area-inset-bottom)) + 16px);
+}

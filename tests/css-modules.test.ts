@@ -75,3 +75,24 @@ describe('CSS Modules', () => {
     })
   })
 })
+
+describe('declarações com prefixo de navegador', () => {
+  // O minificador do Next (Lightning CSS) trata um par "propriedade + -webkit-propriedade" assim:
+  // se a versão padrão vem ANTES da prefixada, ele mantém só a prefixada. O Chrome não entende
+  // `-webkit-backdrop-filter`, então o efeito some. Com o prefixado primeiro, os dois sobrevivem.
+  const todosCss = PASTAS.flatMap(p => arquivos(path.join(RAIZ, p), /\.css$/))
+
+  it.each(todosCss.map(f => [rel(f), f]))('%s: o prefixado -webkit- vem antes do padrão', (_nome, caminho) => {
+    const css = readFileSync(caminho, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    const problemas: string[] = []
+    for (const bloco of css.matchAll(/\{([^{}]*)\}/g)) {
+      const nomes = [...bloco[1].matchAll(/(?:^|;)\s*([-\w]+)\s*:/g)].map(m => m[1])
+      for (const prefixada of nomes.filter(n => n.startsWith('-webkit-'))) {
+        const padrao = prefixada.replace('-webkit-', '')
+        const iPadrao = nomes.indexOf(padrao)
+        if (iPadrao !== -1 && iPadrao < nomes.indexOf(prefixada)) problemas.push(`${padrao} está antes de ${prefixada}`)
+      }
+    }
+    expect(problemas).toEqual([])
+  })
+})

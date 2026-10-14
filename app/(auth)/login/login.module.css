@@ -173,8 +173,9 @@
   padding: 28px 22px 24px;
   border-radius: 28px;
   background: var(--glass);
-  backdrop-filter: blur(24px) saturate(140%);
+  /* O prefixado vem primeiro: o minificador do Next descarta o padrão se ele vier antes. */
   -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
   box-shadow: 0 30px 60px -20px oklch(0 0 0 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.06);
   animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s both;
 }

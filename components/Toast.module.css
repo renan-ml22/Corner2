@@ -1,0 +1,21 @@
+.aviso {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  top: calc(16px + env(safe-area-inset-top));
+  z-index: 30;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-neutral-800);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.icone {
+  font-size: 20px;
+  color: var(--color-green);
+}

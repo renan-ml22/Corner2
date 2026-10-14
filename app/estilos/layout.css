@@ -1,0 +1,98 @@
+/* ── Estrutura das telas: contêiner, títulos, grade de números e medidor ── */
+.page-container {
+  width: min(100% - 2.5rem, 32rem);
+  margin: 0 auto;
+  padding-top: 2.25rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 8vw, 2.5rem);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 2.25rem 0 0.9rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.section-heading span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.muted-copy {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.surface-card {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--surface);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.stat-card {
+  padding: 1.1rem;
+}
+
+.stat-value {
+  margin: 0.55rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.progress-bar {
+  height: 0.45rem;
+  margin-top: 0.9rem;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--border);
+}
+
+.progress-bar span {
+  display: block;
+  width: 0;
+  transition: width 0.4s ease;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue);
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    padding-top: 3rem;
+  }
+}
