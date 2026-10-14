@@ -1,0 +1,63 @@
+.settingsList {
+  list-style: none;
+}
+
+.settingsList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 0.88rem;
+}
+
+.settingsList li:last-child {
+  border-bottom: 0;
+}
+
+.settingsList span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.settingsList .settingsLabel {
+  display: grid;
+  gap: 2px;
+  color: var(--foreground);
+  font-size: 0.88rem;
+}
+
+.settingsLabel small { color: var(--muted); font-size: 0.72rem; }
+
+.settingsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.miniStepper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.miniStepper button {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0.6rem;
+  background: var(--color-neutral-700);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.miniStepper button:disabled { opacity: 0.35; cursor: default; }
+
+.miniStepper output { min-width: 2rem; font-weight: 700; text-align: center; }
+
+:global(.field-input).compacto { width: auto; min-height: 38px; padding: 0 10px; font-size: 14px; }

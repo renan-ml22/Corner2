@@ -1,0 +1,117 @@
+.streakCard {
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--red) 20%, var(--surface)), var(--surface));
+}
+
+.streakCard::after {
+  position: absolute;
+  top: -4rem;
+  right: -2rem;
+  width: 10rem;
+  height: 10rem;
+  border: 1px solid color-mix(in oklch, var(--red) 40%, transparent);
+  border-radius: 50%;
+  content: "";
+}
+
+.streakCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.streakLabel {
+  margin: 0;
+  color: #ffb1a6;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.streakNumber {
+  margin: 0.35rem 0 0;
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.08em;
+  line-height: 1;
+}
+
+.streakNumber span {
+  margin-left: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.streakMark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--red);
+  color: white;
+  font-size: 1.25rem;
+}
+
+.weekRow {
+  display: grid;
+  position: relative;
+  z-index: 1;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
+  margin-top: 1.5rem;
+}
+
+.dayDot {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.dayDot i {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  font-style: normal;
+  font-size: 0.7rem;
+}
+
+.dayDot.done i {
+  border-color: var(--red);
+  background: var(--red);
+  color: white;
+}
+
+.dayDot.today {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.dayDot.today i {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--red) 24%, transparent);
+}
+
+.streakGoal {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.streakGoal :global(.progress-bar) { margin-top: 0.5rem; }
+
+.streakGoal :global(.progress-bar) span { background: var(--red); }

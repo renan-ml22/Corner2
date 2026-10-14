@@ -10,6 +10,7 @@ import { usePainelAcoes } from "./PainelProvider";
 import { chaveDia } from "@/lib/datas";
 import { pedirPermissaoNotificacao } from "@/lib/notificar";
 import type { Postura } from "@/lib/tipos";
+import estilos from './PreferenciasCard.module.css'
 
 export default function PreferenciasCard() {
   const pronto = useHidratado();
@@ -60,21 +61,21 @@ export default function PreferenciasCard() {
   return (
     <>
       <section className="surface-card">
-        <ul className="settings-list">
+        <ul className={estilos.settingsList}>
           <li>
             Plano ativo
-            <Link href="/plano" className="settings-link">{plano ? plano.nome : "Nenhum"} <i className="ph-bold ph-caret-right" aria-hidden="true" /></Link>
+            <Link href="/plano" className={estilos.settingsLink}>{plano ? plano.nome : "Nenhum"} <i className="ph-bold ph-caret-right" aria-hidden="true" /></Link>
           </li>
           <li>
-            <span className="settings-label">Postura<small>Define qual mão fica à frente nas orientações</small></span>
-            <select className="field-input compacto" value={config.postura} onChange={e => atualizarConfig({ postura: e.target.value as Postura })} aria-label="Postura">
+            <span className={estilos.settingsLabel}>Postura<small>Define qual mão fica à frente nas orientações</small></span>
+            <select className={`field-input ${estilos.compacto}`} value={config.postura} onChange={e => atualizarConfig({ postura: e.target.value as Postura })} aria-label="Postura">
               <option value="ortodoxo">Ortodoxo</option>
               <option value="canhoto">Canhoto</option>
             </select>
           </li>
           <li>
-            <span className="settings-label">Meta semanal<small>Treinos por semana para manter a sequência</small></span>
-            <div className="mini-stepper">
+            <span className={estilos.settingsLabel}>Meta semanal<small>Treinos por semana para manter a sequência</small></span>
+            <div className={estilos.miniStepper}>
               <button type="button" onClick={() => atualizarConfig({ metaSemanal: Math.max(1, meta - 1) })} disabled={meta <= 1} aria-label="Diminuir meta semanal">
                 <i className="ph-bold ph-minus" />
               </button>
@@ -85,13 +86,13 @@ export default function PreferenciasCard() {
             </div>
           </li>
           <li>
-            <label htmlFor="pref-notif" className="settings-label">Lembretes<small>Aviso diário no horário escolhido</small></label>
+            <label htmlFor="pref-notif" className={estilos.settingsLabel}>Lembretes<small>Aviso diário no horário escolhido</small></label>
             <input id="pref-notif" type="checkbox" role="switch" className="switch" checked={config.notificacoes} onChange={e => void alternarNotificacoes(e.target.checked)} />
           </li>
           {config.notificacoes && (
             <li>
-              <label htmlFor="pref-hora" className="settings-label">Horário do lembrete<small>Só dispara com o app aberto neste aparelho</small></label>
-              <input id="pref-hora" type="time" className="field-input compacto" value={config.lembreteHora} onChange={e => void definirLembrete(e.target.value)} />
+              <label htmlFor="pref-hora" className={estilos.settingsLabel}>Horário do lembrete<small>Só dispara com o app aberto neste aparelho</small></label>
+              <input id="pref-hora" type="time" className={`field-input ${estilos.compacto}`} value={config.lembreteHora} onChange={e => void definirLembrete(e.target.value)} />
             </li>
           )}
         </ul>

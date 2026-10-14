@@ -1,3 +1,5 @@
+import estilos from './StreakCard.module.css'
+
 const LETRAS = ["S", "T", "Q", "Q", "S", "S", "D"];
 
 interface StreakCardProps {
@@ -16,20 +18,20 @@ export default function StreakCard({ sequencia, feitosSemana, meta, dias, hojeIn
   const progresso = Math.min(100, Math.round((feitosSemana / Math.max(1, meta)) * 100));
 
   return (
-    <section className="surface-card streak-card" aria-label="Sequência semanal">
-      <div className="streak-card-top">
+    <section className={`surface-card ${estilos.streakCard}`} aria-label="Sequência semanal">
+      <div className={estilos.streakCardTop}>
         <div>
-          <p className="streak-label">Sequência atual</p>
-          <p className="streak-number">
+          <p className={estilos.streakLabel}>Sequência atual</p>
+          <p className={estilos.streakNumber}>
             {sequencia} <span>{sequencia === 1 ? "semana na meta" : "semanas na meta"}</span>
           </p>
         </div>
-        <div className="streak-mark" aria-hidden="true"><i className="ph-fill ph-fire" /></div>
+        <div className={estilos.streakMark} aria-hidden="true"><i className="ph-fill ph-fire" /></div>
       </div>
-      <div className="week-row">
+      <div className={estilos.weekRow}>
         {dias.map((feito, index) => (
           <div
-            className={`day-dot${feito ? " done" : ""}${index === hojeIndex ? " today" : ""}`}
+            className={`${estilos.dayDot}${feito ? ` ${estilos.done}` : ""}${index === hojeIndex ? ` ${estilos.today}` : ""}`}
             key={index}
             aria-label={`${LETRAS[index]}: ${feito ? "treinou" : "sem treino"}`}
           >
@@ -38,7 +40,7 @@ export default function StreakCard({ sequencia, feitosSemana, meta, dias, hojeIn
           </div>
         ))}
       </div>
-      <div className="streak-goal">
+      <div className={estilos.streakGoal}>
         <span>{feitosSemana} de {meta} treinos nesta semana</span>
         <div className="progress-bar" aria-hidden="true"><span style={{ width: `${progresso}%` }} /></div>
       </div>

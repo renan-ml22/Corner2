@@ -1,0 +1,17 @@
+.graficoPeso svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.gpGrade { stroke: var(--border); stroke-width: 1; }
+
+.gpMeta { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
+
+.gpEixo { fill: var(--muted); font-size: 10px; }
+
+.gpLinha { fill: none; stroke: var(--blue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.gpMarca { fill: var(--blue); stroke: var(--surface); stroke-width: 2; }
+
+.gpValor { fill: var(--foreground); font-size: 12px; font-weight: 700; }
+
+.gpPonto { outline: none; cursor: pointer; }
+
+.gpPonto:focus-visible .gpMarca { stroke: var(--foreground); }

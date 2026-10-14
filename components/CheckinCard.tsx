@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCheckins } from "@/hooks/useSaude";
 import { useToast } from "@/hooks/useToast";
 import { prontidao } from "@/lib/saude";
+import estilos from './CheckinCard.module.css'
 
 type Campo = "sono" | "energia" | "dor";
 
@@ -22,12 +23,12 @@ export default function CheckinCard() {
   if (checkinHoje && !refazendo) {
     const p = prontidao(checkinHoje);
     return (
-      <section className="surface-card checkin-resumo" aria-label="Check-in de hoje">
+      <section className={`surface-card ${estilos.checkinResumo}`} aria-label="Check-in de hoje">
         <div>
           <p className="stat-label">Prontidão de hoje</p>
           <p className="stat-value" style={{ marginTop: 4 }}>{p.toFixed(1).replace(".", ",")}<small>/5</small></p>
         </div>
-        <p className="checkin-detalhe">Sono {checkinHoje.sono} · Energia {checkinHoje.energia} · Dor {checkinHoje.dor}</p>
+        <p className={estilos.checkinDetalhe}>Sono {checkinHoje.sono} · Energia {checkinHoje.energia} · Dor {checkinHoje.dor}</p>
         <button type="button" className="btn-ghost small" onClick={() => { setValores({}); setRefazendo(true); }}>Refazer</button>
       </section>
     );
@@ -36,13 +37,13 @@ export default function CheckinCard() {
   const completo = valores.sono !== undefined && valores.energia !== undefined && valores.dor !== undefined;
 
   return (
-    <section className="surface-card checkin-card" aria-label="Check-in de hoje">
+    <section className={`surface-card ${estilos.checkinCard}`} aria-label="Check-in de hoje">
       <h3>Como você está hoje?</h3>
       <p className="muted-copy" style={{ marginTop: 4 }}>Leva 10 segundos e ajusta o treino ao seu corpo.</p>
       {CAMPOS.map(c => (
-        <div key={c.id} className="checkin-campo" role="radiogroup" aria-label={c.rotulo}>
+        <div key={c.id} className={estilos.checkinCampo} role="radiogroup" aria-label={c.rotulo}>
           <span>{c.rotulo}</span>
-          <div className="checkin-notas">
+          <div className={estilos.checkinNotas}>
             {[1, 2, 3, 4, 5].map(n => (
               <button
                 key={n}
@@ -56,7 +57,7 @@ export default function CheckinCard() {
               </button>
             ))}
           </div>
-          <div className="checkin-extremos"><small>1 = {c.baixo}</small><small>5 = {c.alto}</small></div>
+          <div className={estilos.checkinExtremos}><small>1 = {c.baixo}</small><small>5 = {c.alto}</small></div>
         </div>
       ))}
       <button

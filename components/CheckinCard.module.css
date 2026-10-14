@@ -1,0 +1,57 @@
+.checkinCard { padding: 1.1rem; }
+
+.checkinCard h3 { font-size: 1rem; }
+
+.checkinCard :global(.btn-primary):disabled { opacity: 0.45; cursor: default; }
+
+.checkinCampo { margin-top: 1rem; }
+
+.checkinCampo > span { font-size: 0.85rem; color: var(--color-neutral-300); }
+
+.checkinNotas {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 0.45rem;
+}
+
+.checkinNotas button {
+  height: 2.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: var(--color-neutral-800);
+  color: var(--color-neutral-300);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.checkinNotas button:global(.ativo) {
+  border-color: var(--red);
+  background: color-mix(in oklch, var(--red) 22%, var(--color-neutral-800));
+  color: #fff;
+}
+
+.checkinNotas button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.checkinExtremos {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  color: var(--muted);
+}
+
+.checkinExtremos small { font-size: 0.7rem; }
+
+.checkinResumo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.checkinResumo :global(.stat-value) small { color: var(--muted); font-size: 0.85rem; font-weight: 500; }
+
+.checkinDetalhe { flex: 1; color: var(--muted); font-size: 0.78rem; text-align: right; }

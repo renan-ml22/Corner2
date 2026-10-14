@@ -1,0 +1,74 @@
+.checklistCard {
+  overflow: hidden;
+}
+
+.checklistHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.checklistTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checklistTitle h3 {
+  font-size: 0.95rem;
+}
+
+.checklistTitle p {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.checklistCount {
+  color: var(--blue);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.checklistIcon {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 0.7rem;
+  background: color-mix(in oklch, var(--blue) 18%, transparent);
+  color: #99bcff;
+}
+
+.checklistItems {
+  padding: 0 1.2rem;
+  list-style: none;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 0.87rem;
+}
+
+li:last-child > .checklistItem {
+  border-bottom: 0;
+}
+
+.checklistItem input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--blue);
+}
+
+.checklistItem:has(input:checked) span {
+  color: var(--muted);
+  text-decoration: line-through;
+}

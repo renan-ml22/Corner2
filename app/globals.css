@@ -113,187 +113,6 @@ button, input { font-family: inherit; }
   background: var(--surface);
 }
 
-.streak-card {
-  position: relative;
-  overflow: hidden;
-  padding: 1.35rem;
-  background: linear-gradient(135deg, color-mix(in oklch, var(--red) 20%, var(--surface)), var(--surface));
-}
-
-.streak-card::after {
-  position: absolute;
-  top: -4rem;
-  right: -2rem;
-  width: 10rem;
-  height: 10rem;
-  border: 1px solid color-mix(in oklch, var(--red) 40%, transparent);
-  border-radius: 50%;
-  content: "";
-}
-
-.streak-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.streak-label {
-  margin: 0;
-  color: #ffb1a6;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.streak-number {
-  margin: 0.35rem 0 0;
-  font-size: 2.75rem;
-  font-weight: 800;
-  letter-spacing: -0.08em;
-  line-height: 1;
-}
-
-.streak-number span {
-  margin-left: 0.45rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.streak-mark {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: 2.6rem;
-  height: 2.6rem;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--red);
-  color: white;
-  font-size: 1.25rem;
-}
-
-.week-row {
-  display: grid;
-  position: relative;
-  z-index: 1;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.35rem;
-  margin-top: 1.5rem;
-}
-
-.day-dot {
-  display: grid;
-  gap: 0.4rem;
-  justify-items: center;
-  color: var(--muted);
-  font-size: 0.65rem;
-}
-
-.day-dot i {
-  display: grid;
-  width: 1.85rem;
-  height: 1.85rem;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
-  font-style: normal;
-  font-size: 0.7rem;
-}
-
-.day-dot.done i {
-  border-color: var(--red);
-  background: var(--red);
-  color: white;
-}
-
-.day-dot.today {
-  color: var(--foreground);
-  font-weight: 700;
-}
-
-.day-dot.today i {
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--red) 24%, transparent);
-}
-
-.checklist-card {
-  overflow: hidden;
-}
-
-.checklist-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.15rem 1.2rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.checklist-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.checklist-title h3 {
-  font-size: 0.95rem;
-}
-
-.checklist-title p {
-  margin-top: 0.2rem;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.checklist-count {
-  color: var(--blue);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.checklist-icon {
-  display: grid;
-  width: 2.2rem;
-  height: 2.2rem;
-  place-items: center;
-  border-radius: 0.7rem;
-  background: color-mix(in oklch, var(--blue) 18%, transparent);
-  color: #99bcff;
-}
-
-.checklist-items {
-  padding: 0 1.2rem;
-  list-style: none;
-}
-
-.checklist-item {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--border);
-  color: var(--foreground);
-  cursor: pointer;
-  font-size: 0.87rem;
-}
-
-li:last-child > .checklist-item {
-  border-bottom: 0;
-}
-
-.checklist-item input {
-  width: 1.15rem;
-  height: 1.15rem;
-  accent-color: var(--blue);
-}
-
-.checklist-item:has(input:checked) span {
-  color: var(--muted);
-  text-decoration: line-through;
-}
-
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -355,29 +174,6 @@ li:last-child > .checklist-item {
   margin-top: 0.25rem;
   color: var(--muted);
   font-size: 0.8rem;
-}
-
-.settings-list {
-  list-style: none;
-}
-
-.settings-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.2rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--foreground);
-  font-size: 0.88rem;
-}
-
-.settings-list li:last-child {
-  border-bottom: 0;
-}
-
-.settings-list span {
-  color: var(--muted);
-  font-size: 0.78rem;
 }
 
 /* ── Utilidades ─────────────────────────────────────────────── */
@@ -525,17 +321,6 @@ li:last-child > .checklist-item {
 .cta-card strong { font-size: 0.9rem; }
 .cta-card small { color: var(--muted); font-size: 0.78rem; }
 .cta-card:hover { background: var(--surface-raised); }
-
-.streak-goal {
-  position: relative;
-  z-index: 1;
-  margin-top: 1.25rem;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.streak-goal .progress-bar { margin-top: 0.5rem; }
-.streak-goal .progress-bar span { background: var(--red); }
 
 /* ── Sessões do plano ───────────────────────────────────────── */
 .sessao-list {
@@ -787,43 +572,6 @@ li:last-child > .checklist-item {
 .historico-list time small { color: var(--muted); font-size: 0.7rem; }
 
 /* ── Preferências (Perfil) ──────────────────────────────────── */
-.settings-list .settings-label {
-  display: grid;
-  gap: 2px;
-  color: var(--foreground);
-  font-size: 0.88rem;
-}
-
-.settings-label small { color: var(--muted); font-size: 0.72rem; }
-
-.settings-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.mini-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.mini-stepper button {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border: 0;
-  border-radius: 0.6rem;
-  background: var(--color-neutral-700);
-  color: var(--foreground);
-  cursor: pointer;
-}
-
-.mini-stepper button:disabled { opacity: 0.35; cursor: default; }
-.mini-stepper output { min-width: 2rem; font-weight: 700; text-align: center; }
 
 .switch {
   position: relative;
@@ -906,21 +654,7 @@ li:last-child > .checklist-item {
 .destaque-cta > i:first-child { color: var(--red); }
 
 /* ── Check-in e ajuste do dia ───────────────────────────────── */
-.checkin-card { padding: 1.1rem; }
-.checkin-card h3 { font-size: 1rem; }
-.checkin-card .btn-primary:disabled { opacity: 0.45; cursor: default; }
 
-.checkin-campo { margin-top: 1rem; }
-.checkin-campo > span { font-size: 0.85rem; color: var(--color-neutral-300); }
-
-.checkin-notas {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  margin-top: 0.45rem;
-}
-
-.checkin-notas button,
 .seg button {
   height: 2.6rem;
   border: 1px solid transparent;
@@ -933,35 +667,13 @@ li:last-child > .checklist-item {
   transition: background 0.15s, color 0.15s;
 }
 
-.checkin-notas button.ativo,
 .seg button.ativo {
   border-color: var(--red);
   background: color-mix(in oklch, var(--red) 22%, var(--color-neutral-800));
   color: #fff;
 }
 
-.checkin-notas button:focus-visible,
 .seg button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-
-.checkin-extremos {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.3rem;
-  color: var(--muted);
-}
-
-.checkin-extremos small { font-size: 0.7rem; }
-
-.checkin-resumo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.1rem;
-}
-
-.checkin-resumo .stat-value small { color: var(--muted); font-size: 0.85rem; font-weight: 500; }
-.checkin-detalhe { flex: 1; color: var(--muted); font-size: 0.78rem; text-align: right; }
 
 .ajuste-card {
   display: flex;
@@ -1020,7 +732,6 @@ li:last-child > .checklist-item {
 textarea.field-input { padding: 12px 14px; line-height: 1.45; }
 .field-input::placeholder { color: var(--muted); }
 .field-input:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-.field-input.compacto { width: auto; min-height: 38px; padding: 0 10px; font-size: 14px; }
 
 .form-card { padding: 1.1rem; }
 .linha-form { display: flex; gap: 0.6rem; }
@@ -1148,15 +859,6 @@ textarea.field-input { padding: 12px 14px; line-height: 1.45; }
 }
 
 /* ── Gráfico de peso ────────────────────────────────────────── */
-.grafico-peso svg { display: block; width: 100%; height: auto; overflow: visible; }
-.gp-grade { stroke: var(--border); stroke-width: 1; }
-.gp-meta { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
-.gp-eixo { fill: var(--muted); font-size: 10px; }
-.gp-linha { fill: none; stroke: var(--blue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.gp-marca { fill: var(--blue); stroke: var(--surface); stroke-width: 2; }
-.gp-valor { fill: var(--foreground); font-size: 12px; font-weight: 700; }
-.gp-ponto { outline: none; cursor: pointer; }
-.gp-ponto:focus-visible .gp-marca { stroke: var(--foreground); }
 
 /* ── Carga de treino ────────────────────────────────────────── */
 .carga-card,
@@ -1171,23 +873,6 @@ textarea.field-input { padding: 12px 14px; line-height: 1.45; }
 .carga-atencao .carga-topo > i { color: oklch(0.8 0.14 85); }
 .carga-alta { border-color: color-mix(in oklch, var(--red) 50%, var(--border)); }
 .carga-alta .carga-topo > i { color: var(--red); }
-
-.logout-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 1rem;
-  color: oklch(0.75 0.15 25);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.logout-button:hover {
-  background: var(--surface-raised);
-}
 
 @media (min-width: 640px) {
   .page-container {

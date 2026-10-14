@@ -1,6 +1,7 @@
 "use client";
 
 import { logout } from "@/app/actions/auth";
+import estilos from './SairButton.module.css'
 
 async function limparCachesOffline() {
   try {
@@ -21,7 +22,7 @@ export default function SairButton() {
       }}
       style={{ marginTop: 24 }}
     >
-      <button type="submit" className="surface-card logout-button">
+      <button type="submit" className={`surface-card ${estilos.logoutButton}`}>
         <i className="ph ph-sign-out" aria-hidden="true" /> Sair da conta
       </button>
     </form>
