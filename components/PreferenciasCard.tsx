@@ -87,7 +87,7 @@ export default function PreferenciasCard() {
           </li>
           <li>
             <label htmlFor="pref-notif" className={estilos.settingsLabel}>Lembretes<small>Aviso diário no horário escolhido</small></label>
-            <input id="pref-notif" type="checkbox" role="switch" className="switch" checked={config.notificacoes} onChange={e => void alternarNotificacoes(e.target.checked)} />
+            <input id="pref-notif" type="checkbox" role="switch" className={estilos.switch} checked={config.notificacoes} onChange={e => void alternarNotificacoes(e.target.checked)} />
           </li>
           {config.notificacoes && (
             <li>

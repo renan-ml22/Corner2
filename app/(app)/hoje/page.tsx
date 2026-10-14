@@ -21,6 +21,7 @@ import {
   sessaoDeHoje, sugestaoSemPlano, treinosNaSemanaAtual,
 } from "@/lib/treinos";
 import estilos from './hoje.module.css'
+import estilosSessao from '@/components/SessaoCard.module.css'
 
 // Cada nível de ajuste sugerido tem a sua cor; "normal" não tem destaque.
 const CLASSE_NIVEL: Record<string, string> = { reduzir: estilos.nivelReduzir, leve: estilos.nivelLeve, descanso: estilos.nivelDescanso };
@@ -125,19 +126,19 @@ export default function HojePage() {
 
       {!plano && efetivo && (
         <>
-          <section className="surface-card sessao-card destaque">
-            <div className="sessao-body">
+          <section className={`surface-card ${estilosSessao.sessaoCard} destaque`}>
+            <div className={estilosSessao.sessaoBody}>
               <span className="tipo-icon" aria-hidden="true"><i className={`ph-fill ${CAT_ICONS[efetivo.tipo]}`} /></span>
               <div>
                 <h3>Sugestão: {CAT_LABELS[efetivo.tipo]}</h3>
-                <p className="sessao-meta">{efetivo.rounds} rounds de {efetivo.minPorRound} min</p>
+                <p className={estilosSessao.sessaoMeta}>{efetivo.rounds} rounds de {efetivo.minPorRound} min</p>
               </div>
             </div>
-            <p className="sessao-descricao">{sugestao.motivo}</p>
+            <p className={estilosSessao.sessaoDescricao}>{sugestao.motivo}</p>
             {descansoDoDia ? (
-              <p className="sessao-descricao"><strong>Hoje é dia de descanso.</strong> Volte amanhã com o corpo recuperado.</p>
+              <p className={estilosSessao.sessaoDescricao}><strong>Hoje é dia de descanso.</strong> Volte amanhã com o corpo recuperado.</p>
             ) : (
-              <div className="sessao-acoes">
+              <div className={estilosSessao.sessaoAcoes}>
                 {hrefTreino && <Link href={hrefTreino} className="btn-primary"><i className="ph-fill ph-timer" aria-hidden="true" /> Iniciar com cronômetro</Link>}
                 {registrarEfetivo && <button type="button" className="btn-ghost" onClick={registrarEfetivo}><i className="ph-bold ph-plus" aria-hidden="true" /> Registrar sem cronômetro</button>}
               </div>

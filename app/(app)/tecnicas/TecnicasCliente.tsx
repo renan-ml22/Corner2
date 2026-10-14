@@ -11,6 +11,7 @@ import {
 import { NIVEL_LABEL, type Nivel } from "@/data/planos";
 import { nivelDoAtleta } from "@/lib/sessao";
 import estilos from './tecnicas.module.css'
+import estilosSessao from '@/components/SessaoCard.module.css'
 
 export type Aba = "golpes" | "combinacoes" | "defesa" | "preparacao";
 
@@ -74,8 +75,8 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
                   <span className={estilos.golpeNum} aria-hidden="true">{g.numero}</span>
                   <div>
                     <h3>{g.nome}</h3>
-                    <p className="sessao-meta">{g.resumo}</p>
-                    <p className="sessao-descricao">{g.dica}</p>
+                    <p className={estilosSessao.sessaoMeta}>{g.resumo}</p>
+                    <p className={estilosSessao.sessaoDescricao}>{g.dica}</p>
                   </div>
                 </article>
               ))}
@@ -99,7 +100,7 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
                   <span className={estilos.comboNotacao}>{c.notacao}</span>
                   <div>
                     <h3>{c.nome}</h3>
-                    <p className="sessao-descricao" style={{ marginTop: 4 }}>{c.descricao}</p>
+                    <p className={estilosSessao.sessaoDescricao} style={{ marginTop: 4 }}>{c.descricao}</p>
                   </div>
                   <span className="nivel-badge">{NIVEL_LABEL[c.nivel]}</span>
                 </article>
@@ -118,8 +119,8 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
                   <span className={estilos.golpeNum} aria-hidden="true"><i className="ph-fill ph-shield-check" /></span>
                   <div>
                     <h3>{d.nome}</h3>
-                    <p className="sessao-meta">{d.resumo}</p>
-                    <p className="sessao-descricao">{d.dica}</p>
+                    <p className={estilosSessao.sessaoMeta}>{d.resumo}</p>
+                    <p className={estilosSessao.sessaoDescricao}>{d.dica}</p>
                   </div>
                 </article>
               ))}
