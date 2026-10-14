@@ -7,6 +7,7 @@ import { useHistorico } from "@/hooks/useHistorico";
 import { usePreferencias } from "@/hooks/usePreferencias";
 import { useCheckins, useLesoes, usePesos } from "@/hooks/useSaude";
 import { useToast } from "@/hooks/useToast";
+import { aoTeclarNoGrupo } from "@/lib/teclado";
 import GraficoPeso from "@/components/GraficoPeso";
 import { deChave, diferencaDias, formatarDataCurta } from "@/lib/datas";
 import { prontidao, resumoCabeca } from "@/lib/saude";
@@ -164,9 +165,9 @@ export default function SaudeCliente() {
             {(Object.keys(REGIOES) as RegiaoCorpo[]).map(r => <option key={r} value={r}>{REGIOES[r]}</option>)}
           </select>
           <p className={estilos.campoRotulo}>Intensidade (1 = leve, 5 = forte)</p>
-          <div className="seg" role="radiogroup" aria-label="Intensidade da dor">
+          <div className="seg" role="radiogroup" aria-label="Intensidade da dor" onKeyDown={e => aoTeclarNoGrupo(e, "radio")}>
             {[1, 2, 3, 4, 5].map(n => (
-              <button key={n} type="button" role="radio" aria-checked={intensidade === n} className={intensidade === n ? "ativo" : ""} onClick={() => setIntensidade(n)}>{n}</button>
+              <button key={n} type="button" role="radio" aria-checked={intensidade === n} tabIndex={intensidade === n ? 0 : -1} className={intensidade === n ? "ativo" : ""} onClick={() => setIntensidade(n)}>{n}</button>
             ))}
           </div>
           <input className="field-input" style={{ marginTop: 12 }} placeholder="Observação (opcional)" maxLength={200} value={nota} onChange={e => setNota(e.target.value)} aria-label="Observação sobre a lesão" />

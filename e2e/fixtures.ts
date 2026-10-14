@@ -37,7 +37,7 @@ export const test = base.extend<{ pagina: Page; semRedeExterna: void }>({
   // O app carrega os ícones de unpkg.com: nos testes, qualquer domínio externo responde vazio.
   // Deixa os testes rápidos e independentes de internet (sem gerar erro de console).
   semRedeExterna: [async ({ context }, aplicar) => {
-    await context.route(url => url.hostname !== 'localhost', rota => rota.fulfill({ status: 200, body: '' }))
+    await context.route(url => url.hostname !== 'localhost', rota => rota.fulfill({ status: 200, body: '', contentType: 'text/css', headers: { 'access-control-allow-origin': '*' } }))
     await aplicar()
   }, { auto: true }],
 
@@ -45,7 +45,7 @@ export const test = base.extend<{ pagina: Page; semRedeExterna: void }>({
     const erros: string[] = []
     const vigiar = (p: Page) => {
       p.on('pageerror', e => erros.push(`pageerror: ${e.message}`))
-      p.on('console', m => { if (m.type() === 'error') erros.push(`console: ${m.text()}`) })
+      p.on('console', m => { if (m.type() === 'error') erros.push(`console: ${m.text()} (${m.location().url})`) })
       p.on('dialog', d => void d.accept()) // window.confirm da importação de backup
     }
     context.on('page', vigiar)

@@ -27,6 +27,7 @@ export default defineConfig({
     timezoneId: 'America/Sao_Paulo',
     viewport: { width: 420, height: 880 },
     acceptDownloads: true,
+    serviceWorkers: 'block', // o service worker buscaria o CDN de ícones fora do alcance das respostas falsas
     trace: 'retain-on-failure',
   },
   webServer: {

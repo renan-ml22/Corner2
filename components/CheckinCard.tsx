@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCheckins } from "@/hooks/useSaude";
 import { useToast } from "@/hooks/useToast";
+import { aoTeclarNoGrupo } from "@/lib/teclado";
 import { prontidao } from "@/lib/saude";
 import estilos from './CheckinCard.module.css'
 
@@ -41,7 +42,7 @@ export default function CheckinCard() {
       <h3>Como você está hoje?</h3>
       <p className="muted-copy" style={{ marginTop: 4 }}>Leva 10 segundos e ajusta o treino ao seu corpo.</p>
       {CAMPOS.map(c => (
-        <div key={c.id} className={estilos.checkinCampo} role="radiogroup" aria-label={c.rotulo}>
+        <div key={c.id} className={estilos.checkinCampo} role="radiogroup" aria-label={c.rotulo} onKeyDown={e => aoTeclarNoGrupo(e, "radio")}>
           <span>{c.rotulo}</span>
           <div className={estilos.checkinNotas}>
             {[1, 2, 3, 4, 5].map(n => (
@@ -50,6 +51,7 @@ export default function CheckinCard() {
                 type="button"
                 role="radio"
                 aria-checked={valores[c.id] === n}
+                tabIndex={valores[c.id] === n || (valores[c.id] === undefined && n === 1) ? 0 : -1}
                 className={valores[c.id] === n ? "ativo" : ""}
                 onClick={() => setValores(v => ({ ...v, [c.id]: n }))}
               >

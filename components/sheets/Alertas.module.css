@@ -23,7 +23,8 @@
   border-left: 3px solid var(--cor);
 }
 
-.critico { --cor: oklch(0.63 0.21 25); }
+/* --cor-texto: tom mais claro para o rótulo em texto pequeno (contraste 4,5:1); a borda e o ícone usam --cor. */
+.critico { --cor: var(--color-red); --cor-texto: var(--color-red-texto); }
 .atencao { --cor: oklch(0.8 0.14 85); }
 .info { --cor: oklch(0.7 0.14 258); }
 
@@ -42,7 +43,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--cor);
+  color: var(--cor-texto, var(--cor));
 }
 
 .titulo {

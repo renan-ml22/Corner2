@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useHistorico } from '@/hooks/useHistorico'
 import { usePlano } from '@/hooks/usePlano'
 import { novoId } from '@/lib/id'
@@ -58,7 +58,7 @@ export function PainelProvider({ children }: { children: ReactNode }) {
   const { adicionarTreino } = useHistorico()
   const { concluirChecklistDeHoje } = usePlano()
 
-  const [sheet, setSheet] = useState<Sheet>(null)
+  const [sheet, setSheetBruto] = useState<Sheet>(null)
   const [regType, setRegTypeRaw] = useState<RegType>('spa')
   const [rounds, setRounds] = useState(4)
   const [roundMin, setRoundMin] = useState(2)
@@ -68,7 +68,25 @@ export function PainelProvider({ children }: { children: ReactNode }) {
   const [ultimoSalvo, setUltimoSalvo] = useState<WorkoutEntry | null>(null)
   const [viaCronometro, setViaCronometro] = useState(false)
   const t0Ref = useRef(0)
+  const sheetRef = useRef<Sheet>(null)
+  const abridorRef = useRef<HTMLElement | null>(null)
+  const restaurarRef = useRef<HTMLElement | null>(null)
   const presetRef = useRef<PresetTreino | null>(null)
+
+  // Guarda quem abriu o painel para devolver o foco a esse elemento quando o painel fecha.
+  const setSheet = useCallback((s: Sheet) => {
+    if (s !== null && sheetRef.current === null) abridorRef.current = document.activeElement as HTMLElement | null
+    if (s === null) { restaurarRef.current = abridorRef.current; abridorRef.current = null }
+    sheetRef.current = s
+    setSheetBruto(s)
+  }, [])
+
+  useEffect(() => {
+    if (sheet !== null) return
+    const el = restaurarRef.current
+    restaurarRef.current = null
+    if (el && el.isConnected) el.focus()
+  }, [sheet])
 
   const setRegType = useCallback((t: RegType) => {
     setRegTypeRaw(t)
@@ -92,12 +110,12 @@ export function PainelProvider({ children }: { children: ReactNode }) {
     } else {
       setSheet('type')
     }
-  }, [])
+  }, [setSheet])
 
-  const openNotif = useCallback(() => setSheet('notif'), [])
-  const openPlanos = useCallback(() => setSheet('planos'), [])
-  const openOnboarding = useCallback(() => setSheet('onboarding'), [])
-  const closeSheet = useCallback(() => setSheet(null), [])
+  const openNotif = useCallback(() => setSheet('notif'), [setSheet])
+  const openPlanos = useCallback(() => setSheet('planos'), [setSheet])
+  const openOnboarding = useCallback(() => setSheet('onboarding'), [setSheet])
+  const closeSheet = useCallback(() => setSheet(null), [setSheet])
 
   const saveWorkout = useCallback(() => {
     const preset = presetRef.current
@@ -118,9 +136,9 @@ export function PainelProvider({ children }: { children: ReactNode }) {
     concluirChecklistDeHoje(regType, agora)
     presetRef.current = null
     setSheet('done')
-  }, [regType, rounds, roundMin, rpe, extras, adicionarTreino, concluirChecklistDeHoje])
+  }, [regType, rounds, roundMin, rpe, extras, adicionarTreino, concluirChecklistDeHoje, setSheet])
 
-  const acoes = useMemo<Acoes>(() => ({ setSheet, openRegister, openNotif, openPlanos, openOnboarding, closeSheet }), [openRegister, openNotif, openPlanos, openOnboarding, closeSheet])
+  const acoes = useMemo<Acoes>(() => ({ setSheet, openRegister, openNotif, openPlanos, openOnboarding, closeSheet }), [setSheet, openRegister, openNotif, openPlanos, openOnboarding, closeSheet])
   const estado = useMemo<Estado>(() => ({
     sheet, regType, setRegType, rounds, setRounds, roundMin, setRoundMin, rpe, setRpe, extras, setExtras, elapsed, ultimoSalvo, viaCronometro, saveWorkout,
   }), [sheet, regType, setRegType, rounds, roundMin, rpe, extras, setExtras, elapsed, ultimoSalvo, viaCronometro, saveWorkout])

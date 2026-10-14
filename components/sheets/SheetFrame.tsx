@@ -1,13 +1,16 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
+import { useDialogo } from '@/hooks/useDialogo'
 import animacoes from '../animacoes.module.css'
 import comum from './comum.module.css'
 import estilos from './SheetFrame.module.css'
 
 /** Moldura dos painéis que sobem de baixo da tela: fundo escuro, título, voltar e fechar. */
 export default function SheetFrame({ title, onBack, onClose, children }: { title: string; onBack?: () => void; onClose: () => void; children: ReactNode }) {
+  const painel = useRef<HTMLDivElement>(null)
+  useDialogo(painel, onClose)
   return (
     <div onClick={onClose} className={`${estilos.fundo} ${animacoes.aparecer}`}>
-      <div role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} className={`${estilos.painel} ${animacoes.subir}`}>
+      <div ref={painel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} className={`${estilos.painel} ${animacoes.subir}`}>
         <div className={estilos.alca} />
         <div className={estilos.cabecalho}>
           {onBack && <button onClick={onBack} aria-label="Voltar" className={comum.botaoIcone}><i className="ph-bold ph-caret-left" /></button>}

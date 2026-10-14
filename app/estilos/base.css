@@ -4,12 +4,13 @@
   --color-surface: #16182a;
   --color-text: #e9e9ed;
   --color-neutral-300: #a3a5b5;
-  --color-neutral-400: #7a7c8c;
+  --color-neutral-400: #8b8d9e; /* texto secundário: 4,5:1 ou mais sobre os cartões (WCAG AA) */
   --color-neutral-500: #595b6a;
   --color-neutral-600: #3f4150;
   --color-neutral-700: #2c2e3d;
   --color-neutral-800: #1e2030;
   --color-red: oklch(0.63 0.21 25);
+  --color-red-texto: oklch(0.75 0.15 25); /* vermelho para TEXTO pequeno sobre fundo escuro (contraste 4,5:1) */
   --color-green: oklch(0.72 0.15 150);
   --font-body: -apple-system, 'Inter', system-ui, sans-serif;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);

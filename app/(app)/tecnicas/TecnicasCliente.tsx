@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePlano } from "@/hooks/usePlano";
+import { aoTeclarNoGrupo } from "@/lib/teclado";
 import { usePreferencias } from "@/hooks/usePreferencias";
 import {
   AQUECIMENTO, BANDAGEM, COMBINACOES, DEFESAS, DESAQUECIMENTO, GOLPES, NOTACAO_CORPO, maoDaFrente, maoDeTras,
@@ -57,9 +58,9 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
         <p className="muted-copy">Mão da frente: <strong>{maoDaFrente(config.postura)}</strong> · mão de trás: <strong>{maoDeTras(config.postura)}</strong> ({config.postura === "ortodoxo" ? "postura ortodoxa" : "postura canhota"}).</p>
       </header>
 
-      <div className={estilos.abas} role="tablist" aria-label="Seções da biblioteca">
+      <div className={estilos.abas} role="tablist" aria-label="Seções da biblioteca" onKeyDown={e => aoTeclarNoGrupo(e, "tab")}>
         {ABAS.map(a => (
-          <button key={a.id} type="button" role="tab" id={`aba-${a.id}`} aria-selected={aba === a.id} aria-controls={`painel-${a.id}`} className={aba === a.id ? "ativa" : ""} onClick={() => setAba(a.id)}>
+          <button key={a.id} type="button" role="tab" id={`aba-${a.id}`} aria-selected={aba === a.id} tabIndex={aba === a.id ? 0 : -1} aria-controls={`painel-${a.id}`} className={aba === a.id ? "ativa" : ""} onClick={() => setAba(a.id)}>
             {a.label}
           </button>
         ))}

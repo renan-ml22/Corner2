@@ -20,6 +20,11 @@
   box-shadow: var(--shadow-lg);
 }
 
+/* O painel recebe o foco por programa ao abrir; não é um controle, então não precisa de contorno. */
+.painel:focus {
+  outline: none;
+}
+
 .alca {
   width: 40px;
   height: 5px;

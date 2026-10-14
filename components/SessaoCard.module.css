@@ -7,7 +7,7 @@
   background: linear-gradient(150deg, color-mix(in oklch, var(--red) 12%, var(--surface)), var(--surface) 70%);
 }
 
-.sessaoCard.statusFeita { opacity: 0.78; }
+.sessaoCard.statusFeita { border-color: color-mix(in oklch, var(--green) 28%, var(--border)); }
 
 .sessaoTop {
   display: flex;
