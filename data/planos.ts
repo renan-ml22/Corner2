@@ -230,6 +230,36 @@ function blocoPreCompeticao(semanas: [number, number], rounds: number, intensida
   ])
 }
 
+// Semana da luta: o volume cai pela metade para o corpo chegar descansado (polimento / taper).
+function polimento(semana: number): SessaoPlano[] {
+  return fase([semana, semana], [
+    {
+      id: 'pre-pol-seg', diaSemana: 1, tipo: 'tec', titulo: 'Manopla leve de estratégia',
+      rounds: 6, minPorRound: 3, descansoSeg: 60,
+      descricao: 'Revise o plano de luta em ritmo leve. Foco em precisão e timing, não em desgaste.',
+      checklist: ['Aquecimento + shadow', '6 rounds de manopla leve', 'Revisar plano de luta com o treinador', 'Alongamento final'],
+    },
+    {
+      id: 'pre-pol-ter', diaSemana: 2, tipo: 'spa', titulo: 'Sparring leve de ajuste',
+      rounds: 4, minPorRound: 3, descansoSeg: 60,
+      descricao: 'Último sparring da preparação, em intensidade leve e com parceiro de confiança. Sem trocas pesadas.',
+      checklist: ['Aquecimento completo', 'Bandagem e protetor bucal', '4 rounds de sparring leve', 'Recuperação e hidratação'],
+    },
+    {
+      id: 'pre-pol-qua', diaSemana: 3, tipo: 'con', titulo: 'Ativação',
+      rounds: 4, minPorRound: 3, descansoSeg: 60,
+      descricao: 'Saco e corda em ritmo confortável, só para manter o corpo ativo.',
+      checklist: ['Aquecimento: corda', '4 rounds de saco leve', 'Mobilidade', 'Alongamento final'],
+    },
+    {
+      id: 'pre-pol-qui', diaSemana: 4, tipo: 'tec', titulo: 'Soltura e velocidade',
+      rounds: 4, minPorRound: 3, descansoSeg: 60,
+      descricao: 'Shadowboxing solto e saco de velocidade. Termine cedo e descanse: nos últimos dias, o que importa é recuperar.',
+      checklist: ['Aquecimento: 5 min', '4 rounds de shadow solto', 'Saco de velocidade', 'Alongamento final'],
+    },
+  ])
+}
+
 const preCompeticao: Plano = {
   id: 'pre-competicao',
   nome: 'Pré-competição',
@@ -237,11 +267,12 @@ const preCompeticao: Plano = {
   nivelLabel: 'Avançado',
   semanas: 6,
   diasPorSemana: 5,
-  resumo: 'Volume alto e intensidade progressiva, com dois sparrings por semana até a luta.',
+  resumo: 'Volume alto e intensidade progressiva, com dois sparrings por semana. A última semana é de polimento, com volume reduzido.',
   sessoes: [
     ...blocoPreCompeticao([1, 2], 8, 'moderada'),
     ...blocoPreCompeticao([3, 4], 10, 'alta'),
-    ...blocoPreCompeticao([5, 6], 12, 'de luta'),
+    ...blocoPreCompeticao([5, 5], 12, 'de luta'),
+    ...polimento(6),
   ],
 }
 

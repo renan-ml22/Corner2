@@ -1,6 +1,6 @@
 import { sessoesDaSemana, type Plano, type SessaoPlano } from '@/data/planos'
 import { chaveDia, dataNaSemana, deChave, diferencaDias, inicioDaSemana, inicioDoDia, somarDias } from './datas'
-import { TIPOS, type PlanoAtivo, type RegType, type WorkoutEntry } from './tipos'
+import { TIPOS, type PlanoAtivo, type RegType, type Reagendamentos, type WorkoutEntry } from './tipos'
 
 export type StatusSessao = 'feita' | 'perdida' | 'hoje' | 'futura'
 
@@ -34,13 +34,19 @@ export function treinosEntre(historico: WorkoutEntry[], inicio: Date, fimExclusi
  * Um treino conta para a sessão do mesmo tipo — de preferência no mesmo dia,
  * senão em qualquer dia daquela semana (treinar na terça a sessão de segunda vale).
  */
+export function chaveReagendamento(semana: number, sessaoId: string): string {
+  return `${semana}:${sessaoId}`
+}
+
 export function sessoesComStatus(
-  plano: Plano, ativo: PlanoAtivo, semana: number, historico: WorkoutEntry[], hoje: Date,
+  plano: Plano, ativo: PlanoAtivo, semana: number, historico: WorkoutEntry[], hoje: Date, reag: Reagendamentos = {},
 ): SessaoComStatus[] {
   const segunda = segundaDaSemanaDoPlano(ativo, semana)
   const daSemana = treinosEntre(historico, segunda, somarDias(segunda, 7))
   const usados = new Set<string>()
-  const sessoes = sessoesDaSemana(plano, semana).map(sessao => ({ sessao, data: dataNaSemana(segunda, sessao.diaSemana) }))
+  const sessoes = sessoesDaSemana(plano, semana)
+    .map(sessao => ({ sessao, data: dataNaSemana(segunda, reag[chaveReagendamento(semana, sessao.id)] ?? sessao.diaSemana) }))
+    .sort((a, b) => a.data.getTime() - b.data.getTime())
 
   const pegar = (filtro: (t: WorkoutEntry) => boolean) => {
     const t = daSemana.find(x => !usados.has(x.id) && filtro(x))
@@ -74,21 +80,21 @@ export interface ProximaSessao extends SessaoComStatus {
 }
 
 /** Próxima sessão pendente a partir de hoje (inclusive), olhando a semana atual e as seguintes. */
-export function proximaSessao(plano: Plano, ativo: PlanoAtivo, historico: WorkoutEntry[], hoje: Date): ProximaSessao | null {
+export function proximaSessao(plano: Plano, ativo: PlanoAtivo, historico: WorkoutEntry[], hoje: Date, reag: Reagendamentos = {}): ProximaSessao | null {
   const atual = Math.max(1, semanaAtualDoPlano(ativo, hoje))
   for (let semana = atual; semana <= plano.semanas; semana++) {
-    const s = sessoesComStatus(plano, ativo, semana, historico, hoje).find(x => x.status === 'hoje' || x.status === 'futura')
+    const s = sessoesComStatus(plano, ativo, semana, historico, hoje, reag).find(x => x.status === 'hoje' || x.status === 'futura')
     if (s) return { ...s, semana }
   }
   return null
 }
 
 /** Sessão marcada para hoje no plano (feita ou não), se houver. */
-export function sessaoDeHoje(plano: Plano, ativo: PlanoAtivo, historico: WorkoutEntry[], hoje: Date): SessaoComStatus | null {
+export function sessaoDeHoje(plano: Plano, ativo: PlanoAtivo, historico: WorkoutEntry[], hoje: Date, reag: Reagendamentos = {}): SessaoComStatus | null {
   const semana = semanaAtualDoPlano(ativo, hoje)
   if (semana < 1 || semana > plano.semanas) return null
   const hojeKey = chaveDia(hoje)
-  return sessoesComStatus(plano, ativo, semana, historico, hoje).find(s => chaveDia(s.data) === hojeKey) ?? null
+  return sessoesComStatus(plano, ativo, semana, historico, hoje, reag).find(s => chaveDia(s.data) === hojeKey) ?? null
 }
 
 /** Dias da semana atual (segunda → domingo) com pelo menos um treino. */
