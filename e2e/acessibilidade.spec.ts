@@ -10,7 +10,17 @@ import { E2E_EMAIL, E2E_SENHA } from './constantes'
 
 const HOJE = new Date('2026-10-14T12:00:00-03:00')
 
+/** Espera as animações com fim terminarem: medir contraste no meio de um fade lê cores semitransparentes. */
+async function esperarAnimacoes(pagina: Page) {
+  await pagina.evaluate(() => Promise.all(
+    document.getAnimations()
+      .filter(a => Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity))
+      .map(a => a.finished.catch(() => undefined)),
+  ))
+}
+
 async function auditar(pagina: Page) {
+  await esperarAnimacoes(pagina)
   const resultado = await new AxeBuilder({ page: pagina }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   return resultado.violations.map(v => `${v.id} (${v.impact}): ${v.help}\n${v.nodes.slice(0, 4).map(n => `   - ${n.target.join(' ')}  ${(n.failureSummary ?? '').split('\n')[1] ?? ''}`).join('\n')}`)
 }
