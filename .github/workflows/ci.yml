@@ -40,6 +40,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Navegador de verdade (Chrome, já instalado no runner) contra o build acima.
+      - name: Testes de navegador
+        run: npx playwright test
+
+      - name: Guarda o relatório quando os testes de navegador falham
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorio-playwright
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+
       # Só dependências de produção: a cadeia do lint (eslint-config-next) tem achados
       # conhecidos que não vão para o app publicado.
       - name: Auditoria de dependências
