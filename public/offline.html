@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0e0f17">
+  <title>Sem conexão · Corner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      min-height: 100dvh; display: grid; place-items: center; padding: 24px; text-align: center;
+      background: radial-gradient(60% 50% at 15% 0%, rgba(80, 130, 255, .16), transparent 70%), radial-gradient(50% 45% at 95% 100%, rgba(240, 70, 60, .14), transparent 70%), #0e0f17;
+      color: #e9e9ed; font-family: -apple-system, 'Inter', system-ui, sans-serif;
+    }
+    main { max-width: 22rem; }
+    .marca { width: 88px; height: 88px; margin: 0 auto 24px; border-radius: 24px; background: linear-gradient(160deg, #232532, #161826); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); position: relative; overflow: hidden; }
+    .marca svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    h1 { font-size: 1.5rem; letter-spacing: -.03em; }
+    p { margin-top: 10px; color: #a3a5b5; line-height: 1.55; }
+    a, button {
+      display: inline-flex; align-items: center; justify-content: center; margin-top: 22px; height: 48px; padding: 0 22px;
+      border: 0; border-radius: 14px; background: linear-gradient(145deg, #f04a45, #d02a2d); color: #fff; font: 600 1rem inherit; text-decoration: none; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="marca" aria-hidden="true">
+      <svg viewBox="0 0 120 120"><path d="M120 24H24V120" fill="none" stroke="#e8453f" stroke-width="5" stroke-linecap="round"/><path d="M120 36H36V120" fill="none" stroke="#e9e9ed" stroke-opacity=".85" stroke-width="5" stroke-linecap="round"/><path d="M120 48H48V120" fill="none" stroke="#4a86f0" stroke-width="5" stroke-linecap="round"/><circle cx="24" cy="24" r="11" fill="#e8453f"/><circle cx="24" cy="24" r="4" fill="#161826"/></svg>
+    </div>
+    <h1>Você está sem conexão</h1>
+    <p>Esta tela ainda não foi guardada para uso offline. Quando a internet voltar, tente de novo. As telas que você já abriu antes continuam disponíveis.</p>
+    <button type="button" onclick="location.reload()">Tentar de novo</button>
+  </main>
+</body>
+</html>

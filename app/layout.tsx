@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import RegistrarSW from "@/components/RegistrarSW";
 
 export const metadata: Metadata = {
   title: "Corner",
@@ -25,7 +26,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
         <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <RegistrarSW />
+      </body>
     </html>
   );
 }

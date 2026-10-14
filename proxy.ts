@@ -18,5 +18,6 @@ export default async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|manifest.json|.*\\.(?:png|svg|jpg|jpeg|webp|ico)$).*)'],
+  // sw.js, offline.html e os ícones precisam abrir sem login (o navegador os busca antes da sessão).
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|offline.html|.*\\.(?:png|svg|jpg|jpeg|webp|ico)$).*)'],
 }
