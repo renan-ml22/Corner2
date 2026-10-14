@@ -7,14 +7,25 @@ import {
   INTENSIDADE_LABEL,
   REGIOES,
   TIPOS,
-  isArrayDe,
-  isCheckin,
-  isLesao,
-  isPesoRegistro,
   isRegType,
-  isWorkoutEntry,
   type RegType,
 } from '@/lib/tipos'
+import {
+  isAjuste,
+  isArrayDe,
+  isChave,
+  isCheckin,
+  isChecklist,
+  isConfigParcial,
+  isLembrete,
+  isLesao,
+  isPesoRegistro,
+  isPlanoAtivo,
+  isReag,
+  isWorkoutEntry,
+  limparConfig,
+  limparLista,
+} from '@/lib/dados/contrato'
 
 const TODOS_OS_TIPOS: RegType[] = ['tec', 'con', 'spa']
 
@@ -210,41 +221,40 @@ describe('isWorkoutEntry', () => {
     expect(isWorkoutEntry({ ...treino(), sparring })).toBe(false)
   })
 
-  // ── Comportamento correto esperado (hoje o validador é frouxo) ──
-  // O contrato de tipos.ts diz Intensidade/ImpactoCabeca (enums) e RPE de 1 a 10 (AppSheets.tsx:213).
-  it.fails('rejeita sparring.intensidade fora do enum Intensidade (tipos.ts:146 só checa isStr)', () => {
+  // Contrato: Intensidade/ImpactoCabeca são enums, RPE vai de 1 a 10 e durações não são negativas.
+  it('rejeita sparring.intensidade fora do enum Intensidade ', () => {
     expect(isWorkoutEntry({ ...treino(), sparring: { intensidade: 'extrema', cabeca: 'nenhum' } })).toBe(false)
   })
 
-  it.fails('rejeita sparring.cabeca fora do enum ImpactoCabeca (tipos.ts:146 só checa isStr)', () => {
+  it('rejeita sparring.cabeca fora do enum ImpactoCabeca ', () => {
     expect(isWorkoutEntry({ ...treino(), sparring: { intensidade: 'leve', cabeca: 'muito' } })).toBe(false)
   })
 
-  it.fails('rejeita sparring.parceiro que não seja texto', () => {
+  it('rejeita sparring.parceiro que não seja texto', () => {
     expect(isWorkoutEntry({ ...treino(), sparring: { intensidade: 'leve', cabeca: 'nenhum', parceiro: 123 } })).toBe(false)
   })
 
-  it.fails('rejeita sessaoId que não seja texto', () => {
+  it('rejeita sessaoId que não seja texto', () => {
     expect(isWorkoutEntry({ ...treino(), sessaoId: 99 })).toBe(false)
   })
 
-  it.fails('rejeita nota que não seja texto', () => {
+  it('rejeita nota que não seja texto', () => {
     expect(isWorkoutEntry({ ...treino(), nota: { x: 1 } })).toBe(false)
   })
 
-  it.fails('rejeita rounds negativo', () => {
+  it('rejeita rounds negativo', () => {
     expect(isWorkoutEntry({ ...treino(), rounds: -1 })).toBe(false)
   })
 
-  it.fails('rejeita minPorRound negativo', () => {
+  it('rejeita minPorRound negativo', () => {
     expect(isWorkoutEntry({ ...treino(), minPorRound: -3 })).toBe(false)
   })
 
-  it.fails('rejeita duracaoSegundos negativa', () => {
+  it('rejeita duracaoSegundos negativa', () => {
     expect(isWorkoutEntry({ ...treino(), duracaoSegundos: -10 })).toBe(false)
   })
 
-  it.fails('rejeita rpe fora da escala 1 a 10', () => {
+  it('rejeita rpe fora da escala 1 a 10', () => {
     expect(isWorkoutEntry({ ...treino(), rpe: 15 })).toBe(false)
     expect(isWorkoutEntry({ ...treino(), rpe: -2 })).toBe(false)
   })
@@ -290,8 +300,8 @@ describe('isCheckin', () => {
     expect(isCheckin({ ...checkin(), [campo]: Infinity })).toBe(false)
   })
 
-  // Contrato em tipos.ts:91: "cada nota de 1 a 5".
-  it.fails.each(['sono', 'dor', 'energia'])('rejeita %s fora da faixa 1 a 5', campo => {
+  // Contrato: cada nota de 1 a 5.
+  it.each(['sono', 'dor', 'energia'])('rejeita %s fora da faixa 1 a 5', campo => {
     expect(isCheckin({ ...checkin(), [campo]: 9 })).toBe(false)
     expect(isCheckin({ ...checkin(), [campo]: -1 })).toBe(false)
   })
@@ -345,17 +355,17 @@ describe('isLesao', () => {
     },
   )
 
-  // Contrato em tipos.ts:116: "1 (leve) a 5 (forte)".
-  it.fails('rejeita intensidade fora da faixa 1 a 5', () => {
+  // Contrato: intensidade de 1 (leve) a 5 (forte).
+  it('rejeita intensidade fora da faixa 1 a 5', () => {
     expect(isLesao({ ...lesao(), intensidade: 99 })).toBe(false)
     expect(isLesao({ ...lesao(), intensidade: -1 })).toBe(false)
   })
 
-  it.fails('rejeita nota que não seja texto', () => {
+  it('rejeita nota que não seja texto', () => {
     expect(isLesao({ ...lesao(), nota: 123 })).toBe(false)
   })
 
-  it.fails('rejeita resolvidaEm que não seja uma data YYYY-MM-DD', () => {
+  it('rejeita resolvidaEm que não seja uma data YYYY-MM-DD', () => {
     expect(isLesao({ ...lesao(), resolvidaEm: 'ontem' })).toBe(false)
   })
 })
@@ -403,13 +413,18 @@ describe('isPesoRegistro', () => {
 })
 
 describe('validação de datas YYYY-MM-DD (isChave, via isCheckin)', () => {
-  // isChave só confere o formato com regex, não se a data existe no calendário.
-  it('aceita apenas o formato, sem checar o calendário (comportamento atual)', () => {
-    expect(isCheckin({ ...checkin(), data: '2026-02-31' })).toBe(true)
+  it.each(['2026-13-45', '2026-02-31', '2026-00-10', '2026-04-31', '2025-02-29'])('rejeita %s, que não existe no calendário', data => {
+    expect(isCheckin({ ...checkin(), data })).toBe(false)
   })
 
-  it.fails('rejeita datas que não existem no calendário (ex.: 2026-13-45)', () => {
-    expect(isCheckin({ ...checkin(), data: '2026-13-45' })).toBe(false)
+  it.each(['2024-02-29', '2026-12-31', '2026-01-01'])('aceita %s', data => {
+    expect(isCheckin({ ...checkin(), data })).toBe(true)
+  })
+
+  it('isChave exportada segue a mesma regra', () => {
+    expect(isChave('2026-03-10')).toBe(true)
+    expect(isChave('2026-02-31')).toBe(false)
+    expect(isChave(20260310)).toBe(false)
   })
 })
 
@@ -464,5 +479,199 @@ describe('isArrayDe', () => {
 
   it('array esparso com buracos conta só os itens existentes (comportamento de Array.every)', () => {
     expect(isArrayDeTipos(['tec', , 'con'])).toBe(true)
+  })
+})
+
+// ── Validadores que antes viviam dentro do CornerProvider ──────
+
+describe('isPlanoAtivo', () => {
+  it('aceita null (sem plano ativo)', () => {
+    expect(isPlanoAtivo(null)).toBe(true)
+  })
+
+  it('aceita um plano que existe, com início YYYY-MM-DD', () => {
+    expect(isPlanoAtivo({ planoId: 'fundamentos', inicio: '2026-10-05' })).toBe(true)
+  })
+
+  it.each([
+    ['plano inexistente', { planoId: 'nao-existe', inicio: '2026-10-05' }],
+    ['planoId numérico', { planoId: 1, inicio: '2026-10-05' }],
+    ['sem inicio', { planoId: 'fundamentos' }],
+    ['inicio fora do calendário', { planoId: 'fundamentos', inicio: '2026-02-31' }],
+    ['inicio em ISO completo', { planoId: 'fundamentos', inicio: '2026-10-05T00:00:00Z' }],
+    ['undefined', undefined],
+    ['string', 'fundamentos'],
+    ['array', []],
+  ])('rejeita %s', (_nome, valor) => {
+    expect(isPlanoAtivo(valor)).toBe(false)
+  })
+})
+
+describe('isConfigParcial', () => {
+  it('aceita objeto vazio (tudo opcional)', () => {
+    expect(isConfigParcial({})).toBe(true)
+  })
+
+  it('aceita a configuração completa válida', () => {
+    expect(isConfigParcial({
+      metaSemanal: 4, notificacoes: false, postura: 'canhoto', onboardingFeito: true,
+      experiencia: '1a3', pesoCategoria: 66.5, lembreteHora: '18:30',
+    })).toBe(true)
+  })
+
+  it('aceita CONFIG_PADRAO', () => {
+    expect(isConfigParcial(CONFIG_PADRAO)).toBe(true)
+  })
+
+  it.each([
+    ['metaSemanal 0', { metaSemanal: 0 }],
+    ['metaSemanal 8', { metaSemanal: 8 }],
+    ['metaSemanal em texto', { metaSemanal: '3' }],
+    ['metaSemanal NaN', { metaSemanal: NaN }],
+    ['notificacoes em texto', { notificacoes: 'sim' }],
+    ['postura desconhecida', { postura: 'southpaw' }],
+    ['experiencia desconhecida', { experiencia: 'muita' }],
+    ['onboardingFeito numérico', { onboardingFeito: 1 }],
+    ['pesoCategoria negativo', { pesoCategoria: -5 }],
+    ['pesoCategoria em texto', { pesoCategoria: '66' }],
+    ['lembreteHora fora do formato', { lembreteHora: '6pm' }],
+    ['lembreteHora inexistente', { lembreteHora: '25:99' }],
+  ])('rejeita %s', (_nome, config) => {
+    expect(isConfigParcial(config)).toBe(false)
+  })
+
+  it('aceita experiencia e pesoCategoria null, e lembreteHora vazio', () => {
+    expect(isConfigParcial({ experiencia: null, pesoCategoria: null, lembreteHora: '' })).toBe(true)
+  })
+
+  it.each(NAO_OBJETOS)('rejeita %s', (_nome, valor) => {
+    expect(isConfigParcial(valor)).toBe(false)
+  })
+})
+
+describe('limparConfig (leitura tolerante)', () => {
+  it('mantém os campos válidos e descarta só os inválidos', () => {
+    expect(limparConfig({ metaSemanal: 5, postura: 'southpaw', notificacoes: false, lixo: 1 }))
+      .toEqual({ metaSemanal: 5, notificacoes: false })
+  })
+
+  it('devolve objeto vazio quando nada presta, e null quando nem é objeto', () => {
+    expect(limparConfig({ metaSemanal: 99 })).toEqual({})
+    expect(limparConfig('texto')).toBeNull()
+    expect(limparConfig(null)).toBeNull()
+    expect(limparConfig([])).toBeNull()
+  })
+
+  it('o resultado sempre passa em isConfigParcial', () => {
+    const r = limparConfig({ metaSemanal: 3, lembreteHora: 'x', pesoCategoria: 70, postura: 'ortodoxo' })
+    expect(isConfigParcial(r)).toBe(true)
+  })
+})
+
+describe('isChecklist', () => {
+  it('aceita data e itens booleanos', () => {
+    expect(isChecklist({ data: '2026-10-14', itens: { 'a:0': true, 'a:1': false } })).toBe(true)
+  })
+
+  it('aceita o estado vazio inicial (data vazia, sem itens)', () => {
+    expect(isChecklist({ data: '', itens: {} })).toBe(true)
+  })
+
+  it.each([
+    ['itens com valor que não é booleano', { data: '2026-10-14', itens: { a: 1 } }],
+    ['itens como array', { data: '2026-10-14', itens: [] }],
+    ['sem itens', { data: '2026-10-14' }],
+    ['data numérica', { data: 20261014, itens: {} }],
+  ])('rejeita %s', (_nome, valor) => {
+    expect(isChecklist(valor)).toBe(false)
+  })
+})
+
+describe('isAjuste', () => {
+  it('aceita data e flag', () => {
+    expect(isAjuste({ data: '2026-10-14', aplicado: true })).toBe(true)
+    expect(isAjuste({ data: '', aplicado: false })).toBe(true)
+  })
+
+  it.each([
+    ['aplicado em texto', { data: '2026-10-14', aplicado: 'sim' }],
+    ['sem aplicado', { data: '2026-10-14' }],
+    ['sem data', { aplicado: true }],
+  ])('rejeita %s', (_nome, valor) => {
+    expect(isAjuste(valor)).toBe(false)
+  })
+})
+
+describe('isReag', () => {
+  it('aceita objeto vazio e dias de 0 (domingo) a 6 (sábado)', () => {
+    expect(isReag({})).toBe(true)
+    expect(isReag({ '2:sessao-a': 0, '3:sessao-b': 6 })).toBe(true)
+  })
+
+  it.each([
+    ['dia 7', { x: 7 }],
+    ['dia negativo', { x: -1 }],
+    ['dia fracionário', { x: 2.5 }],
+    ['dia em texto', { x: '2' }],
+    ['array', []],
+    ['null', null],
+  ])('rejeita %s', (_nome, valor) => {
+    expect(isReag(valor)).toBe(false)
+  })
+})
+
+describe('isLembrete (data do último lembrete disparado)', () => {
+  it('aceita uma data YYYY-MM-DD válida ou vazio', () => {
+    expect(isLembrete('2026-10-14')).toBe(true)
+    expect(isLembrete('')).toBe(true)
+  })
+
+  it.each(['2026-02-31', 'hoje', 20261014, null])('rejeita %s', valor => {
+    expect(isLembrete(valor)).toBe(false)
+  })
+})
+
+describe('limparLista (leitura tolerante)', () => {
+  const limparPesos = limparLista(isPesoRegistro)
+
+  it('devolve a lista intacta quando tudo é válido', () => {
+    const lista = [peso(), { ...peso(), id: 'p2' }]
+    expect(limparPesos(lista)).toEqual(lista)
+  })
+
+  it('descarta só os itens inválidos, sem perder os bons', () => {
+    const bom = peso()
+    expect(limparPesos([bom, { ...peso(), kg: -1 }, 'lixo', null])).toEqual([bom])
+  })
+
+  it('devolve null quando o valor nem é uma lista', () => {
+    expect(limparPesos({})).toBeNull()
+    expect(limparPesos('x')).toBeNull()
+    expect(limparPesos(null)).toBeNull()
+  })
+
+  it('lista só com itens inválidos vira lista vazia (não null)', () => {
+    expect(limparPesos(['a', 'b'])).toEqual([])
+  })
+})
+
+describe('isWorkoutEntry: data e limites numéricos', () => {
+  it('rejeita data que não é um instante válido', () => {
+    expect(isWorkoutEntry({ ...treino(), data: 'ontem' })).toBe(false)
+    expect(isWorkoutEntry({ ...treino(), data: '' })).toBe(false)
+  })
+
+  it('aceita ISO com e sem milissegundos', () => {
+    expect(isWorkoutEntry({ ...treino(), data: '2026-10-14T15:30:00Z' })).toBe(true)
+    expect(isWorkoutEntry({ ...treino(), data: '2026-10-14T15:30:00.123Z' })).toBe(true)
+  })
+
+  it('aceita zero em rounds, minutos e duração (registro antigo não deve ser derrubado)', () => {
+    expect(isWorkoutEntry({ ...treino(), rounds: 0, minPorRound: 0, duracaoSegundos: 0 })).toBe(true)
+  })
+
+  it('aceita RPE nos extremos 1 e 10', () => {
+    expect(isWorkoutEntry({ ...treino(), rpe: 1 })).toBe(true)
+    expect(isWorkoutEntry({ ...treino(), rpe: 10 })).toBe(true)
   })
 })

@@ -8,7 +8,10 @@ import { notificar } from '@/lib/notificar'
 import { checkinDeHoje, gerarAlertas, type Alerta } from '@/lib/saude'
 import { sessaoDeHoje, chaveReagendamento } from '@/lib/treinos'
 import {
-  CONFIG_PADRAO, isArrayDe, isCheckin, isLesao, isPesoRegistro, isWorkoutEntry,
+  isAjuste, isArrayDe, isCheckin, isChecklist, isConfigParcial, isLesao, isObj, isPesoRegistro, isPlanoAtivo, isReag, isWorkoutEntry,
+} from '@/lib/dados/contrato'
+import {
+  CONFIG_PADRAO,
   type AjusteDoDia, type Checkin, type ChecklistDoDia, type Configuracoes, type ImpactoCabeca, type Intensidade,
   type Lesao, type PesoRegistro, type PlanoAtivo, type Reagendamentos, type RegType, type RegiaoCorpo, type WorkoutEntry,
 } from '@/lib/tipos'
@@ -94,24 +97,7 @@ interface CornerCtx {
 
 const Ctx = createContext<CornerCtx | null>(null)
 
-// ── Validação do que vem do localStorage ─────────────────────
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
-
-const isPlanoAtivo = (v: unknown): v is PlanoAtivo | null => {
-  if (v === null) return true
-  if (!isObj(v)) return false
-  return typeof v.planoId === 'string' && getPlano(v.planoId) !== null && typeof v.inicio === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.inicio)
-}
-
-const isConfigParcial = (v: unknown): v is Partial<Configuracoes> => {
-  if (!isObj(v)) return false
-  return v.metaSemanal === undefined || (typeof v.metaSemanal === 'number' && v.metaSemanal >= 1 && v.metaSemanal <= 7)
-}
-
-const isChecklist = (v: unknown): v is ChecklistDoDia => isObj(v) && typeof v.data === 'string' && isObj(v.itens)
-const isAjuste = (v: unknown): v is AjusteDoDia => isObj(v) && typeof v.data === 'string' && typeof v.aplicado === 'boolean'
-const isReag = (v: unknown): v is Reagendamentos => isObj(v) && Object.values(v).every(x => typeof x === 'number' && x >= 0 && x <= 6)
-
+// ── Validação do que vem do localStorage (contrato em lib/dados/contrato.ts) ──
 const isHistorico = isArrayDe(isWorkoutEntry)
 const isCheckins = isArrayDe(isCheckin)
 const isLesoes = isArrayDe(isLesao)

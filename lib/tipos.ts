@@ -129,36 +129,9 @@ export interface PesoRegistro {
   kg: number
 }
 
-// ── Validadores (dados vindos do localStorage ou de backup importado) ─
-
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
-const isStr = (v: unknown): v is string => typeof v === 'string'
-const isChave = (v: unknown): v is string => isStr(v) && /^\d{4}-\d{2}-\d{2}$/.test(v)
+// ── Guarda de tipo ───────────────────────────────────────────
+// Os validadores dos dados salvos ficam em lib/dados/contrato.ts.
 
 export function isRegType(v: unknown): v is RegType {
   return v === 'tec' || v === 'con' || v === 'spa'
-}
-
-export function isWorkoutEntry(v: unknown): v is WorkoutEntry {
-  if (!isObj(v)) return false
-  if (!(isStr(v.id) && isStr(v.data) && isRegType(v.tipo) && isNum(v.rounds) && isNum(v.minPorRound) && isNum(v.rpe) && isNum(v.duracaoSegundos))) return false
-  if (v.sparring !== undefined && !(isObj(v.sparring) && isStr(v.sparring.intensidade) && isStr(v.sparring.cabeca))) return false
-  return true
-}
-
-export function isCheckin(v: unknown): v is Checkin {
-  return isObj(v) && isChave(v.data) && isNum(v.sono) && isNum(v.dor) && isNum(v.energia)
-}
-
-export function isLesao(v: unknown): v is Lesao {
-  return isObj(v) && isStr(v.id) && isStr(v.regiao) && Object.hasOwn(REGIOES, v.regiao) && isNum(v.intensidade) && isChave(v.inicio)
-}
-
-export function isPesoRegistro(v: unknown): v is PesoRegistro {
-  return isObj(v) && isStr(v.id) && isChave(v.data) && isNum(v.kg) && v.kg > 0
-}
-
-export function isArrayDe<T>(guarda: (v: unknown) => v is T) {
-  return (v: unknown): v is T[] => Array.isArray(v) && v.every(guarda)
 }
