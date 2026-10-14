@@ -18,6 +18,9 @@ export default function BottomNav() {
   const pathname = usePathname()
   const { openRegister } = useCorner()
 
+  // O cronômetro ocupa a tela inteira: sem barra de navegação por cima.
+  if (pathname.startsWith('/treino')) return null
+
   const tabBtn = (tab: typeof TABS[0]) => {
     const active = pathname.startsWith(tab.href)
     return (

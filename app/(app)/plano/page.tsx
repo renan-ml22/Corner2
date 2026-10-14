@@ -5,10 +5,11 @@ import SessaoCard from "@/components/SessaoCard";
 import { useCorner } from "@/components/CornerProvider";
 import { sessoesDaSemana } from "@/data/planos";
 import { formatarDataCurta, somarDias } from "@/lib/datas";
-import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComStatus } from "@/lib/treinos";
+import { nivelDoAtleta, urlTreino } from "@/lib/sessao";
+import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComStatus, type SessaoComStatus } from "@/lib/treinos";
 
 export default function PlanoPage() {
-  const { pronto, plano, planoAtivo, historico, openPlanos, openRegister, encerrarPlano, showToast } = useCorner();
+  const { pronto, plano, planoAtivo, historico, reag, reagendar, config, openPlanos, openRegister, encerrarPlano, showToast } = useCorner();
   // null = acompanhar a semana atual
   const [semanaEscolhida, setSemanaEscolhida] = useState<number | null>(null);
 
@@ -37,15 +38,20 @@ export default function PlanoPage() {
   const semanaPadrao = Math.min(Math.max(semanaAtual, 1), plano.semanas);
   const semana = semanaEscolhida ?? semanaPadrao;
   const segunda = segundaDaSemanaDoPlano(planoAtivo, semana);
-  const sessoes = sessoesComStatus(plano, planoAtivo, semana, historico, hoje);
-  const proxima = proximaSessao(plano, planoAtivo, historico, hoje);
+  const sessoes = sessoesComStatus(plano, planoAtivo, semana, historico, hoje, reag);
+  const proxima = proximaSessao(plano, planoAtivo, historico, hoje, reag);
+  const nivel = nivelDoAtleta(plano, config.experiencia);
+
+  // Só dá para treinar ou mover o que ainda está pela frente (semana atual em diante).
+  const params = (s: SessaoComStatus) => ({ tipo: s.sessao.tipo, rounds: s.sessao.rounds, minPorRound: s.sessao.minPorRound, descansoSeg: s.sessao.descansoSeg, sessaoId: s.sessao.id, nivel });
+  const registrar = (s: SessaoComStatus) => () => openRegister({ tipo: s.sessao.tipo, rounds: s.sessao.rounds, minPorRound: s.sessao.minPorRound, sessaoId: s.sessao.id });
 
   // Progresso no plano: sessões feitas até agora / total de sessões do plano.
   let total = 0;
   let feitas = 0;
   for (let s = 1; s <= plano.semanas; s++) {
     total += sessoesDaSemana(plano, s).length;
-    if (s <= semanaAtual) feitas += sessoesComStatus(plano, planoAtivo, s, historico, hoje).filter(x => x.status === "feita").length;
+    if (s <= semanaAtual) feitas += sessoesComStatus(plano, planoAtivo, s, historico, hoje, reag).filter(x => x.status === "feita").length;
   }
   const pct = total ? Math.round((feitas / total) * 100) : 0;
   const concluido = semanaAtual > plano.semanas;
@@ -78,11 +84,7 @@ export default function PlanoPage() {
       {proxima && (
         <>
           <div className="section-heading"><h2>Próximo treino</h2></div>
-          <SessaoCard
-            item={proxima}
-            destaque
-            onRegistrar={() => openRegister({ tipo: proxima.sessao.tipo, rounds: proxima.sessao.rounds, minPorRound: proxima.sessao.minPorRound })}
-          />
+          <SessaoCard item={proxima} destaque iniciarHref={urlTreino(params(proxima))} onRegistrar={registrar(proxima)} />
         </>
       )}
 
@@ -100,9 +102,19 @@ export default function PlanoPage() {
       </div>
 
       <div className="sessao-list">
-        {sessoes.map(item => (
-          <SessaoCard key={item.sessao.id} item={item} detalhado />
-        ))}
+        {sessoes.map(item => {
+          const aFazer = semana >= semanaAtual && (item.status === "hoje" || item.status === "futura");
+          return (
+            <SessaoCard
+              key={item.sessao.id}
+              item={item}
+              detalhado
+              iniciarHref={aFazer && item.status === "hoje" ? urlTreino(params(item)) : undefined}
+              onRegistrar={semana === semanaAtual && (item.status === "hoje" || item.status === "perdida") ? registrar(item) : undefined}
+              onReagendar={semana >= semanaAtual ? dia => reagendar(semana, item.sessao.id, dia) : undefined}
+            />
+          );
+        })}
       </div>
 
       <button

@@ -1,6 +1,6 @@
-import { logout } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/dal";
 import PreferenciasCard from "@/components/PreferenciasCard";
+import SairButton from "@/components/SairButton";
 
 export default async function PerfilPage() {
   const user = await getCurrentUser();
@@ -24,11 +24,7 @@ export default async function PerfilPage() {
       <div className="section-heading"><h2>Preferências</h2></div>
       <PreferenciasCard />
 
-      <form action={logout} style={{ marginTop: 24 }}>
-        <button type="submit" className="surface-card logout-button">
-          <i className="ph ph-sign-out" aria-hidden="true" /> Sair da conta
-        </button>
-      </form>
+      <SairButton />
     </main>
   );
 }
