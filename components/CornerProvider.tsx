@@ -1,18 +1,18 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, ReactNode } from 'react'
-import { useStorage, useHidratado } from '@/hooks/useStorage'
+import { useEntidade, useHidratado } from '@/hooks/useEntidade'
 import { getPlano, type Plano } from '@/data/planos'
 import { chaveDia, inicioDaSemana } from '@/lib/datas'
 import { notificar } from '@/lib/notificar'
 import { checkinDeHoje, gerarAlertas, type Alerta } from '@/lib/saude'
 import { sessaoDeHoje, chaveReagendamento } from '@/lib/treinos'
-import {
-  isAjuste, isArrayDe, isCheckin, isChecklist, isConfigParcial, isLesao, isObj, isPesoRegistro, isPlanoAtivo, isReag, isWorkoutEntry,
-} from '@/lib/dados/contrato'
+import { lerBackup, montarBackup } from '@/lib/dados/backup'
+import { ENTIDADES } from '@/lib/dados/entidades'
+import { criarRepositorioLocal } from '@/lib/dados/repositorio-local'
 import {
   CONFIG_PADRAO,
-  type AjusteDoDia, type Checkin, type ChecklistDoDia, type Configuracoes, type ImpactoCabeca, type Intensidade,
+  type Checkin, type Configuracoes, type ImpactoCabeca, type Intensidade,
   type Lesao, type PesoRegistro, type PlanoAtivo, type Reagendamentos, type RegType, type RegiaoCorpo, type WorkoutEntry,
 } from '@/lib/tipos'
 
@@ -97,17 +97,7 @@ interface CornerCtx {
 
 const Ctx = createContext<CornerCtx | null>(null)
 
-// ── Validação do que vem do localStorage (contrato em lib/dados/contrato.ts) ──
-const isHistorico = isArrayDe(isWorkoutEntry)
-const isCheckins = isArrayDe(isCheckin)
-const isLesoes = isArrayDe(isLesao)
-const isPesos = isArrayDe(isPesoRegistro)
-
-const CHECKLIST_VAZIO: ChecklistDoDia = { data: '', itens: {} }
-const AJUSTE_VAZIO: AjusteDoDia = { data: '', aplicado: false }
-const CONFIG_VAZIA: Partial<Configuracoes> = {}
-const REAG_VAZIO: Reagendamentos = {}
-const LISTA_VAZIA: never[] = []
+const ITENS_VAZIOS = ENTIDADES.checklist.inicial.itens
 
 function novoId(): string {
   // crypto.randomUUID só existe em contexto seguro (https/localhost)
@@ -117,23 +107,24 @@ function novoId(): string {
 
 export function CornerProvider({ usuario, children }: { usuario: UsuarioApp; children: ReactNode }) {
   const pronto = useHidratado()
-  const k = (nome: string) => `corner:${usuario.id}:${nome}`
+  // Os dados passam pelo repositório: o provider não conhece chaves nem o armazenamento.
+  const repo = useMemo(() => criarRepositorioLocal({ usuarioId: usuario.id }), [usuario.id])
 
-  const [historico, setHistorico] = useStorage<WorkoutEntry[]>(k('historico'), LISTA_VAZIA, isHistorico)
-  const [planoAtivo, setPlanoAtivo] = useStorage<PlanoAtivo | null>(k('plano'), null, isPlanoAtivo)
-  const [configSalva, setConfig] = useStorage<Partial<Configuracoes>>(k('config'), CONFIG_VAZIA, isConfigParcial)
-  const [checklist, setChecklist] = useStorage<ChecklistDoDia>(k('checklist'), CHECKLIST_VAZIO, isChecklist)
-  const [checkins, setCheckins] = useStorage<Checkin[]>(k('checkins'), LISTA_VAZIA, isCheckins)
-  const [lesoes, setLesoes] = useStorage<Lesao[]>(k('lesoes'), LISTA_VAZIA, isLesoes)
-  const [pesos, setPesos] = useStorage<PesoRegistro[]>(k('pesos'), LISTA_VAZIA, isPesos)
-  const [ajuste, setAjuste] = useStorage<AjusteDoDia>(k('ajuste'), AJUSTE_VAZIO, isAjuste)
-  const [reag, setReag] = useStorage<Reagendamentos>(k('reag'), REAG_VAZIO, isReag)
+  const [historico, setHistorico] = useEntidade(repo, 'historico')
+  const [planoAtivo, setPlanoAtivo] = useEntidade(repo, 'plano')
+  const [configSalva, setConfig] = useEntidade(repo, 'config')
+  const [checklist, setChecklist] = useEntidade(repo, 'checklist')
+  const [checkins, setCheckins] = useEntidade(repo, 'checkins')
+  const [lesoes, setLesoes] = useEntidade(repo, 'lesoes')
+  const [pesos, setPesos] = useEntidade(repo, 'pesos')
+  const [ajuste, setAjuste] = useEntidade(repo, 'ajuste')
+  const [reag, setReag] = useEntidade(repo, 'reag')
 
   const config = useMemo<Configuracoes>(() => ({ ...CONFIG_PADRAO, ...configSalva }), [configSalva])
   const plano = useMemo(() => getPlano(planoAtivo?.planoId), [planoAtivo])
   const hojeKey = pronto ? chaveDia(new Date()) : ''
   // O que é "do dia" só vale na data em que foi marcado.
-  const checklistHoje = checklist.data === hojeKey ? checklist.itens : CHECKLIST_VAZIO.itens
+  const checklistHoje = checklist.data === hojeKey ? checklist.itens : ITENS_VAZIOS
   const ajusteAplicado = ajuste.data === hojeKey && ajuste.aplicado
   const checkinHoje = useMemo(() => (pronto ? checkinDeHoje(checkins, new Date()) : null), [pronto, checkins])
 
@@ -254,33 +245,18 @@ export function CornerProvider({ usuario, children }: { usuario: UsuarioApp; chi
 
   const removerPeso = useCallback((id: string) => setPesos(prev => prev.filter(p => p.id !== id)), [setPesos])
 
-  const exportarDados = useCallback(() => JSON.stringify({
-    app: 'corner', versao: 1, exportadoEm: new Date().toISOString(),
-    dados: { historico, plano: planoAtivo, config: configSalva, checkins, lesoes, pesos, reag },
-  }, null, 2), [historico, planoAtivo, configSalva, checkins, lesoes, pesos, reag])
+  const exportarDados = useCallback(
+    () => montarBackup({ historico, plano: planoAtivo, config: configSalva, checkins, lesoes, pesos, reag }, new Date()),
+    [historico, planoAtivo, configSalva, checkins, lesoes, pesos, reag],
+  )
 
   const importarDados = useCallback((texto: string): { ok: boolean; erro?: string } => {
-    let raiz: unknown
-    try { raiz = JSON.parse(texto) } catch { return { ok: false, erro: 'O arquivo não é um JSON válido.' } }
-    if (!isObj(raiz) || raiz.app !== 'corner' || !isObj(raiz.dados)) return { ok: false, erro: 'Este arquivo não é um backup do Corner.' }
-    const d = raiz.dados
-    // Valida tudo antes de gravar qualquer coisa: backup parcial ou corrompido não pode apagar dados bons.
-    if (d.historico !== undefined && !isHistorico(d.historico)) return { ok: false, erro: 'O histórico do backup está corrompido.' }
-    if (d.plano !== undefined && !isPlanoAtivo(d.plano)) return { ok: false, erro: 'O plano do backup é inválido.' }
-    if (d.config !== undefined && !isConfigParcial(d.config)) return { ok: false, erro: 'As configurações do backup são inválidas.' }
-    if (d.checkins !== undefined && !isCheckins(d.checkins)) return { ok: false, erro: 'Os check-ins do backup estão corrompidos.' }
-    if (d.lesoes !== undefined && !isLesoes(d.lesoes)) return { ok: false, erro: 'As lesões do backup estão corrompidas.' }
-    if (d.pesos !== undefined && !isPesos(d.pesos)) return { ok: false, erro: 'Os registros de peso do backup estão corrompidos.' }
-    if (d.reag !== undefined && !isReag(d.reag)) return { ok: false, erro: 'Os reagendamentos do backup são inválidos.' }
-    if (d.historico !== undefined) setHistorico(d.historico as WorkoutEntry[])
-    if (d.plano !== undefined) setPlanoAtivo(d.plano as PlanoAtivo | null)
-    if (d.config !== undefined) setConfig(d.config as Partial<Configuracoes>)
-    if (d.checkins !== undefined) setCheckins(d.checkins as Checkin[])
-    if (d.lesoes !== undefined) setLesoes(d.lesoes as Lesao[])
-    if (d.pesos !== undefined) setPesos(d.pesos as PesoRegistro[])
-    if (d.reag !== undefined) setReag(d.reag as Reagendamentos)
+    // lerBackup valida tudo antes de devolver: backup parcial ou corrompido não apaga dados bons.
+    const r = lerBackup(texto)
+    if (!r.ok) return { ok: false, erro: r.erro }
+    repo.gravarVarias(r.dados)
     return { ok: true }
-  }, [setHistorico, setPlanoAtivo, setConfig, setCheckins, setLesoes, setPesos, setReag])
+  }, [repo])
 
   const saveWorkout = useCallback(() => {
     const preset = presetRef.current
@@ -316,7 +292,6 @@ export function CornerProvider({ usuario, children }: { usuario: UsuarioApp; chi
   }, [regType, rounds, roundMin, rpe, extras, plano, planoAtivo, reag, setHistorico, setChecklist])
 
   // Lembrete diário: só dispara com o app aberto (lembretes com o app fechado exigem um servidor de push).
-  const chaveLembrete = `corner:${usuario.id}:lembrete`
   const tituloSessaoHoje = sessaoHoje && sessaoHoje.status !== 'feita' ? sessaoHoje.sessao.titulo : null
   const treinouHoje = useMemo(() => {
     if (!pronto) return false
@@ -334,16 +309,14 @@ export function CornerProvider({ usuario, children }: { usuario: UsuarioApp; chi
       const agora = new Date()
       const hojeChave = chaveDia(agora)
       if (agora < new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), h, m) || treinouHoje) return
-      try {
-        if (localStorage.getItem(chaveLembrete) === hojeChave) return
-        localStorage.setItem(chaveLembrete, hojeChave)
-      } catch { /* sem storage: pode repetir, mas não quebra */ }
+      if (repo.obter('lembrete') === hojeChave) return
+      repo.gravar('lembrete', hojeChave)
       void notificar('Hora de treinar', tituloSessaoHoje ? `Hoje: ${tituloSessaoHoje}. Abra o Corner e comece o cronômetro.` : 'Que tal um treino hoje? Abra o Corner e registre.')
     }
     verificar()
     const id = window.setInterval(verificar, 30_000)
     return () => window.clearInterval(id)
-  }, [pronto, config.notificacoes, config.lembreteHora, treinouHoje, tituloSessaoHoje, chaveLembrete])
+  }, [pronto, config.notificacoes, config.lembreteHora, treinouHoje, tituloSessaoHoje, repo])
 
   return (
     <Ctx.Provider value={{
