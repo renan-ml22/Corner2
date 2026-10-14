@@ -16,6 +16,17 @@
 - Localmente o `npm run e2e` faz o build antes. No CI o build já foi feito no passo anterior.
 - Se um teste falhar no CI, o relatório (com o trace) fica como artefato da execução, por 7 dias. Localmente: `npx playwright show-report`.
 
+## Acessibilidade
+
+- `e2e/acessibilidade.spec.ts`: auditoria automática com o **axe-core** (regras WCAG 2.0/2.1 A e AA) em todas as telas, nos estados vazios, nos painéis (cada passo) e no login. Também confere que cada tela tem um **título próprio**.
+- `e2e/teclado.spec.ts`: navegação só pelo teclado. Painéis recebem o foco ao abrir, fecham com **Esc**, mantêm **Tab** dentro deles, deixam o resto da página inerte e devolvem o foco a quem os abriu; abas e grupos de rádio respondem às **setas**.
+- O axe acha o que é mecânico (contraste, nomes de botões, rótulos, papéis). Ele **não substitui** testar com leitor de tela (TalkBack no Android, VoiceOver no iPhone) de vez em quando.
+- Cores: o cinza de texto secundário (`--color-neutral-400`) e o vermelho de texto pequeno (`--color-red-texto`) foram escolhidos para dar 4,5:1 ou mais sobre os cartões. Ao criar uma cor nova para texto, rode a auditoria.
+
+## Textos
+
+Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.ts`. Um teste (`tests/textos-uso.test.ts`) barra literais soltos em `showToast`, `window.confirm` e `setErro…`.
+
 ## Quando escrever cada tipo
 
 - Regra de cálculo, validador, migração: teste de unidade em `tests/` (primeiro o teste, depois o código).

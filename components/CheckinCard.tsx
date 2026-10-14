@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/useToast";
 import { aoTeclarNoGrupo } from "@/lib/teclado";
 import { prontidao } from "@/lib/saude";
 import estilos from './CheckinCard.module.css'
+import { TEXTOS } from "@/lib/textos";
 
 type Campo = "sono" | "energia" | "dor";
 
@@ -70,7 +71,7 @@ export default function CheckinCard() {
           if (valores.sono === undefined || valores.energia === undefined || valores.dor === undefined) return;
           registrarCheckin({ sono: valores.sono, energia: valores.energia, dor: valores.dor });
           setRefazendo(false);
-          showToast("Check-in salvo");
+          showToast(TEXTOS.aviso.checkinSalvo);
         }}
       >
         Salvar check-in

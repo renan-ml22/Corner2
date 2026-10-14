@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/dal";
 import PreferenciasCard from "@/components/PreferenciasCard";
 import SairButton from "@/components/SairButton";
 import estilos from './perfil.module.css'
+
+export const metadata: Metadata = {
+  title: "Perfil · Corner",
+};
 
 export default async function PerfilPage() {
   const user = await getCurrentUser();

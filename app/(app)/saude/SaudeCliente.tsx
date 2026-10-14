@@ -13,6 +13,7 @@ import { deChave, diferencaDias, formatarDataCurta } from "@/lib/datas";
 import { prontidao, resumoCabeca } from "@/lib/saude";
 import { REGIOES, type RegiaoCorpo } from "@/lib/tipos";
 import estilos from './saude.module.css'
+import { TEXTOS } from "@/lib/textos";
 
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
 
@@ -49,29 +50,29 @@ export default function SaudeCliente() {
   const salvarPeso = (e: FormEvent) => {
     e.preventDefault();
     const kg = Number(kgTexto.replace(",", "."));
-    if (!(kg >= 30 && kg <= 250)) { setErroPeso("Digite um peso entre 30 e 250 kg."); return; }
+    if (!(kg >= 30 && kg <= 250)) { setErroPeso(TEXTOS.erro.pesoForaDaFaixa); return; }
     setErroPeso("");
     registrarPeso(Math.round(kg * 10) / 10);
     setKgTexto("");
-    showToast("Peso registrado");
+    showToast(TEXTOS.aviso.pesoRegistrado);
   };
 
   const salvarCategoria = (e: FormEvent) => {
     e.preventDefault();
     const txt = catTexto.trim();
-    if (txt === "") { atualizarConfig({ pesoCategoria: null }); showToast("Categoria removida"); return; }
+    if (txt === "") { atualizarConfig({ pesoCategoria: null }); showToast(TEXTOS.aviso.categoriaRemovida); return; }
     const kg = Number(txt.replace(",", "."));
-    if (!(kg >= 30 && kg <= 250)) { showToast("Categoria inválida"); return; }
+    if (!(kg >= 30 && kg <= 250)) { showToast(TEXTOS.aviso.categoriaInvalida); return; }
     atualizarConfig({ pesoCategoria: kg });
     setCatTexto("");
-    showToast("Categoria salva");
+    showToast(TEXTOS.aviso.categoriaSalva);
   };
 
   const salvarLesao = (e: FormEvent) => {
     e.preventDefault();
     adicionarLesao({ regiao, intensidade, nota });
     setNota("");
-    showToast("Lesão registrada");
+    showToast(TEXTOS.aviso.lesaoRegistrada);
   };
 
   return (
@@ -150,7 +151,7 @@ export default function SaudeCliente() {
                   <span>Desde {formatarDataCurta(deChave(l.inicio))}{l.nota ? ` · ${l.nota}` : ""}</span>
                 </div>
                 <div className={estilos.acoesLinha}>
-                  <button type="button" className="btn-ghost small" onClick={() => { resolverLesao(l.id); showToast("Marcada como resolvida"); }}>Resolvida</button>
+                  <button type="button" className="btn-ghost small" onClick={() => { resolverLesao(l.id); showToast(TEXTOS.aviso.lesaoResolvida); }}>Resolvida</button>
                   <button type="button" className="btn-ghost small" onClick={() => removerLesao(l.id)} aria-label={`Remover lesão em ${REGIOES[l.regiao]}`}>Remover</button>
                 </div>
               </li>

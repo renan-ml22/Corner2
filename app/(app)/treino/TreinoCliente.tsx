@@ -13,6 +13,7 @@ import { CAT_LABELS } from "@/lib/tipos";
 import { lerParamsTreino, type ParamsTreino } from "@/lib/sessao";
 import animacoes from "@/components/animacoes.module.css";
 import styles from "./treino.module.css";
+import { TEXTOS } from "@/lib/textos";
 
 function mmss(seg: number): string {
   const s = Math.max(0, Math.round(seg));
@@ -193,7 +194,7 @@ function Cronometro({ params }: { params: ParamsTreino }) {
           type="button"
           className={styles.secundario}
           aria-label="Encerrar treino"
-          onClick={() => { if (window.confirm("Encerrar o treino agora? Os rounds já completos podem ser registrados.")) c.encerrar(); }}
+          onClick={() => { if (window.confirm(TEXTOS.confirmar.encerrarTreino)) c.encerrar(); }}
         >
           <i className="ph-bold ph-stop" aria-hidden="true" />
         </button>

@@ -12,6 +12,7 @@ import comum from './comum.module.css'
 import estilos from './PerfilAtleta.module.css'
 import SheetFrame from './SheetFrame'
 import Stepper from './Stepper'
+import { TEXTOS } from '@/lib/textos'
 
 const EXPERIENCIAS: [Experiencia, string][] = [['nenhuma', 'Nunca treinei'], ['ate1', 'Menos de 1 ano'], ['1a3', '1 a 3 anos'], ['mais3', 'Mais de 3 anos ou já compito']]
 const OBJETIVOS: [Objetivo, string, string][] = [
@@ -44,7 +45,7 @@ export default function PerfilAtleta() {
     if (abrirLista) { openPlanos(); return }
     escolherPlano(plano.id)
     closeSheet()
-    showToast(`Perfil salvo. Plano ${plano.nome} ativado`)
+    showToast(TEXTOS.aviso.perfilSalvo(plano.nome))
   }
 
   return (

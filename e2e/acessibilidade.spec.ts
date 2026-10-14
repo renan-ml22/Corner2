@@ -131,3 +131,27 @@ test('os dados de exemplo têm plano, lesão ativa e pesos', () => {
   expect(DADOS_DE_EXEMPLO.plano).toBeTruthy()
   expect(Object.keys(DADOS_DE_EXEMPLO)).toEqual(expect.arrayContaining(['historico', 'lesoes', 'pesos', 'checkins']))
 })
+
+test.describe('acessibilidade: títulos de página', () => {
+  // O leitor de tela anuncia o título ao trocar de tela; títulos iguais não dizem onde a pessoa está.
+  const esperados = [
+    ['/hoje', 'Hoje · Corner'], ['/plano', 'Plano de treino · Corner'], ['/progresso', 'Progresso · Corner'],
+    ['/perfil', 'Perfil · Corner'], ['/saude', 'Saúde e corpo · Corner'], ['/tecnicas', 'Biblioteca técnica · Corner'],
+  ] as const
+
+  for (const [rota, titulo] of esperados) {
+    test(`${rota} tem o título "${titulo}"`, async ({ pagina }) => {
+      await pagina.goto(rota)
+      await expect(pagina).toHaveTitle(titulo)
+    })
+  }
+
+  test('os títulos das telas são todos diferentes entre si', async ({ pagina }) => {
+    const titulos: string[] = []
+    for (const [rota] of esperados) {
+      await pagina.goto(rota)
+      titulos.push(await pagina.title())
+    }
+    expect(new Set(titulos).size).toBe(titulos.length)
+  })
+})

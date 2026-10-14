@@ -13,6 +13,7 @@ import { formatarDataCurta, somarDias } from "@/lib/datas";
 import { nivelDoAtleta, urlTreino } from "@/lib/sessao";
 import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComStatus, type SessaoComStatus } from "@/lib/treinos";
 import estilos from './plano.module.css'
+import { TEXTOS } from "@/lib/textos";
 
 export default function PlanoPage() {
   const pronto = useHidratado();
@@ -132,8 +133,8 @@ export default function PlanoPage() {
         type="button"
         className={estilos.linkDanger}
         onClick={() => {
-          if (!window.confirm(`Encerrar o plano ${plano.nome}? Seus treinos registrados continuam salvos.`)) return;
-          encerrarPlano(); setSemanaEscolhida(null); showToast("Plano encerrado");
+          if (!window.confirm(TEXTOS.confirmar.encerrarPlano(plano.nome))) return;
+          encerrarPlano(); setSemanaEscolhida(null); showToast(TEXTOS.aviso.planoEncerrado);
         }}
       >
         Encerrar plano

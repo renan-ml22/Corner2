@@ -7,6 +7,7 @@ import animacoes from '../animacoes.module.css'
 import comum from './comum.module.css'
 import estilos from './RegistroConcluido.module.css'
 import SheetFrame from './SheetFrame'
+import { TEXTOS } from '@/lib/textos'
 
 /** Último passo do registro: resumo do treino e, se houve pancada forte, o aviso de saúde. */
 export default function RegistroConcluido() {
@@ -14,7 +15,7 @@ export default function RegistroConcluido() {
   const { rounds, roundMin, rpe, elapsed, ultimoSalvo } = usePainelEstado()
   const showToast = useToast()
 
-  const finish = () => { closeSheet(); showToast('Treino salvo no seu histórico') }
+  const finish = () => { closeSheet(); showToast(TEXTOS.aviso.treinoSalvo) }
   const cabecaForte = ultimoSalvo?.sparring?.cabeca === 'fortes'
   const numeros = [
     { v: rounds, l: 'rounds' },

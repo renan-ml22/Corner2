@@ -11,6 +11,7 @@ import { chaveDia } from "@/lib/datas";
 import { pedirPermissaoNotificacao } from "@/lib/notificar";
 import type { Postura } from "@/lib/tipos";
 import estilos from './PreferenciasCard.module.css'
+import { TEXTOS } from "@/lib/textos";
 
 export default function PreferenciasCard() {
   const pronto = useHidratado();
@@ -34,7 +35,7 @@ export default function PreferenciasCard() {
     if (hora) {
       const r = await pedirPermissaoNotificacao();
       setPermissao(r);
-      if (r !== "granted") showToast("Permita as notificações no navegador para receber o lembrete");
+      if (r !== "granted") showToast(TEXTOS.aviso.permitirNotificacoes);
     }
   };
 
@@ -45,17 +46,17 @@ export default function PreferenciasCard() {
     a.download = `corner-backup-${chaveDia(new Date())}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast("Backup baixado");
+    showToast(TEXTOS.aviso.backupBaixado);
   };
 
   const importar = async (e: ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0];
     e.target.value = ""; // permite escolher o mesmo arquivo de novo
     if (!arquivo) return;
-    if (arquivo.size > 2_000_000) { showToast("Arquivo grande demais para ser um backup do Corner"); return; }
-    if (!window.confirm("Importar substitui os dados atuais deste aparelho pelos do backup. Continuar?")) return;
+    if (arquivo.size > 2_000_000) { showToast(TEXTOS.aviso.backupGrande); return; }
+    if (!window.confirm(TEXTOS.confirmar.importarBackup)) return;
     const r = importarDados(await arquivo.text());
-    showToast(r.ok ? "Backup importado" : (r.erro ?? "Não foi possível importar"));
+    showToast(r.ok ? TEXTOS.aviso.backupImportado : (r.erro ?? TEXTOS.aviso.backupFalhou));
   };
 
   return (

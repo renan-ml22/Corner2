@@ -7,6 +7,7 @@ import { usePainelAcoes } from '../PainelProvider'
 import comum from './comum.module.css'
 import estilos from './EscolherPlano.module.css'
 import SheetFrame from './SheetFrame'
+import { TEXTOS } from '@/lib/textos'
 
 /** Lista dos planos de treino; escolher um ativa a semana 1 a partir da próxima segunda-feira. */
 export default function EscolherPlano() {
@@ -16,10 +17,10 @@ export default function EscolherPlano() {
 
   const escolher = (id: string, nome: string) => {
     if (planoAtivo?.planoId === id) { closeSheet(); return }
-    if (planoAtivo && !window.confirm(`Trocar para o plano ${nome}? O plano atual será substituído e a semana 1 começa agora.`)) return
+    if (planoAtivo && !window.confirm(TEXTOS.confirmar.trocarPlano(nome))) return
     escolherPlano(id)
     closeSheet()
-    showToast(`Plano ${nome} ativado`)
+    showToast(TEXTOS.aviso.planoAtivado(nome))
   }
 
   return (
