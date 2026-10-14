@@ -186,11 +186,10 @@
   color: #f4f2f2;
   font-size: 2.6rem;
   box-shadow: 0 10px 24px oklch(0.63 0.21 25 / 0.45);
-  animation: pop 0.45s ease-out;
 }
 
 .resumo :global(.stat-card) { text-align: left; }
 
 @media (prefers-reduced-motion: reduce) {
-  .tela, .resumoIcone { transition: none; animation: none; }
+  .tela, .resumoIcone { transition: none; }
 }

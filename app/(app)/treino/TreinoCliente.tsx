@@ -11,6 +11,7 @@ import { PREPARO_SEG, useCronometro } from "@/hooks/useCronometro";
 import { focoDosRounds, maoDaFrente, maoDeTras } from "@/data/tecnicas";
 import { CAT_LABELS } from "@/lib/tipos";
 import { lerParamsTreino, type ParamsTreino } from "@/lib/sessao";
+import animacoes from "@/components/animacoes.module.css";
 import styles from "./treino.module.css";
 
 function mmss(seg: number): string {
@@ -108,7 +109,7 @@ function Cronometro({ params }: { params: ParamsTreino }) {
     const completo = c.roundsFeitos >= params.rounds;
     return (
       <main className={`page-container ${styles.resumo}`}>
-        <div className={styles.resumoIcone} aria-hidden="true"><i className={`ph-fill ${completo ? "ph-check" : "ph-flag"}`} /></div>
+        <div className={`${styles.resumoIcone} ${animacoes.surgir}`} aria-hidden="true"><i className={`ph-fill ${completo ? "ph-check" : "ph-flag"}`} /></div>
         <h1 className="page-title">{completo ? "Treino concluído!" : "Treino encerrado"}</h1>
         <p className="muted-copy">{completo ? "Todos os rounds feitos. Bom trabalho." : "Você parou antes do fim, e tudo bem. O que foi feito conta."}</p>
 

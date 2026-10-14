@@ -1,0 +1,50 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--color-neutral-800);
+}
+
+.rotulo {
+  font-size: 15px;
+  color: var(--color-neutral-300);
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.botao {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 0;
+  cursor: pointer;
+  background: var(--color-neutral-700);
+  color: var(--color-text);
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+}
+
+.botao:disabled {
+  opacity: 0.4;
+}
+
+.valor {
+  min-width: 56px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.valor small {
+  font-size: 12px;
+  color: var(--color-neutral-400);
+  font-weight: 500;
+}

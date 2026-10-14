@@ -1,0 +1,48 @@
+.tipo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text);
+  background: var(--color-neutral-800);
+  border: 1px solid transparent;
+}
+
+.ativo {
+  border-color: var(--color-red);
+}
+
+.icone {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: var(--color-red);
+  background: oklch(0.63 0.21 25 / 0.14);
+}
+
+.texto {
+  flex: 1;
+}
+
+.nome {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.descricao {
+  display: block;
+  font-size: 13px;
+  color: var(--color-neutral-400);
+  margin-top: 2px;
+}
+
+.seta {
+  color: var(--color-neutral-400);
+}

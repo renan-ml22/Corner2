@@ -1,0 +1,91 @@
+.esforco {
+  margin-top: 22px;
+}
+
+.esforcoTopo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.rotulo {
+  font-size: 15px;
+  color: var(--color-neutral-300);
+}
+
+.esforcoValor {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.esforcoValor small {
+  font-size: 12px;
+  color: var(--color-neutral-400);
+}
+
+.escala {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+}
+
+.nivel {
+  height: 38px;
+  border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--color-neutral-800);
+  color: var(--color-neutral-400);
+}
+
+/* O fundo do nível ligado (mais forte quanto maior o nível) vem de um estilo inline com a transparência calculada. */
+.nivelLigado {
+  color: #f4f2f2;
+}
+
+.extremos {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-neutral-400);
+  margin-top: 6px;
+}
+
+.sparring {
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.pergunta {
+  font-size: 15px;
+  color: var(--color-neutral-300);
+  margin-bottom: 8px;
+}
+
+.ajuda {
+  font-size: 12px;
+  color: var(--color-neutral-400);
+  margin-top: 6px;
+}
+
+/* `.field-input` é global e também define altura mínima; o seletor duplo garante que estas medidas vençam. */
+.nota:global(.field-input) {
+  margin-top: 18px;
+  min-height: 72px;
+  resize: vertical;
+}
+
+.total {
+  margin: 18px 0 14px;
+  font-size: 14px;
+  color: var(--color-neutral-400);
+  text-align: center;
+}
+
+.total strong {
+  color: var(--color-text);
+}

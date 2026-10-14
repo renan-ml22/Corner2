@@ -1,0 +1,43 @@
+.fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+}
+
+.painel {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid oklch(1 0 0 / 0.08);
+  padding: 10px 20px max(24px, env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-lg);
+}
+
+.alca {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--color-neutral-600);
+  margin: 0 auto 14px;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.titulo {
+  flex: 1;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}

@@ -1,0 +1,48 @@
+.plano {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text);
+  background: var(--color-neutral-800);
+  border: 1px solid transparent;
+}
+
+.ativo {
+  border-color: var(--color-red);
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nome {
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.tagAtivo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-red);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resumo {
+  font-size: 13px;
+  color: var(--color-neutral-300);
+  line-height: 1.45;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

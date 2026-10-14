@@ -1,0 +1,80 @@
+.passo {
+  font-size: 13px;
+  color: var(--color-neutral-400);
+  margin-bottom: 14px;
+}
+
+.pergunta {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.opcao {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text);
+  background: var(--color-neutral-800);
+  border: 1px solid transparent;
+}
+
+.ativa {
+  border-color: var(--color-red);
+}
+
+.descricao {
+  font-size: 13px;
+  color: var(--color-neutral-400);
+}
+
+.verPlano {
+  margin-top: 18px;
+}
+
+/* Cartão do plano recomendado: parecido com uma opção selecionada, com mais espaço entre as linhas. */
+.recomendado {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: var(--color-text);
+  background: var(--color-neutral-800);
+  border: 1px solid var(--color-red);
+}
+
+.recomendadoTopo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recomendadoTopo strong {
+  font-size: 18px;
+}
+
+.resumo {
+  font-size: 13px;
+  color: var(--color-neutral-300);
+  line-height: 1.45;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--color-neutral-400);
+}
+
+.avisoDias {
+  font-size: 13px;
+  color: oklch(0.82 0.13 85);
+  margin: 12px 0 0;
+  line-height: 1.45;
+}
+
+.acoes {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
