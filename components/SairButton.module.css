@@ -14,3 +14,5 @@
 .logoutButton:hover {
   background: var(--surface-raised);
 }
+
+.formulario { margin-top: 24px; }

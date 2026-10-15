@@ -1,0 +1,14 @@
+/* Espaçamentos avulsos entre blocos. Carregado por último, para vencer regras de uma classe só. */
+
+.mt-0 { margin-top: 0px; }
+.mt-4 { margin-top: 4px; }
+.mt-10 { margin-top: 10px; }
+.mt-12 { margin-top: 12px; }
+.mt-14 { margin-top: 14px; }
+.mt-18 { margin-top: 18px; }
+.mt-20 { margin-top: 20px; }
+.mt-22 { margin-top: 22px; }
+.mt-24 { margin-top: 24px; }
+.mt-28 { margin-top: 28px; }
+.mb-12 { margin-bottom: 12px; }
+.espaco-12 { height: 12px; }

@@ -26,7 +26,7 @@ const ABAS: { id: Aba; label: string }[] = [
 function Passos({ titulo, passos, icone }: { titulo: string; passos: PassoGuia[]; icone: string }) {
   return (
     <>
-      <div className="section-heading"><h2><i className={`ph-fill ${icone}`} aria-hidden="true" style={{ color: "var(--red)", marginRight: 8 }} />{titulo}</h2></div>
+      <div className="section-heading"><h2><i className={`ph-fill ${icone} ${estilos.tituloIcone}`} aria-hidden="true" />{titulo}</h2></div>
       <section className="surface-card">
         <ol className={estilos.passos}>
           {passos.map((p, i) => (
@@ -53,7 +53,7 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
     <main className="page-container">
       <header>
         <Link href="/hoje" className="link-muted"><i className="ph-bold ph-caret-left" aria-hidden="true" /> Voltar</Link>
-        <p className="eyebrow" style={{ marginTop: 18 }}>Aprenda e revise</p>
+        <p className="eyebrow mt-18">Aprenda e revise</p>
         <h1 className="page-title">Biblioteca técnica</h1>
         <p className="muted-copy">Mão da frente: <strong>{maoDaFrente(config.postura)}</strong> · mão de trás: <strong>{maoDeTras(config.postura)}</strong> ({config.postura === "ortodoxo" ? "postura ortodoxa" : "postura canhota"}).</p>
       </header>
@@ -82,7 +82,7 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
                 </article>
               ))}
             </div>
-            <p className="muted-copy" style={{ marginTop: 14 }}>{NOTACAO_CORPO}</p>
+            <p className="muted-copy mt-14">{NOTACAO_CORPO}</p>
           </>
         )}
 
@@ -101,13 +101,13 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
                   <span className={estilos.comboNotacao}>{c.notacao}</span>
                   <div>
                     <h3>{c.nome}</h3>
-                    <p className={estilosSessao.sessaoDescricao} style={{ marginTop: 4 }}>{c.descricao}</p>
+                    <p className={`${estilosSessao.sessaoDescricao} ${estilosSessao.descricaoCompacta}`}>{c.descricao}</p>
                   </div>
                   <span className="nivel-badge">{NIVEL_LABEL[c.nivel]}</span>
                 </article>
               ))}
             </div>
-            <p className="muted-copy" style={{ marginTop: 14 }}>Os números seguem a numeração de golpes. Palavras como “esquiva” e “bloqueio” entram no meio da sequência. Treine devagar antes de acelerar.</p>
+            <p className="muted-copy mt-14">Os números seguem a numeração de golpes. Palavras como “esquiva” e “bloqueio” entram no meio da sequência. Treine devagar antes de acelerar.</p>
           </>
         )}
 

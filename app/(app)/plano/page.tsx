@@ -35,7 +35,7 @@ export default function PlanoPage() {
           <h1 className="page-title">Plano de treino</h1>
           <p className="muted-copy">Escolha um plano e o Corner monta suas sessões semana a semana.</p>
         </header>
-        <section className="surface-card empty-state" style={{ marginTop: 28 }}>
+        <section className="surface-card empty-state mt-28">
           <i className="ph-fill ph-calendar-dots" aria-hidden="true" />
           <h3>Nenhum plano ativo</h3>
           <p>São 4 planos, do iniciante à pré-competição.</p>
@@ -77,7 +77,7 @@ export default function PlanoPage() {
         <h1 className="page-title">Plano de treino</h1>
       </header>
 
-      <section className={`surface-card ${estilos.planoHero}`} style={{ marginTop: 22 }}>
+      <section className={`surface-card ${estilos.planoHero}`}>
         <div className={estilos.planoHeroTop}>
           <div>
             <span className="nivel-badge">{plano.nivelLabel}</span>

@@ -8,6 +8,23 @@ Regras de trabalho (memória do projeto): TDD nas regras puras, subagentes em ta
 
 ---
 
+## Estado (15/10/2026)
+
+| Fase | Situação |
+|---|---|
+| 0 Auditar, dividir em commits e publicar | Concluída |
+| 1 Vitest nas regras puras | Concluída (1.159 testes de unidade) |
+| 2 Atualizar dependências | Concluída (0 vulnerabilidades em produção; exceção do lint em `docs/excecoes-de-seguranca.md`) |
+| 3 CI e auditoria padronizada | Concluída (CI com tipos, lint, testes, build, navegador e auditoria; `main` protegida) |
+| 4 Camada de dados única | Concluída (`docs/camada-de-dados.md`) |
+| 5 Dividir provider, painéis e CSS | Concluída |
+| 6 Teste em celular real | **Pendente: depende de você** (roteiro em `docs/teste-celular.md`) |
+| 7 Acessibilidade e textos | Concluída (axe, teclado, contraste, títulos, `lib/textos.ts`) |
+| Estilos inline | Concluída: só restam os dinâmicos |
+| Conta com banco de dados | Adiada por decisão: provedor ainda não escolhido |
+
+---
+
 ## Visão geral
 
 | Fase | Objetivo | Esforço | Depende de |

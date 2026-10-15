@@ -111,11 +111,11 @@ export default function ProgressoPage() {
                 <p>{STATUS_CARGA_TEXTO[carga.status].texto}</p>
               </div>
             </div>
-            <div className="stat-grid" style={{ marginTop: 14 }}>
+            <div className="stat-grid mt-14">
               <div><p className="stat-label">Últimos 7 dias</p><p className="stat-value">{carga.aguda}</p></div>
               <div><p className="stat-label">Média das semanas anteriores</p><p className="stat-value">{carga.cronica}</p></div>
             </div>
-            <p className="muted-copy" style={{ marginTop: 12 }}>Razão: {carga.razao.toFixed(2).replace(".", ",")}×. A faixa ideal fica entre 0,8× e 1,3×; acima de 1,5× o risco de lesão cresce.</p>
+            <p className="muted-copy mt-12">Razão: {carga.razao.toFixed(2).replace(".", ",")}×. A faixa ideal fica entre 0,8× e 1,3×; acima de 1,5× o risco de lesão cresce.</p>
           </>
         ) : (
           <p className="muted-copy">A carga precisa de pelo menos duas semanas de treinos registrados para ser comparada. Continue registrando.</p>

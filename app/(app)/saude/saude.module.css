@@ -18,3 +18,13 @@
 .acoesLinha { display: flex; gap: 0.4rem; }
 
 .cabecaCard { padding: 1.1rem; }
+
+.tresColunas:global(.stat-grid) { grid-template-columns: repeat(3, 1fr); }
+
+/* Botões ao lado de um campo: o `.form-card .btn-primary` global dá margem e largura de tela cheia. */
+:global(.form-card) .botaoRegistrar:global(.btn-primary) { margin-top: 0; width: auto; }
+
+.botaoSalvar:global(.btn-ghost) { height: 46px; }
+
+/* Aviso logo abaixo do campo de categoria (o aviso de peso, mais acima, não tem margem). */
+.erroAbaixo { margin-top: 10px; }

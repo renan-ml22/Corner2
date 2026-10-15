@@ -65,6 +65,9 @@
   line-height: 1.55;
 }
 
+/* Junto de .sessaoDescricao, quando o texto vem logo abaixo de um título. */
+.descricaoCompacta { margin-top: 4px; }
+
 .sessaoAcoes { display: grid; gap: 0.5rem; margin-top: 0.9rem; }
 
 .sessaoAcoes :global(.btn-primary) { margin-top: 0; }

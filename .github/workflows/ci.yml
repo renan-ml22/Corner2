@@ -16,7 +16,9 @@ permissions:
 
 jobs:
   verificar:
-    runs-on: ubuntu-latest
+    # Versão fixa: `ubuntu-latest` passa para o Ubuntu 26 em 19/10/2026 e a troca silenciosa pode quebrar o CI.
+    # Para migrar, mude aqui, rode o CI numa branch e só então leve para a main.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7

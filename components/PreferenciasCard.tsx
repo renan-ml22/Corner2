@@ -98,7 +98,7 @@ export default function PreferenciasCard() {
           )}
         </ul>
         {config.notificacoes && config.lembreteHora && permissao !== "granted" && (
-          <p className="muted-copy" style={{ padding: "0 1.2rem 1rem" }}>
+          <p className={`muted-copy ${estilos.rodapeLista}`}>
             {permissao === "denied" ? "As notificações estão bloqueadas neste navegador. Libere nas configurações do site para receber o lembrete." : permissao === "indisponivel" ? "Este navegador não oferece notificações." : "Falta permitir as notificações no navegador."}
           </p>
         )}
@@ -125,10 +125,10 @@ export default function PreferenciasCard() {
 
       <div className="section-heading"><h2>Backup dos dados</h2></div>
       <section className="surface-card form-card">
-        <p className="muted-copy" style={{ marginTop: 0 }}>Seus dados ficam só neste aparelho. Baixe um backup de vez em quando, principalmente antes de trocar de celular ou limpar o navegador.</p>
-        <div className="linha-form" style={{ marginTop: 14 }}>
-          <button type="button" className="btn-ghost" style={{ flex: 1, height: 46 }} onClick={exportar}><i className="ph ph-download-simple" aria-hidden="true" /> Baixar backup</button>
-          <label className="btn-ghost" style={{ flex: 1, height: 46, cursor: "pointer" }}>
+        <p className="muted-copy mt-0">Seus dados ficam só neste aparelho. Baixe um backup de vez em quando, principalmente antes de trocar de celular ou limpar o navegador.</p>
+        <div className="linha-form mt-14">
+          <button type="button" className={`btn-ghost ${estilos.botaoBackup}`} onClick={exportar}><i className="ph ph-download-simple" aria-hidden="true" /> Baixar backup</button>
+          <label className={`btn-ghost ${estilos.botaoImportar}`}>
             <i className="ph ph-upload-simple" aria-hidden="true" /> Importar
             <input type="file" accept="application/json,.json" className="sr-only" onChange={e => void importar(e)} />
           </label>

@@ -91,3 +91,9 @@
 .switch:checked::after { transform: translateX(1.15rem); }
 
 .switch:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.rodapeLista:global(.muted-copy) { padding: 0 1.2rem 1rem; }
+
+.botaoBackup:global(.btn-ghost) { flex: 1; height: 46px; }
+
+.botaoImportar:global(.btn-ghost) { flex: 1; height: 46px; cursor: pointer; }

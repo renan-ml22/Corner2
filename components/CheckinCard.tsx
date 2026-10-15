@@ -28,7 +28,7 @@ export default function CheckinCard() {
       <section className={`surface-card ${estilos.checkinResumo}`} aria-label="Check-in de hoje">
         <div>
           <p className="stat-label">Prontidão de hoje</p>
-          <p className="stat-value" style={{ marginTop: 4 }}>{p.toFixed(1).replace(".", ",")}<small>/5</small></p>
+          <p className="stat-value mt-4">{p.toFixed(1).replace(".", ",")}<small>/5</small></p>
         </div>
         <p className={estilos.checkinDetalhe}>Sono {checkinHoje.sono} · Energia {checkinHoje.energia} · Dor {checkinHoje.dor}</p>
         <button type="button" className="btn-ghost small" onClick={() => { setValores({}); setRefazendo(true); }}>Refazer</button>
@@ -41,7 +41,7 @@ export default function CheckinCard() {
   return (
     <section className={`surface-card ${estilos.checkinCard}`} aria-label="Check-in de hoje">
       <h3>Como você está hoje?</h3>
-      <p className="muted-copy" style={{ marginTop: 4 }}>Leva 10 segundos e ajusta o treino ao seu corpo.</p>
+      <p className="muted-copy mt-4">Leva 10 segundos e ajusta o treino ao seu corpo.</p>
       {CAMPOS.map(c => (
         <div key={c.id} className={estilos.checkinCampo} role="radiogroup" aria-label={c.rotulo} onKeyDown={e => aoTeclarNoGrupo(e, "radio")}>
           <span>{c.rotulo}</span>

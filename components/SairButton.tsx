@@ -20,7 +20,7 @@ export default function SairButton() {
         await limparCachesOffline();
         await logout();
       }}
-      style={{ marginTop: 24 }}
+      className={estilos.formulario}
     >
       <button type="submit" className={`surface-card ${estilos.logoutButton}`}>
         <i className="ph ph-sign-out" aria-hidden="true" /> Sair da conta

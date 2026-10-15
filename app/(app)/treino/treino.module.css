@@ -193,3 +193,7 @@
 @media (prefers-reduced-motion: reduce) {
   .tela, .resumoIcone { transition: none; }
 }
+
+.voltarInicio:global(.btn-ghost) { margin-top: 12px; width: 100%; }
+
+.depoisDoTreino:global(.empty-state) { justify-items: start; text-align: left; }

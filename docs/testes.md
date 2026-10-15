@@ -27,6 +27,13 @@
 
 Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.ts`. Um teste (`tests/textos-uso.test.ts`) barra literais soltos em `showToast`, `window.confirm` e `setErro…`.
 
+## Estilos
+
+- Estilo de um componente ou tela fica num **CSS Module** ao lado dele; o que é compartilhado fica em `app/estilos/` (`base`, `layout`, `componentes`, `utilidades`).
+- `utilidades.css` tem espaçamentos avulsos (`mt-14`, `mb-12`, `espaco-12`). **Não combine uma utilitária com uma classe de módulo que já define a mesma propriedade:** o módulo vence (ele carrega depois) e a utilitária é ignorada em silêncio. Nesse caso, crie a classe no próprio módulo. A comparação de capturas de tela pega esse erro; os testes de unidade não.
+- Evite `style={{ ... }}` fixo. Só use para valores calculados (largura de barra em %, tamanho da logo).
+- Num par `-webkit-x` + `x`, escreva o prefixado **primeiro** (o minificador do Next descarta o padrão se vier antes). Um teste confere.
+
 ## Quando escrever cada tipo
 
 - Regra de cálculo, validador, migração: teste de unidade em `tests/` (primeiro o teste, depois o código).

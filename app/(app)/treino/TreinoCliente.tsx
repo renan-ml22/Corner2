@@ -65,7 +65,7 @@ function Cronometro({ params }: { params: ParamsTreino }) {
       <main className="page-container">
         <header>
           <Link href="/hoje" className="link-muted"><i className="ph-bold ph-caret-left" aria-hidden="true" /> Voltar</Link>
-          <p className="eyebrow" style={{ marginTop: 18 }}>Cronômetro de rounds</p>
+          <p className="eyebrow mt-18">Cronômetro de rounds</p>
           <h1 className="page-title">{titulo}</h1>
           <p className="muted-copy">
             {CAT_LABELS[params.tipo]} · {params.rounds} rounds de {params.minPorRound < 1 ? `${Math.round(params.minPorRound * 60)} s` : `${params.minPorRound} min`} · descanso de {params.descansoSeg} s · cerca de {Math.round(totalSeg / 60)} min no total
@@ -114,7 +114,7 @@ function Cronometro({ params }: { params: ParamsTreino }) {
         <h1 className="page-title">{completo ? "Treino concluído!" : "Treino encerrado"}</h1>
         <p className="muted-copy">{completo ? "Todos os rounds feitos. Bom trabalho." : "Você parou antes do fim, e tudo bem. O que foi feito conta."}</p>
 
-        <div className="stat-grid" style={{ marginTop: 24 }}>
+        <div className="stat-grid mt-24">
           <section className="surface-card stat-card"><p className="stat-label">Rounds feitos</p><p className="stat-value">{c.roundsFeitos}/{params.rounds}</p></section>
           <section className="surface-card stat-card"><p className="stat-label">Tempo de treino</p><p className="stat-value">{mmss(c.decorridoReal)}</p></section>
         </div>
@@ -124,11 +124,11 @@ function Cronometro({ params }: { params: ParamsTreino }) {
             <i className="ph-bold ph-plus" aria-hidden="true" /> Registrar treino
           </button>
         ) : (
-          <p className="muted-copy" style={{ marginTop: 20 }}>Nenhum round foi completo, então não há nada para registrar.</p>
+          <p className="muted-copy mt-20">Nenhum round foi completo, então não há nada para registrar.</p>
         )}
-        <Link href="/hoje" className="btn-ghost" style={{ marginTop: 12, width: "100%" }}>Voltar ao início</Link>
+        <Link href="/hoje" className={`btn-ghost ${styles.voltarInicio}`}>Voltar ao início</Link>
         <div className="section-heading"><h2>Depois do treino</h2><Link href="/tecnicas?aba=preparacao" className="link-muted">Ver guia</Link></div>
-        <section className="surface-card empty-state" style={{ justifyItems: "start", textAlign: "left" }}>
+        <section className={`surface-card empty-state ${styles.depoisDoTreino}`}>
           <p>Faça 3 a 5 minutos de desaceleração, alongue ombros, punhos e pernas e hidrate-se.</p>
         </section>
       </main>

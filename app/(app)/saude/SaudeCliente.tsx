@@ -79,7 +79,7 @@ export default function SaudeCliente() {
     <main className="page-container">
       <header>
         <Link href="/perfil" className="link-muted"><i className="ph-bold ph-caret-left" aria-hidden="true" /> Perfil</Link>
-        <p className="eyebrow" style={{ marginTop: 18 }}>Cuide do corpo</p>
+        <p className="eyebrow mt-18">Cuide do corpo</p>
         <h1 className="page-title">Saúde e corpo</h1>
         <p className="muted-copy">Estas ferramentas ajudam a acompanhar, mas não substituem avaliação de um médico ou fisioterapeuta.</p>
       </header>
@@ -87,12 +87,12 @@ export default function SaudeCliente() {
       {/* ── Pancadas na cabeça ─────────────────────────── */}
       <div className="section-heading"><h2>Pancadas na cabeça</h2><span>Últimos 30 dias</span></div>
       <section className={`surface-card ${estilos.cabecaCard}`}>
-        <div className="stat-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className={`stat-grid ${estilos.tresColunas}`}>
           <div><p className="stat-label">Sparrings</p><p className="stat-value">{cabeca.sparrings}</p></div>
           <div><p className="stat-label">Leves</p><p className="stat-value">{cabeca.leves}</p></div>
           <div><p className="stat-label">Fortes</p><p className="stat-value">{cabeca.fortes}</p></div>
         </div>
-        <p className="muted-copy" style={{ marginTop: 14 }}>
+        <p className="muted-copy mt-14">
           {cabeca.fortes === 0
             ? "Nenhum sparring com pancadas fortes registrado. Continue marcando a cada sparring."
             : `Último sparring com pancadas fortes: ${formatarDataCurta(cabeca.ultimoForte ?? hoje)}. Após pancadas fortes, evite sparring por 7 dias. Dor de cabeça persistente, tontura, náusea, visão turva ou confusão exigem atendimento médico.`}
@@ -104,22 +104,22 @@ export default function SaudeCliente() {
       <section className="surface-card form-card">
         <form onSubmit={salvarPeso} className="linha-form" noValidate>
           <input className="field-input" inputMode="decimal" placeholder="Peso de hoje (kg)" value={kgTexto} onChange={e => setKgTexto(e.target.value)} aria-label="Peso de hoje em quilos" aria-invalid={erroPeso ? true : undefined} />
-          <button type="submit" className="btn-primary" style={{ marginTop: 0, width: "auto" }}>Registrar</button>
+          <button type="submit" className={`btn-primary ${estilos.botaoRegistrar}`}>Registrar</button>
         </form>
         {erroPeso && <p role="alert" className={estilos.erroTexto}>{erroPeso}</p>}
-        <div style={{ marginTop: 14 }}><GraficoPeso pesos={pesos} categoria={categoria} /></div>
+        <div className="mt-14"><GraficoPeso pesos={pesos} categoria={categoria} /></div>
 
-        <form onSubmit={salvarCategoria} className="linha-form" style={{ marginTop: 14 }} noValidate>
+        <form onSubmit={salvarCategoria} className="linha-form mt-14" noValidate>
           <input className="field-input" inputMode="decimal" placeholder={categoria ? `Categoria atual: ${fmt(categoria)} kg` : "Categoria de peso (kg), se compete"} value={catTexto} onChange={e => setCatTexto(e.target.value)} aria-label="Categoria de peso em quilos" />
-          <button type="submit" className="btn-ghost" style={{ height: 46 }}>Salvar</button>
+          <button type="submit" className={`btn-ghost ${estilos.botaoSalvar}`}>Salvar</button>
         </form>
         {diff !== null && (
-          <p className="muted-copy" style={{ marginTop: 10 }}>
+          <p className="muted-copy mt-10">
             {diff > 0.05 ? `${fmt(diff)} kg acima da categoria. Ajuste com calma e acompanhamento de um nutricionista.` : diff < -0.05 ? `${fmt(-diff)} kg abaixo da categoria.` : "Você está exatamente no peso da categoria."}
           </p>
         )}
         {perdaPct > 2 && (
-          <p role="alert" className={estilos.erroTexto} style={{ marginTop: 10 }}>
+          <p role="alert" className={`${estilos.erroTexto} ${estilos.erroAbaixo}`}>
             <i className="ph-fill ph-warning" aria-hidden="true" /> Você perdeu {fmt(perdaPct)}% do peso em cerca de uma semana. Cortes rápidos reduzem o rendimento e aumentam o risco de lesão e desidratação. Converse com seu treinador e um nutricionista.
           </p>
         )}
@@ -141,7 +141,7 @@ export default function SaudeCliente() {
       {/* ── Lesões ─────────────────────────────────────── */}
       <div className="section-heading"><h2>Lesões e dores</h2><span>{ativas.length} {ativas.length === 1 ? "ativa" : "ativas"}</span></div>
       {ativas.length > 0 && (
-        <section className="surface-card" style={{ marginBottom: 12 }}>
+        <section className="surface-card mb-12">
           <ul className="historico-list">
             {ativas.map(l => (
               <li key={l.id}>
@@ -171,7 +171,7 @@ export default function SaudeCliente() {
               <button key={n} type="button" role="radio" aria-checked={intensidade === n} tabIndex={intensidade === n ? 0 : -1} className={intensidade === n ? "ativo" : ""} onClick={() => setIntensidade(n)}>{n}</button>
             ))}
           </div>
-          <input className="field-input" style={{ marginTop: 12 }} placeholder="Observação (opcional)" maxLength={200} value={nota} onChange={e => setNota(e.target.value)} aria-label="Observação sobre a lesão" />
+          <input className="field-input mt-12" placeholder="Observação (opcional)" maxLength={200} value={nota} onChange={e => setNota(e.target.value)} aria-label="Observação sobre a lesão" />
           <button type="submit" className="btn-primary">Registrar lesão</button>
         </form>
         {resolvidas.length > 0 && (

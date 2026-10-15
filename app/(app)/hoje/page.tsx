@@ -171,8 +171,8 @@ export default function HojePage() {
             iniciarHref={hrefTreino}
             onRegistrar={registrarEfetivo}
           />
-          {descansoDoDia && <p className="muted-copy" style={{ marginTop: 10 }}>Você escolheu descansar hoje. O treino volta a aparecer se você desfizer o ajuste.</p>}
-          <div style={{ height: 12 }} />
+          {descansoDoDia && <p className="muted-copy mt-10">Você escolheu descansar hoje. O treino volta a aparecer se você desfizer o ajuste.</p>}
+          <div className="espaco-12" />
           <ChecklistCard
             titulo={daHoje.sessao.titulo}
             subtitulo={`${CAT_LABELS[daHoje.sessao.tipo]} · ${daHoje.sessao.rounds * daHoje.sessao.minPorRound} min de rounds`}

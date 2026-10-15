@@ -103,3 +103,5 @@
   font-size: 0.75rem;
   font-weight: 700;
 }
+
+.tituloIcone { color: var(--red); margin-right: 8px; }
