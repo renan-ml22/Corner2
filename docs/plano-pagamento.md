@@ -1,6 +1,6 @@
 # Corner — Plano de pagamento com Stripe
 
-Estado: **em andamento.** Fase P1 (regras puras) em construção; P0 (chaves do Stripe) aguarda você. Pontos com ❓ ainda dependem de confirmação.
+Estado: **em andamento.** P0 (chaves de teste) e P1 (regras puras) concluídas; P2 (produtos e preços no Stripe) em construção. Pontos com ❓ ainda dependem de confirmação.
 
 ## Decisões já tomadas
 
@@ -17,11 +17,11 @@ Estado: **em andamento.** Fase P1 (regras puras) em construção; P0 (chaves do 
 
 | Plano | Mensal | Anual (proposta ❓) |
 |---|---|---|
-| Iniciante | R$ 39,90 | ❓ |
-| Amador | R$ 52,90 | ❓ |
-| Profissional | R$ 69,90 | ❓ |
+| Iniciante | R$ 39,90 | R$ 399,00 |
+| Amador | R$ 52,90 | R$ 529,00 |
+| Profissional | R$ 69,90 | R$ 699,00 |
 
-**Anual pendente:** 10× o mensal (2 meses grátis: 399,00 / 529,00 / 699,00) ou 11× (1 mês grátis: 438,90 / 581,90 / 768,90)? No código é um número só (`ANUAL_EM_MESES`); hoje está em 10.
+**Anual decidido:** 10× o mensal (2 meses grátis). No código é um número só (`ANUAL_EM_MESES`). Atenção: no Stripe o valor de um preço não se edita; mudar o anual depois cria um preço novo e arquiva o antigo (o script faz isso sozinho).
 
 ## Como funciona sem banco (e o que isso limita)
 

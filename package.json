@@ -12,14 +12,16 @@
     "test:watch": "vitest",
     "verificar-env": "node scripts/verificar-env.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "stripe:sincronizar": "tsx scripts/stripe-sincronizar.ts"
   },
   "dependencies": {
     "jose": "^6.2.12",
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "stripe": "^23.0.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
@@ -31,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.4"
   }
