@@ -48,8 +48,8 @@ function falso(opcoes: {
 }
 
 const assinatura = (parcial: Record<string, unknown> = {}) => ({
-  status: 'active', cancel_at_period_end: false, trial_end: null,
-  items: { data: [{ price: { lookup_key: 'amador_mensal' }, current_period_end: unix('2026-11-20T12:00:00.000Z') }] }, ...parcial,
+  id: 'sub_1', status: 'active', cancel_at_period_end: false, trial_end: null,
+  items: { data: [{ id: 'si_1', price: { lookup_key: 'amador_mensal' }, current_period_end: unix('2026-11-20T12:00:00.000Z') }] }, ...parcial,
 })
 const doUsuario = { id: 'cus_existente', email: USUARIO.email, metadata: { corner_user_id: USUARIO.id } }
 
@@ -166,6 +166,71 @@ describe('criarCheckout', () => {
     expect(erro).toBeInstanceOf(ErroAssinatura)
     expect(erro.message).toMatch(/[a-zç]/i)
     expect(erro.message).not.toMatch(/price_|cus_|sk_/)
+  })
+})
+
+describe('criarPortal: trocar de plano', () => {
+  const troca = (parcial = {}) => ({ usuario: USUARIO, origem: ORIGEM, trocarPara: { nivel: 'profissional' as const, periodo: 'mensal' as const }, ...parcial })
+  const precos = { amador_mensal: 'price_amador_mensal', profissional_mensal: 'price_profissional_mensal', profissional_anual: 'price_profissional_anual', amador_anual: 'price_amador_anual' }
+
+  it('abre o portal direto na confirmação da troca, com a assinatura, o item e o preço de destino', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura()], precos })
+    const r = await criarPortal(f.stripe, troca())
+    expect(r.url).toBe('https://billing.stripe.com/p/session/x')
+    expect(f.pedidos('portal.create')[0]).toEqual({
+      customer: 'cus_existente',
+      return_url: `${ORIGEM}/assinatura`,
+      flow_data: {
+        type: 'subscription_update_confirm',
+        subscription_update_confirm: { subscription: 'sub_1', items: [{ id: 'si_1', price: 'price_profissional_mensal', quantity: 1 }] },
+        after_completion: { type: 'redirect', redirect: { return_url: `${ORIGEM}/assinatura` } },
+      },
+    })
+  })
+
+  it('o preço de destino é buscado pela chave (plano + período), nunca recebido do navegador', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura()], precos })
+    await criarPortal(f.stripe, troca({ trocarPara: { nivel: 'profissional', periodo: 'anual' } }))
+    expect(f.pedidos('prices.list')[0]).toMatchObject({ lookup_keys: ['profissional_anual'], active: true })
+  })
+
+  it('serve também em teste grátis', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura({ status: 'trialing', trial_end: unix('2026-10-27T12:00:00.000Z') })], precos })
+    await criarPortal(f.stripe, troca())
+    expect(f.pedidos('portal.create')[0]).toHaveProperty('flow_data')
+  })
+
+  it('trocar só o período do mesmo plano (mensal para anual) também é uma troca', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura()], precos })
+    await criarPortal(f.stripe, troca({ trocarPara: { nivel: 'amador', periodo: 'anual' } }))
+    expect((f.pedidos('portal.create')[0] as { flow_data: { subscription_update_confirm: { items: { price: string }[] } } }).flow_data.subscription_update_confirm.items[0].price).toBe('price_amador_anual')
+  })
+
+  it('já está nesse plano e período: erro 409, sem abrir portal', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura()], precos })
+    await expect(criarPortal(f.stripe, troca({ trocarPara: { nivel: 'amador', periodo: 'mensal' } }))).rejects.toMatchObject({ codigo: 'mesmo_plano', status: 409 })
+    expect(f.pedidos('portal.create')).toHaveLength(0)
+  })
+
+  it('sem assinatura ativa ou em teste (só cancelada): erro 409 orientando a assinar', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura({ status: 'canceled' })], precos })
+    await expect(criarPortal(f.stripe, troca())).rejects.toMatchObject({ codigo: 'sem_assinatura_ativa', status: 409 })
+    expect(f.pedidos('portal.create')).toHaveLength(0)
+  })
+
+  it('pagamento atrasado não troca de plano: erro 409 (primeiro é preciso resolver o pagamento)', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura({ status: 'past_due' })], precos })
+    await expect(criarPortal(f.stripe, troca())).rejects.toMatchObject({ codigo: 'sem_assinatura_ativa', status: 409 })
+  })
+
+  it('preço de destino que não existe no Stripe: erro 503', async () => {
+    const f = falso({ clientes: [doUsuario], assinaturas: [assinatura()], precos: { amador_mensal: 'price_amador_mensal' } })
+    await expect(criarPortal(f.stripe, troca())).rejects.toMatchObject({ codigo: 'preco_inexistente', status: 503 })
+  })
+
+  it('sem cliente no Stripe: erro 409, como no portal comum', async () => {
+    const f = falso({ precos })
+    await expect(criarPortal(f.stripe, troca())).rejects.toMatchObject({ codigo: 'sem_cliente', status: 409 })
   })
 })
 

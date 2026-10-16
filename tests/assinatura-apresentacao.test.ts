@@ -102,24 +102,32 @@ describe('resumoDoEstado (o que a tela diz sobre a assinatura)', () => {
 
 describe('rotuloDoBotao (o que está escrito em cada plano)', () => {
   it('quem nunca assinou começa o teste grátis', () => {
-    expect(rotuloDoBotao(SEM_ASSINATURA, 'amador')).toEqual({ texto: 'Começar 7 dias grátis', acao: 'assinar' })
+    expect(rotuloDoBotao(SEM_ASSINATURA, 'amador', 'mensal')).toEqual({ texto: 'Começar 7 dias grátis', acao: 'assinar' })
+    expect(rotuloDoBotao(SEM_ASSINATURA, 'amador', 'anual')).toEqual({ texto: 'Começar 7 dias grátis', acao: 'assinar' })
   })
 
   it('quem já teve e cancelou assina direto, sem falar de teste grátis', () => {
-    expect(rotuloDoBotao(e({ situacao: 'cancelada' }), 'amador')).toEqual({ texto: 'Assinar', acao: 'assinar' })
+    expect(rotuloDoBotao(e({ situacao: 'cancelada' }), 'amador', 'mensal')).toEqual({ texto: 'Assinar', acao: 'assinar' })
   })
 
-  it('no plano atual: "Plano atual" (sem ação)', () => {
-    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador' }), 'amador')).toEqual({ texto: 'Plano atual', acao: 'nenhuma' })
-    expect(rotuloDoBotao(e({ situacao: 'teste', nivel: 'amador', fimDoTeste: dias(3) }), 'amador')).toEqual({ texto: 'Plano atual', acao: 'nenhuma' })
+  it('no plano e período atuais: "Plano atual" (sem ação)', () => {
+    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador', periodo: 'mensal' }), 'amador', 'mensal')).toEqual({ texto: 'Plano atual', acao: 'nenhuma' })
+    expect(rotuloDoBotao(e({ situacao: 'teste', nivel: 'amador', periodo: 'anual', fimDoTeste: dias(3) }), 'amador', 'anual')).toEqual({ texto: 'Plano atual', acao: 'nenhuma' })
   })
 
-  it('em outro plano de quem já assina: a troca é feita no portal', () => {
-    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador' }), 'profissional')).toEqual({ texto: 'Mudar para este plano', acao: 'portal' })
-    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador' }), 'iniciante')).toEqual({ texto: 'Mudar para este plano', acao: 'portal' })
+  it('no mesmo plano, mas em outro período: oferece trocar só o período', () => {
+    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador', periodo: 'mensal' }), 'amador', 'anual')).toEqual({ texto: 'Mudar para o anual', acao: 'trocar' })
+    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador', periodo: 'anual' }), 'amador', 'mensal')).toEqual({ texto: 'Mudar para o mensal', acao: 'trocar' })
+  })
+
+  it('em outro plano de quem já assina (ou está em teste): a troca abre a confirmação no portal', () => {
+    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador' }), 'profissional', 'mensal')).toEqual({ texto: 'Mudar para este plano', acao: 'trocar' })
+    expect(rotuloDoBotao(e({ situacao: 'ativa', nivel: 'amador' }), 'iniciante', 'mensal')).toEqual({ texto: 'Mudar para este plano', acao: 'trocar' })
+    expect(rotuloDoBotao(e({ situacao: 'teste', nivel: 'amador', fimDoTeste: dias(3) }), 'profissional', 'mensal')).toEqual({ texto: 'Mudar para este plano', acao: 'trocar' })
   })
 
   it('pagamento atrasado: a ação é resolver no portal', () => {
-    expect(rotuloDoBotao(e({ situacao: 'atrasada', fimDoPeriodo: dias(-1) }), 'amador')).toEqual({ texto: 'Resolver pagamento', acao: 'portal' })
+    expect(rotuloDoBotao(e({ situacao: 'atrasada', fimDoPeriodo: dias(-1) }), 'amador', 'mensal')).toEqual({ texto: 'Resolver pagamento', acao: 'portal' })
+    expect(rotuloDoBotao(e({ situacao: 'atrasada', fimDoPeriodo: dias(-1) }), 'profissional', 'anual')).toEqual({ texto: 'Resolver pagamento', acao: 'portal' })
   })
 })

@@ -3,7 +3,7 @@
 
 import {
   ANUAL_EM_MESES, NIVEIS, NOME_DO_NIVEL, RECURSOS, TESTE_GRATIS_DIAS, precoEmCentavos, recurso,
-  type NivelAssinatura, type NivelDeAcesso, type RecursoId,
+  type NivelAssinatura, type NivelDeAcesso, type Periodo, type RecursoId,
 } from './catalogo'
 import { formatarDataCurta } from '@/lib/datas'
 import type { EstadoAssinatura } from './regras'
@@ -73,14 +73,19 @@ export function resumoDoEstado(estado: EstadoAssinatura, agora: Date = new Date(
 
 export interface RotuloDoBotao {
   texto: string
-  /** assinar: abre a página de pagamento; portal: gerencia no Portal do Cliente; nenhuma: sem ação. */
-  acao: 'assinar' | 'portal' | 'nenhuma'
+  /**
+   * assinar: abre a página de pagamento; trocar: abre a confirmação da troca no Portal do Cliente;
+   * portal: abre o portal comum (resolver pagamento); nenhuma: sem ação.
+   */
+  acao: 'assinar' | 'trocar' | 'portal' | 'nenhuma'
 }
 
-export function rotuloDoBotao(estado: EstadoAssinatura, nivel: NivelAssinatura): RotuloDoBotao {
+export function rotuloDoBotao(estado: EstadoAssinatura, nivel: NivelAssinatura, periodo: Periodo): RotuloDoBotao {
   if (estado.situacao === 'atrasada') return { texto: 'Resolver pagamento', acao: 'portal' }
   if (estado.situacao === 'ativa' || estado.situacao === 'teste') {
-    return estado.nivel === nivel ? { texto: 'Plano atual', acao: 'nenhuma' } : { texto: 'Mudar para este plano', acao: 'portal' }
+    if (estado.nivel === nivel && estado.periodo === periodo) return { texto: 'Plano atual', acao: 'nenhuma' }
+    if (estado.nivel === nivel) return { texto: `Mudar para o ${periodo}`, acao: 'trocar' }
+    return { texto: 'Mudar para este plano', acao: 'trocar' }
   }
   if (estado.situacao === 'cancelada') return { texto: 'Assinar', acao: 'assinar' }
   return { texto: `Começar ${TESTE_GRATIS_DIAS} dias grátis`, acao: 'assinar' }

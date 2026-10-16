@@ -139,6 +139,8 @@ export interface ConfiguracaoDoPortal {
       enabled: boolean
       default_allowed_updates: string[]
       proration_behavior: 'create_prorations'
+      /** Trocar de plano em teste grátis NÃO encerra o teste (o padrão do Stripe é encerrar e cobrar na hora). */
+      trial_update_behavior: 'continue_trial'
       products: { product: string; prices: string[]; adjustable_quantity: { enabled: false } }[]
     }
   }
@@ -161,6 +163,7 @@ export function configuracaoDoPortal(
         enabled: true,
         default_allowed_updates: ['price'],
         proration_behavior: 'create_prorations',
+        trial_update_behavior: 'continue_trial',
         products: NIVEIS.map(nivel => ({
           product: produtoPorNivel[nivel],
           prices: PERIODOS.map(periodo => precoPorChave[lookupKey(nivel, periodo)]),

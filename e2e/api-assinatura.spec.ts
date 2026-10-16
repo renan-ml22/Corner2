@@ -69,6 +69,22 @@ test.describe('rotas de assinatura logado, sem o Stripe configurado', () => {
     expect(texto).not.toMatch(/sk_|stripe|price_|cus_/i)
   })
 
+  test('portal com plano de destino inválido: 400, antes de qualquer chamada', async ({ pagina }) => {
+    for (const corpo of [{ nivel: 'ouro', periodo: 'mensal' }, { nivel: 'amador' }, { nivel: 'amador', periodo: 'mensal', price: 'price_x' }]) {
+      const r = await pagina.request.post('/api/assinatura/portal', { headers: mesmoSite, data: corpo })
+      expect(r.status(), JSON.stringify(corpo)).toBe(400)
+      expect((await r.json()).codigo).toBe('pedido_invalido')
+    }
+    const r = await pagina.request.post('/api/assinatura/portal', { headers: { ...mesmoSite, 'content-type': 'application/json' }, data: 'não é { json' })
+    expect(r.status()).toBe(400)
+  })
+
+  test('portal com plano de destino válido, sem chave do Stripe: 503 claro', async ({ pagina }) => {
+    const r = await pagina.request.post('/api/assinatura/portal', { headers: mesmoSite, data: { nivel: 'profissional', periodo: 'anual' } })
+    expect(r.status()).toBe(503)
+    expect((await r.json()).codigo).toBe('nao_configurado')
+  })
+
   test('portal sem chave do Stripe: 503 claro', async ({ pagina }) => {
     const r = await pagina.request.post('/api/assinatura/portal', { headers: mesmoSite })
     expect(r.status()).toBe(503)

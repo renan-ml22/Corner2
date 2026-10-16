@@ -87,8 +87,10 @@ export default function AssinaturaCliente() {
   };
 
   const aoClicar = (nivel: NivelAssinatura) => {
-    const { acao } = rotuloDoBotao(estado, nivel);
+    const { acao } = rotuloDoBotao(estado, nivel, periodo);
     if (acao === "assinar") void ir(nivel, "/api/assinatura/checkout", { nivel, periodo });
+    // Troca de plano: o portal já abre na tela de confirmar a mudança para o plano e período escolhidos.
+    else if (acao === "trocar") void ir(nivel, "/api/assinatura/portal", { nivel, periodo });
     else if (acao === "portal") void ir("portal", "/api/assinatura/portal");
   };
 
@@ -144,8 +146,8 @@ export default function AssinaturaCliente() {
 
       <div className={estilos.planos}>
         {NIVEIS.map((nivel, i) => {
-          const atual = (estado.situacao === "ativa" || estado.situacao === "teste") && estado.nivel === nivel;
-          const botao = rotuloDoBotao(estado, nivel);
+          const botao = rotuloDoBotao(estado, nivel, periodo);
+          const atual = botao.texto === "Plano atual";
           const anterior = i > 0 ? NOME_DO_NIVEL[NIVEIS[i - 1]] : null;
           return (
             <article key={nivel} className={`surface-card ${estilos.plano} ${atual ? estilos.planoAtual : ""}`} aria-label={`Plano ${NOME_DO_NIVEL[nivel]}`}>

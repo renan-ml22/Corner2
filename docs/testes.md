@@ -34,6 +34,15 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - Evite `style={{ ... }}` fixo. Só use para valores calculados (largura de barra em %, tamanho da logo).
 - Num par `-webkit-x` + `x`, escreva o prefixado **primeiro** (o minificador do Next descarta o padrão se vier antes). Um teste confere.
 
+## Assinaturas e pagamento
+
+- `npm run stripe:sincronizar`: cria ou conserta produtos, preços e Portal no Stripe de teste (idempotente). Com `-- --simular`, só mostra o que faria.
+- `npm run stripe:fumaca`: exercita o código das rotas contra o Stripe de teste de verdade e limpa o que criou.
+- Testes de unidade (`tests/assinatura-*.test.ts`): catálogo, regras de acesso, conversão do Stripe, serviço (com um Stripe falso), cookie de estado, validação do pedido e alertas por plano.
+- Testes de navegador (`e2e/assinatura*.spec.ts` e `e2e/bloqueio.spec.ts`): as rotas e as telas com a API de assinatura **simulada**. O servidor de teste sobe **sem** chave do Stripe, com as variáveis vazias de propósito (o `next start` leria o `.env.local` da sua máquina). Nenhum teste automático fala com o Stripe.
+- `tests/sem-segredos.test.ts` falha se qualquer chave do Stripe aparecer em arquivo versionado.
+- Teste manual com a página de pagamento do Stripe: roteiro em `docs/plano-pagamento.md`.
+
 ## Quando escrever cada tipo
 
 - Regra de cálculo, validador, migração: teste de unidade em `tests/` (primeiro o teste, depois o código).

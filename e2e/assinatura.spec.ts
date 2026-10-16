@@ -149,16 +149,48 @@ test.describe('tela de assinatura: quem já assina', () => {
     await pagina.getByRole('button', { name: 'Gerenciar assinatura' }).click()
     await pagina.waitForURL('**/assinatura?portal=voltou')
     expect(portal).toHaveLength(1)
+    expect(portal[0].corpo).toBeNull() // portal comum: sem plano de destino
   })
 
-  test('trocar de plano passa pelo portal, nunca por um segundo checkout', async ({ pagina }) => {
+  test('trocar de plano passa pelo portal, já com o plano de destino, e nunca por um segundo checkout', async ({ pagina }) => {
     await simularEstado(pagina, ativa('amador'))
     const { checkout, portal } = await simularPagamento(pagina)
     await pagina.goto('/assinatura')
     await plano(pagina, 'Profissional').getByRole('button').click()
     await pagina.waitForURL('**/assinatura?portal=voltou')
     expect(portal).toHaveLength(1)
+    expect(portal[0].corpo).toEqual({ nivel: 'profissional', periodo: 'mensal' })
     expect(checkout).toHaveLength(0)
+  })
+
+  test('durante o teste grátis, trocar de plano também abre a confirmação da troca', async ({ pagina }) => {
+    await simularEstado(pagina, emTeste('amador', 4))
+    const { portal } = await simularPagamento(pagina)
+    await pagina.goto('/assinatura')
+    await plano(pagina, 'Iniciante').getByRole('button').click()
+    await pagina.waitForURL('**/assinatura?portal=voltou')
+    expect(portal[0].corpo).toEqual({ nivel: 'iniciante', periodo: 'mensal' })
+  })
+
+  test('no mesmo plano, escolher o outro período oferece trocar só o período', async ({ pagina }) => {
+    await simularEstado(pagina, ativa('amador', { periodo: 'mensal' }))
+    const { portal } = await simularPagamento(pagina)
+    await pagina.goto('/assinatura')
+    await expect(plano(pagina, 'Amador').getByRole('button')).toHaveText('Plano atual')
+    await pagina.getByRole('radio', { name: 'Anual' }).click()
+    await expect(plano(pagina, 'Amador').getByRole('button')).toHaveText('Mudar para o anual')
+    await plano(pagina, 'Amador').getByRole('button').click()
+    await pagina.waitForURL('**/assinatura?portal=voltou')
+    expect(portal[0].corpo).toEqual({ nivel: 'amador', periodo: 'anual' })
+  })
+
+  test('pagamento atrasado: "Resolver pagamento" abre o portal comum, sem plano de destino', async ({ pagina }) => {
+    await simularEstado(pagina, { ...ativa('amador'), situacao: 'atrasada', fimDoPeriodo: '2026-10-13T12:00:00.000Z' })
+    const { portal } = await simularPagamento(pagina)
+    await pagina.goto('/assinatura')
+    await plano(pagina, 'Profissional').getByRole('button', { name: /Resolver pagamento/ }).click()
+    await pagina.waitForURL('**/assinatura?portal=voltou')
+    expect(portal[0].corpo).toBeNull()
   })
 })
 

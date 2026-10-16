@@ -2,7 +2,7 @@
 // então os testes usam um falso e as rotas passam o de verdade (lib/assinatura/stripe.ts).
 // Nada aqui lê cookie, cabeçalho ou variável de ambiente.
 
-import { TESTE_GRATIS_DIAS, lookupKey, type NivelAssinatura, type Periodo } from './catalogo'
+import { TESTE_GRATIS_DIAS, lookupKey, nivelDeLookupKey, type NivelAssinatura, type Periodo } from './catalogo'
 import { temAcesso, type EstadoAssinatura } from './regras'
 import { estadoDeAssinaturas, type AssinaturaStripe } from './stripe-para-estado'
 
@@ -13,9 +13,15 @@ export interface StripeLike {
     create(p: { email: string; name?: string; metadata: Record<string, string> }): Promise<ClienteStripe>
   }
   prices: { list(p: { lookup_keys: string[]; active: boolean; limit: number }): Promise<{ data: { id: string }[] }> }
-  subscriptions: { list(p: { customer: string; status: 'all'; limit: number }): Promise<{ data: AssinaturaStripe[] }> }
+  subscriptions: { list(p: { customer: string; status: 'all'; limit: number }): Promise<{ data: AssinaturaComId[] }> }
   checkout: { sessions: { create(p: Record<string, unknown>): Promise<{ id: string; url: string | null }> } }
-  billingPortal: { sessions: { create(p: { customer: string; return_url: string }): Promise<{ url: string }> } }
+  billingPortal: { sessions: { create(p: Record<string, unknown>): Promise<{ url: string }> } }
+}
+
+/** A assinatura com os ids que a troca de plano precisa (da assinatura e do item). */
+export interface AssinaturaComId extends AssinaturaStripe {
+  id: string
+  items: { data: { id: string; price: { lookup_key?: string | null }; current_period_end?: number }[] }
 }
 
 interface ClienteStripe {
@@ -30,7 +36,7 @@ export interface UsuarioDoApp {
   name: string
 }
 
-export type CodigoDeErro = 'ja_assinante' | 'preco_inexistente' | 'sem_url' | 'sem_cliente'
+export type CodigoDeErro = 'ja_assinante' | 'preco_inexistente' | 'sem_url' | 'sem_cliente' | 'sem_assinatura_ativa' | 'mesmo_plano'
 
 /** Erro com texto seguro para mostrar à pessoa (em português, sem nada do Stripe) e o status HTTP a devolver. */
 export class ErroAssinatura extends Error {
@@ -56,7 +62,7 @@ async function garantirCliente(stripe: StripeLike, usuario: UsuarioDoApp): Promi
   return criado.id
 }
 
-async function assinaturasDoCliente(stripe: StripeLike, cliente: string): Promise<AssinaturaStripe[]> {
+async function assinaturasDoCliente(stripe: StripeLike, cliente: string): Promise<AssinaturaComId[]> {
   return (await stripe.subscriptions.list({ customer: cliente, status: 'all', limit: 100 })).data
 }
 
@@ -112,10 +118,46 @@ export async function criarCheckout(stripe: StripeLike, { usuario, nivel, period
   return { url: sessao.url }
 }
 
-/** Abre o Portal do Cliente do Stripe (trocar de plano, cartão, faturas, cancelar). */
-export async function criarPortal(stripe: StripeLike, { usuario, origem }: { usuario: UsuarioDoApp; origem: string }): Promise<{ url: string }> {
+/**
+ * Abre o Portal do Cliente do Stripe (cartão, faturas, cancelar). Com `trocarPara`, abre já na tela de confirmar a
+ * troca para aquele plano e período, em vez de deixar a pessoa procurar a opção. A troca durante o teste grátis
+ * mantém o resto do teste (configurado no portal).
+ */
+export async function criarPortal(
+  stripe: StripeLike,
+  { usuario, origem, trocarPara }: { usuario: UsuarioDoApp; origem: string; trocarPara?: { nivel: NivelAssinatura; periodo: Periodo } },
+): Promise<{ url: string }> {
   const cliente = await acharCliente(stripe, usuario)
   if (!cliente) throw new ErroAssinatura('sem_cliente', 'Você ainda não tem uma assinatura para gerenciar.', 409)
-  const sessao = await stripe.billingPortal.sessions.create({ customer: cliente, return_url: `${origem}/assinatura` })
+  const retorno = `${origem}/assinatura`
+
+  if (!trocarPara) {
+    return { url: (await stripe.billingPortal.sessions.create({ customer: cliente, return_url: retorno })).url }
+  }
+
+  // Só se troca uma assinatura em andamento (ativa ou em teste), e só uma que seja do Corner.
+  const atual = (await assinaturasDoCliente(stripe, cliente)).find(
+    a => (a.status === 'active' || a.status === 'trialing') && a.items.data.some(i => nivelDeLookupKey(i.price.lookup_key)),
+  )
+  const item = atual?.items.data.find(i => nivelDeLookupKey(i.price.lookup_key))
+  if (!atual || !item) {
+    throw new ErroAssinatura('sem_assinatura_ativa', 'Você não tem uma assinatura em andamento para trocar. Escolha um plano para assinar.', 409)
+  }
+
+  const chave = lookupKey(trocarPara.nivel, trocarPara.periodo)
+  if (item.price.lookup_key === chave) throw new ErroAssinatura('mesmo_plano', 'Este já é o seu plano.', 409)
+
+  const preco = (await stripe.prices.list({ lookup_keys: [chave], active: true, limit: 1 })).data[0]
+  if (!preco) throw new ErroAssinatura('preco_inexistente', 'Os planos ainda não estão disponíveis para contratação. Tente novamente mais tarde.', 503)
+
+  const sessao = await stripe.billingPortal.sessions.create({
+    customer: cliente,
+    return_url: retorno,
+    flow_data: {
+      type: 'subscription_update_confirm',
+      subscription_update_confirm: { subscription: atual.id, items: [{ id: item.id, price: preco.id, quantity: 1 }] },
+      after_completion: { type: 'redirect', redirect: { return_url: retorno } },
+    },
+  })
   return { url: sessao.url }
 }

@@ -1,6 +1,6 @@
 # Corner — Plano de pagamento com Stripe
 
-Estado: **em andamento.** Concluídas: P0 (chaves de teste), P1 (regras puras), P2 (produtos, preços e Portal no Stripe) e P3 (rotas de servidor). Próxima: P4 (tela de assinatura e liberação de recursos). Pontos com ❓ ainda dependem de confirmação.
+Estado: **versão de teste concluída.** P0 a P4 prontas e verificadas contra o Stripe de teste. Falta o seu teste manual (roteiro abaixo) e, para vender de verdade, a conta com banco (seção "Depois do teste").
 
 ## Decisões já tomadas
 
@@ -44,38 +44,40 @@ O estado da assinatura fica num cookie assinado de curta duração (5 min), para
 - Sem webhook, se a pessoa pagar e fechar a aba antes de voltar ao app, a liberação acontece no próximo acesso. Funciona, mas é menos elegante. O webhook entra na versão com banco.
 - **Não é uma versão para vender de verdade.** Para cobrar clientes reais é preciso conta de usuário e banco (ver "Depois do teste").
 
-## O que cada assinatura libera ❓ (proposta para você ajustar)
+## O que cada assinatura libera (em vigor)
 
-O app tem pouca coisa que "parece premium", então esta divisão é uma proposta. Ela fica toda em **uma tabela** (`lib/assinatura/catalogo.ts`): mudar um recurso de plano é mudar uma linha.
+Fica toda em **uma tabela** (`lib/assinatura/catalogo.ts`): mudar um recurso de plano é mudar uma linha (e rodar `npm run stripe:sincronizar` para atualizar a descrição dos produtos no Stripe). O **plano gratuito** foi decisão sua; o que ele inclui foi definido assim:
 
-| Recurso | Iniciante | Amador | Profissional |
-|---|:-:|:-:|:-:|
-| Registrar treino, histórico e progresso | ✓ | ✓ | ✓ |
-| Cronômetro de rounds | ✓ | ✓ | ✓ |
-| Biblioteca técnica | ✓ | ✓ | ✓ |
-| **Alertas de segurança** (pancada na cabeça, lesão ativa) | ✓ | ✓ | ✓ |
-| Plano de treino Fundamentos | ✓ | ✓ | ✓ |
-| Planos Base Aeróbica e Técnica Avançada | | ✓ | ✓ |
-| Check-in diário e ajuste do treino do dia | | ✓ | ✓ |
-| Carga de treino e alerta de sobrecarga | | ✓ | ✓ |
-| Saúde: peso, categoria e lesões | | ✓ | ✓ |
-| Reagendar sessões | | ✓ | ✓ |
-| Plano Pré-competição | | | ✓ |
-| Sparring detalhado com resumo de pancadas na cabeça | | | ✓ |
-| Alerta de perda rápida de peso | | | ✓ |
-| Backup (exportar e importar) e lembrete diário | | | ✓ |
+| Recurso | Gratuito | Iniciante | Amador | Profissional |
+|---|:-:|:-:|:-:|:-:|
+| Registrar treino, histórico e progresso | ✓ | ✓ | ✓ | ✓ |
+| Cronômetro de rounds | ✓ | ✓ | ✓ | ✓ |
+| **Registrar pancadas na cabeça e lesões, com os alertas de segurança** | ✓ | ✓ | ✓ | ✓ |
+| Exportar os próprios dados | ✓ | ✓ | ✓ | ✓ |
+| Biblioteca técnica | | ✓ | ✓ | ✓ |
+| Plano de treino Fundamentos | | ✓ | ✓ | ✓ |
+| Planos Base Aeróbica e Técnica Avançada | | | ✓ | ✓ |
+| Check-in diário e ajuste do treino do dia | | | ✓ | ✓ |
+| Carga de treino e alerta de sobrecarga | | | ✓ | ✓ |
+| Peso, categoria e gráfico de peso | | | ✓ | ✓ |
+| Reagendar sessões | | | ✓ | ✓ |
+| Plano Pré-competição | | | | ✓ |
+| Intensidade e parceiro no sparring, e resumo de pancadas dos últimos 30 dias | | | | ✓ |
+| Alerta de perda rápida de peso | | | | ✓ |
+| Importar backup | | | | ✓ |
+| Lembrete diário | | | | ✓ |
 
-**Recomendação: os alertas de segurança ficam em todos os planos.** Aviso de pancada forte na cabeça e de lesão ativa protege a saúde de quem treina, e esconder isso atrás de pagamento é arriscado para as pessoas e para a marca.
+**Os alertas de segurança ficam em todos os planos, inclusive no gratuito, e o registro que os alimenta também.** Aviso de pancada forte na cabeça e de lesão ativa protege a saúde de quem treina, e esconder isso atrás de pagamento é arriscado para as pessoas e para a marca. Um teste de navegador garante isso para o gratuito, o Iniciante e a assinatura cancelada. Os alertas de **carga** são do plano Amador.
 
 **Exportar os próprios dados:** recomendo permitir sempre, mesmo sem assinatura (a LGPD prevê portabilidade de dados). Por isso o backup talvez não deva ser exclusivo do Profissional ❓.
 
-## Quando não há assinatura ativa ❓
+## Quando não há assinatura ativa: modo gratuito limitado (decidido)
 
-Proposta: a pessoa entra e vê só a tela **Assinatura** (com os planos). Os dados dela ficam guardados no aparelho e **nada é apagado**. Ela pode exportar o backup. Ao assinar, tudo volta. Alternativa: um modo gratuito limitado.
+Quem nunca assinou, cancelou ou deixou o teste terminar usa o plano gratuito. Os recursos bloqueados mostram um convite ("Disponível a partir do plano X") com o caminho para assinar. **Nada é apagado**: se o plano de treino escolhido deixa de estar incluído, os dados dele ficam guardados e voltam quando a pessoa assinar de novo. Se o pagamento não está ligado no ambiente (sem chave do Stripe), **o app fica todo liberado**, como era antes.
 
-## Período de teste grátis ❓
+## Período de teste grátis (decidido)
 
-Proposta: **7 dias** sem exigir cartão (`payment_method_collection: if_required`). Sem cartão, converte menos, mas gera menos disputas. Se preferir cartão no início, é uma linha.
+**7 dias, sem cartão**, só na primeira assinatura. Quem já teve qualquer assinatura paga desde o início, com cartão. Se a pessoa não cadastrar um cartão até o fim do teste, a assinatura é cancelada e ela volta ao gratuito. Trocar de plano durante o teste **não** encerra o teste nem cobra na hora.
 
 ## Fases
 
@@ -143,10 +145,26 @@ O que já é protegido de verdade, no servidor: quem pode **criar a cobrança** 
 | Risco | Mitigação |
 |---|---|
 | Chave secreta vazar | Só em variáveis de ambiente; `server-only`; teste automático que impede `sk_` no código e no navegador; nunca colar no chat |
-| Cobrar errado | Valores só em centavos, de uma tabela; teste que confere os 6 preços; tudo em modo de teste |
+| Cobrar errado | Valores só em centavos, de uma tabela; teste que confere os 6 preços; tudo em modo de teste. A troca de plano durante o teste grátis foi configurada para não cobrar na hora (verificado no Stripe) |
 | Liberar recurso sem pagar | A decisão vem do Stripe no servidor, nunca de dado do navegador; cookie assinado |
 | Bloquear recurso de quem pagou | O estado tem tolerância: assinatura `past_due` mantém acesso por alguns dias |
 | Cobrança com o app errado em produção | Variáveis de teste só em *Preview*; checagem no CI de que `sk_live` não está no repositório |
+
+## Roteiro de teste manual (com o Stripe de teste, na sua máquina)
+
+1. Rode `npm run dev` e entre com o seu usuário. Como o `.env.local` tem as chaves de teste, o pagamento está ligado, e você começa no **plano gratuito**: veja o Perfil ("Plano gratuito"), a Biblioteca técnica (bloqueada) e o check-in na tela Hoje (bloqueado).
+2. Em **Perfil → Assinatura**, escolha **Amador** e clique em **Começar 7 dias grátis**. Na página do Stripe, clique em **Iniciar teste** (não pede cartão). Você volta ao app com "Tudo certo!" e "Teste grátis do Amador".
+3. Confira que check-in, carga, peso e biblioteca abriram.
+4. Clique em **Mudar para este plano** no Profissional: o portal abre direto na confirmação, mostrando **valor devido hoje R$ 0,00** (o teste continua).
+5. Em **Gerenciar assinatura → Adicionar forma de pagamento**, use o cartão `4242 4242 4242 4242` (qualquer data futura e qualquer CVC).
+6. Cancele pelo portal: o app passa a mostrar "Cancelada: vale até…".
+7. Para refazer do zero: no painel do Stripe (modo de teste), abra **Clientes**, abra o seu cliente e apague-o. A tela volta ao plano gratuito.
+
+Cartões de teste úteis: `4000 0000 0000 0341` (aceita o cadastro, mas recusa a cobrança: simula pagamento atrasado) e `4000 0000 0000 0002` (recusado).
+
+## Na Vercel (produção)
+
+**Não cadastre as chaves de teste na Vercel.** Sem `STRIPE_SECRET_KEY`, o site publicado funciona como antes (tudo liberado) e a tela Assinatura mostra "Pagamento ainda não disponível". Só ligue o pagamento em produção com chaves reais (`sk_live_`), o webhook configurado e a conta com banco de dados, e antes revise a seção abaixo.
 
 ## O que preciso de você
 

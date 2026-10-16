@@ -193,6 +193,10 @@ describe('configuracaoDoPortal', () => {
     for (const p of cfg.features.subscription_update.products) expect(p.adjustable_quantity).toEqual({ enabled: false })
   })
 
+  it('trocar de plano durante o teste grátis mantém o resto do teste (não cobra na hora)', () => {
+    expect(cfg.features.subscription_update.trial_update_behavior).toBe('continue_trial')
+  })
+
   it('a troca de plano cobra a diferença proporcional', () => {
     expect(cfg.features.subscription_update.proration_behavior).toBe('create_prorations')
   })
