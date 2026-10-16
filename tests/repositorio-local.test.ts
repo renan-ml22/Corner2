@@ -55,6 +55,7 @@ describe('leitura', () => {
       ajuste: { data: '2026-10-14', aplicado: true },
       reag: { '1:fund-seg': 2 },
       lembrete: '2026-10-14',
+      assinatura: { estado: { situacao: 'ativa', nivel: 'amador', periodo: 'mensal', fimDoPeriodo: '2026-11-20T12:00:00.000Z', fimDoTeste: null, cancelaNoFim: false }, em: '2026-10-14T12:00:00.000Z' },
     }
     for (const [nome, valor] of Object.entries(legado)) {
       storage.dados.set(`corner:u1:${nome}`, JSON.stringify(valor))

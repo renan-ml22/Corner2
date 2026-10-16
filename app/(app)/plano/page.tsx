@@ -14,10 +14,14 @@ import { nivelDoAtleta, urlTreino } from "@/lib/sessao";
 import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComStatus, type SessaoComStatus } from "@/lib/treinos";
 import estilos from './plano.module.css'
 import { TEXTOS } from "@/lib/textos";
+import { ConviteAoPlano } from "@/components/ConviteAoPlano";
+import { useAssinatura } from "@/hooks/useAssinatura";
+import { RECURSO_DO_PLANO_DE_TREINO } from "@/lib/assinatura/catalogo";
 
 export default function PlanoPage() {
   const pronto = useHidratado();
-  const { plano, planoAtivo, reag, reagendar, encerrarPlano } = usePlano();
+  const { plano, planoBloqueado, planoAtivo, reag, reagendar, encerrarPlano } = usePlano();
+  const { podeUsar, pronto: assinaturaPronta } = useAssinatura();
   const { historico } = useHistorico();
   const { config } = usePreferencias();
   const { openPlanos, openRegister } = usePainelAcoes();
@@ -25,7 +29,22 @@ export default function PlanoPage() {
   // null = acompanhar a semana atual
   const [semanaEscolhida, setSemanaEscolhida] = useState<number | null>(null);
 
-  if (!pronto) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
+  if (!pronto || !assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
+
+  // O plano escolhido não está no plano de assinatura atual: os dados ficam guardados e o convite aparece no lugar.
+  if (planoBloqueado) {
+    return (
+      <main className="page-container">
+        <header>
+          <p className="eyebrow">Sua rotina</p>
+          <h1 className="page-title">Plano de treino</h1>
+          <p className="muted-copy">Você escolheu o plano {planoBloqueado.nome}, que não está incluído na sua assinatura atual.</p>
+        </header>
+        <div className="mt-22"><ConviteAoPlano recurso={RECURSO_DO_PLANO_DE_TREINO[planoBloqueado.id]} /></div>
+        <button type="button" className="btn-ghost mt-12" onClick={openPlanos}>Escolher outro plano</button>
+      </main>
+    );
+  }
 
   if (!plano || !planoAtivo) {
     return (
@@ -123,7 +142,7 @@ export default function PlanoPage() {
               detalhado
               iniciarHref={aFazer && item.status === "hoje" ? urlTreino(params(item)) : undefined}
               onRegistrar={semana === semanaAtual && (item.status === "hoje" || item.status === "perdida") ? registrar(item) : undefined}
-              onReagendar={semana >= semanaAtual ? dia => reagendar(semana, item.sessao.id, dia) : undefined}
+              onReagendar={semana >= semanaAtual && podeUsar("reagendar") ? dia => reagendar(semana, item.sessao.id, dia) : undefined}
             />
           );
         })}

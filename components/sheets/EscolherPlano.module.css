@@ -35,6 +35,16 @@
   gap: 4px;
 }
 
+/* Plano de treino fora da assinatura atual. */
+.tagBloqueado {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-neutral-300);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .resumo {
   font-size: 13px;
   color: var(--color-neutral-300);

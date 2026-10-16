@@ -7,6 +7,7 @@ import { ENTIDADES } from '@/lib/dados/entidades'
 import type { RegType } from '@/lib/tipos'
 import { chaveReagendamento, sessaoDeHoje } from '@/lib/treinos'
 import { useEntidade, useHidratado } from './useEntidade'
+import { useAssinatura } from './useAssinatura'
 import { useHistorico } from './useHistorico'
 import { useRepositorio } from './useRepositorio'
 
@@ -20,7 +21,12 @@ export function usePlano() {
   const [reag, setReag] = useEntidade(repo, 'reag')
   const [checklist, setChecklist] = useEntidade(repo, 'checklist')
 
-  const plano = useMemo(() => getPlano(planoAtivo?.planoId), [planoAtivo])
+  const { planoDeTreinoLiberado } = useAssinatura()
+  const planoEscolhido = useMemo(() => getPlano(planoAtivo?.planoId), [planoAtivo])
+  // O plano escolhido pode não estar mais no plano de assinatura (cancelou, trocou para um menor). Os dados do
+  // plano continuam guardados; só deixamos de usá-lo, e as telas mostram o convite no lugar.
+  const planoBloqueado = planoEscolhido && !planoDeTreinoLiberado(planoEscolhido.id) ? planoEscolhido : null
+  const plano = planoBloqueado ? null : planoEscolhido
   const hojeKey = pronto ? chaveDia(new Date()) : ''
   // O que é "do dia" só vale na data em que foi marcado.
   const checklistHoje = checklist.data === hojeKey ? checklist.itens : ITENS_VAZIOS
@@ -61,7 +67,7 @@ export function usePlano() {
     })
   }, [plano, planoAtivo, reag, setChecklist])
 
-  return { planoAtivo, plano, escolherPlano, encerrarPlano, reag, reagendar, checklistHoje, toggleChecklist, concluirChecklistDeHoje }
+  return { planoAtivo, plano, planoBloqueado, escolherPlano, encerrarPlano, reag, reagendar, checklistHoje, toggleChecklist, concluirChecklistDeHoje }
 }
 
 /** A sessão do plano que cai hoje (com o status), ou `null` sem plano. */

@@ -13,6 +13,8 @@ import { NIVEL_LABEL, type Nivel } from "@/data/planos";
 import { nivelDoAtleta } from "@/lib/sessao";
 import estilos from './tecnicas.module.css'
 import estilosSessao from '@/components/SessaoCard.module.css'
+import { ConviteAoPlano } from '@/components/ConviteAoPlano'
+import { useAcesso } from '@/hooks/useAssinatura'
 
 export type Aba = "golpes" | "combinacoes" | "defesa" | "preparacao";
 
@@ -48,6 +50,21 @@ export default function TecnicasCliente({ abaInicial }: { abaInicial: Aba }) {
   const meuNivel = nivelDoAtleta(plano, config.experiencia);
   const [filtro, setFiltro] = useState<Nivel | "todos">(meuNivel);
   const combos = COMBINACOES.filter(c => filtro === "todos" || c.nivel === filtro);
+  const { liberado, pronto: assinaturaPronta } = useAcesso("biblioteca");
+
+  if (!assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
+  if (!liberado) {
+    return (
+      <main className="page-container">
+        <header>
+          <Link href="/hoje" className="link-muted"><i className="ph-bold ph-caret-left" aria-hidden="true" /> Voltar</Link>
+          <p className="eyebrow mt-18">Aprenda e revise</p>
+          <h1 className="page-title">Biblioteca técnica</h1>
+        </header>
+        <div className="mt-22"><ConviteAoPlano recurso="biblioteca" /></div>
+      </main>
+    );
+  }
 
   return (
     <main className="page-container">

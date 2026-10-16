@@ -5,6 +5,7 @@
 // tolerante (veja `limparLista` e `limparConfig`): um item ruim não derruba os outros.
 
 import { getPlano } from '@/data/planos'
+import { isEstadoAssinatura, type EstadoAssinatura } from '@/lib/assinatura/regras'
 import {
   REGIOES, isRegType,
   type AjusteDoDia, type Checkin, type ChecklistDoDia, type Configuracoes, type Lesao,
@@ -116,6 +117,11 @@ export const isAjuste = (v: unknown): v is AjusteDoDia => isObj(v) && isStr(v.da
 
 export const isReag = (v: unknown): v is Reagendamentos =>
   isObj(v) && Object.values(v).every(x => isNum(x) && Number.isInteger(x) && x >= 0 && x <= 6)
+
+/** Último estado da assinatura que o servidor informou, com a hora da consulta (cópia local, só para a tela abrir certa). */
+export interface AssinaturaGuardada { estado: EstadoAssinatura; em: string }
+export const isAssinaturaGuardada = (v: unknown): v is AssinaturaGuardada | null =>
+  v === null || (isObj(v) && isEstadoAssinatura(v.estado) && isStr(v.em))
 
 /** Data do último lembrete disparado (ou vazio). */
 export const isLembrete = (v: unknown): v is string => v === '' || isChave(v)

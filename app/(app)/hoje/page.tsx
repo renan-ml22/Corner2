@@ -22,6 +22,9 @@ import {
 } from "@/lib/treinos";
 import estilos from './hoje.module.css'
 import estilosSessao from '@/components/SessaoCard.module.css'
+import { ConviteAoPlano } from '@/components/ConviteAoPlano'
+import { useAssinatura } from '@/hooks/useAssinatura'
+import { RECURSO_DO_PLANO_DE_TREINO } from '@/lib/assinatura/catalogo'
 
 // Cada nível de ajuste sugerido tem a sua cor; "normal" não tem destaque.
 const CLASSE_NIVEL: Record<string, string> = { reduzir: estilos.nivelReduzir, leve: estilos.nivelLeve, descanso: estilos.nivelDescanso };
@@ -30,13 +33,14 @@ export default function HojePage() {
   const pronto = useHidratado();
   const usuario = useUsuario();
   const { historico } = useHistorico();
-  const { plano, planoAtivo, checklistHoje, toggleChecklist, reag } = usePlano();
+  const { plano, planoBloqueado, planoAtivo, checklistHoje, toggleChecklist, reag } = usePlano();
+  const { podeUsar, pronto: assinaturaPronta } = useAssinatura();
   const { config } = usePreferencias();
   const alertas = useAlertas();
   const { checkinHoje, ajusteAplicado, aplicarAjuste } = useCheckins();
   const { openRegister, openPlanos, openNotif, openOnboarding } = usePainelAcoes();
 
-  if (!pronto) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
+  if (!pronto || !assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
 
   const hoje = new Date();
   const primeiroNome = usuario.nome.split(" ")[0];
@@ -59,7 +63,8 @@ export default function HojePage() {
       : null;
 
   // Ajuste conforme o check-in: só vale depois que a pessoa aceita.
-  const ajuste = alvo ? sugerirAjuste(checkinHoje, alvo.tipo, alvo.rounds) : null;
+  const podeCheckin = podeUsar("checkin");
+  const ajuste = alvo && podeCheckin ? sugerirAjuste(checkinHoje, alvo.tipo, alvo.rounds) : null;
   const ajusteAtivo = !!ajuste && ajuste.nivel !== "normal" && ajusteAplicado;
   const efetivo = alvo && ajuste && ajusteAtivo ? { ...alvo, tipo: ajuste.tipo, rounds: ajuste.rounds } : alvo;
   const descansoDoDia = ajusteAtivo && ajuste?.nivel === "descanso";
@@ -91,7 +96,7 @@ export default function HojePage() {
       )}
 
       <div className="section-heading"><h2>Como você está</h2></div>
-      <CheckinCard />
+      {podeCheckin ? <CheckinCard /> : <ConviteAoPlano recurso="checkin" compacto />}
       {ajuste && ajuste.nivel !== "normal" && (
         <section className={`surface-card ${estilos.ajusteCard} ${CLASSE_NIVEL[ajuste.nivel] ?? ''}`} aria-live="polite">
           <i className={`ph-fill ${ajuste.nivel === "descanso" ? "ph-moon-stars" : "ph-gauge"}`} aria-hidden="true" />
@@ -123,6 +128,8 @@ export default function HojePage() {
         <h2>Treino de hoje</h2>
         {plano && !planoConcluido && <span>{plano.nome} · semana {semanaPlano}/{plano.semanas}</span>}
       </div>
+
+      {planoBloqueado && <div className="mb-12"><ConviteAoPlano recurso={RECURSO_DO_PLANO_DE_TREINO[planoBloqueado.id]} /></div>}
 
       {!plano && efetivo && (
         <>

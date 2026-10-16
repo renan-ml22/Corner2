@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { resumoRounds } from '@/data/planos'
+import { useAssinatura } from '@/hooks/useAssinatura'
+import { NOME_DO_ACESSO, RECURSO_DO_PLANO_DE_TREINO, recurso } from '@/lib/assinatura/catalogo'
 import { usePlano } from '@/hooks/usePlano'
 import { usePreferencias } from '@/hooks/usePreferencias'
 import { useToast } from '@/hooks/useToast'
@@ -29,6 +32,8 @@ export default function PerfilAtleta() {
   const { atualizarConfig } = usePreferencias()
   const { escolherPlano } = usePlano()
   const showToast = useToast()
+  const router = useRouter()
+  const { planoDeTreinoLiberado } = useAssinatura()
 
   const [passo, setPasso] = useState(0)
   const [postura, setPostura] = useState<Postura>('ortodoxo')
@@ -39,6 +44,15 @@ export default function PerfilAtleta() {
 
   const plano = recomendarPlano(exp, obj)
   const metaFinal = metaInicial(dias, plano)
+
+  // O plano recomendado pode não estar na assinatura da pessoa: salva o perfil e leva à tela de assinatura.
+  const planoLiberado = planoDeTreinoLiberado(plano.id)
+  const nivelDoPlano = NOME_DO_ACESSO[recurso(RECURSO_DO_PLANO_DE_TREINO[plano.id]).nivelMinimo]
+  const verAssinatura = () => {
+    atualizarConfig({ postura, experiencia: exp, onboardingFeito: true, metaSemanal: metaFinal })
+    closeSheet()
+    router.push('/assinatura')
+  }
 
   const concluir = (abrirLista: boolean) => {
     atualizarConfig({ postura, experiencia: exp, onboardingFeito: true, metaSemanal: metaFinal })
@@ -105,8 +119,13 @@ export default function PerfilAtleta() {
               Este plano pede {plano.diasPorSemana}× por semana e você marcou {dias}×. Faça as sessões que der: sua meta semanal ficará em {metaFinal}×.
             </p>
           )}
+          {!planoLiberado && (
+            <p className={estilos.avisoDias}>Este plano faz parte do plano {nivelDoPlano}. Veja as opções de assinatura para ativá-lo.</p>
+          )}
           <div className={estilos.acoes}>
-            <button onClick={() => concluir(false)} className={comum.primario}>Ativar este plano</button>
+            {planoLiberado
+              ? <button onClick={() => concluir(false)} className={comum.primario}>Ativar este plano</button>
+              : <button onClick={verAssinatura} className={comum.primario}>Ver planos de assinatura</button>}
             <button onClick={() => concluir(true)} className={comum.fantasma}>Ver outros planos</button>
           </div>
         </>

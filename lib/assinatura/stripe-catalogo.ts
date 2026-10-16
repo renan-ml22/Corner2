@@ -3,9 +3,10 @@
 // Rodar duas vezes não duplica nada: `planejar` compara o que já existe com o que o catálogo pede.
 
 import {
-  NIVEIS, NOME_DO_NIVEL, PERIODOS, RECURSOS, lookupKey, precoEmCentavos, recurso,
+  NIVEIS, NOME_DO_NIVEL, PERIODOS, lookupKey, precoEmCentavos,
   type NivelAssinatura, type Periodo,
 } from './catalogo'
+import { recursosNovosDoNivel } from './apresentacao'
 
 export interface ProdutoDesejado {
   nivel: NivelAssinatura
@@ -23,12 +24,9 @@ export interface PrecoDesejado {
 
 /** Lista o que o nível acrescenta em relação ao anterior, para a descrição do produto. */
 export function descricaoDoNivel(nivel: NivelAssinatura): string {
-  const novos = (Object.keys(RECURSOS) as (keyof typeof RECURSOS)[])
-    .filter(id => recurso(id).nivelMinimo === nivel)
-    .map(id => recurso(id).nome)
   const anterior = NIVEIS[NIVEIS.indexOf(nivel) - 1]
   const base = anterior ? `Tudo do ${NOME_DO_NIVEL[anterior]}` : 'Tudo do plano gratuito'
-  return [base, ...novos].join(' · ')
+  return [base, ...recursosNovosDoNivel(nivel)].join(' · ')
 }
 
 export const produtosDesejados = (): ProdutoDesejado[] =>

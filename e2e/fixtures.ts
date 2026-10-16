@@ -36,7 +36,10 @@ export const contagemDeTreinos = (page: Page): Locator => page.locator('.section
  * `pagina`: já logada e com um vigia de erros. No fim de cada teste, qualquer erro de página ou de console
  * (inclui aviso de hidratação do React) em qualquer aba do teste faz o teste falhar.
  */
-export const test = base.extend<{ pagina: Page; semRedeExterna: void }>({
+export const test = base.extend<{ pagina: Page; semRedeExterna: void; toleraRespostaDeErro: boolean }>({
+  // Teste que provoca uma resposta 4xx/5xx ou uma falha de rede de propósito liga isto: o navegador registra como erro de console.
+  toleraRespostaDeErro: [false, { option: true }],
+
   // O app carrega os ícones de unpkg.com: nos testes, qualquer domínio externo responde vazio.
   // Deixa os testes rápidos e independentes de internet (sem gerar erro de console).
   semRedeExterna: [async ({ context }, aplicar) => {
@@ -44,11 +47,15 @@ export const test = base.extend<{ pagina: Page; semRedeExterna: void }>({
     await aplicar()
   }, { auto: true }],
 
-  pagina: async ({ page, context }, aplicar) => {
+  pagina: async ({ page, context, toleraRespostaDeErro }, aplicar) => {
     const erros: string[] = []
     const vigiar = (p: Page) => {
       p.on('pageerror', e => erros.push(`pageerror: ${e.message}`))
-      p.on('console', m => { if (m.type() === 'error') erros.push(`console: ${m.text()} (${m.location().url})`) })
+      p.on('console', m => {
+        if (m.type() !== 'error') return
+        if (toleraRespostaDeErro && /Failed to load resource: (the server responded with a status of [45]\d\d|net::ERR_FAILED)/.test(m.text())) return
+        erros.push(`console: ${m.text()} (${m.location().url})`)
+      })
       p.on('dialog', d => void d.accept()) // window.confirm da importação de backup
     }
     context.on('page', vigiar)

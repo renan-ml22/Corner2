@@ -29,7 +29,7 @@ describe('tabela de entidades', () => {
   })
 
   it('o que é só do dia (checklist, ajuste, lembrete) não entra no backup', () => {
-    for (const nome of ['checklist', 'ajuste', 'lembrete'] as NomeEntidade[]) {
+    for (const nome of ['checklist', 'ajuste', 'lembrete', 'assinatura'] as NomeEntidade[]) {
       expect(NOMES_NO_BACKUP).not.toContain(nome)
     }
   })

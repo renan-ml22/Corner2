@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react'
 import { useHidratado } from '@/hooks/useEntidade'
+import { useAssinatura } from '@/hooks/useAssinatura'
 import { useHistorico } from '@/hooks/useHistorico'
 import { useSessaoDeHoje } from '@/hooks/usePlano'
 import { usePreferencias } from '@/hooks/usePreferencias'
@@ -19,6 +20,8 @@ export default function LembreteDiario() {
   const { config } = usePreferencias()
   const { historico } = useHistorico()
   const sessaoHoje = useSessaoDeHoje()
+  const { podeUsar } = useAssinatura()
+  const lembreteLiberado = podeUsar('lembrete')
 
   const tituloSessaoHoje = sessaoHoje && sessaoHoje.status !== 'feita' ? sessaoHoje.sessao.titulo : null
   const treinouHoje = useMemo(() => {
@@ -28,7 +31,7 @@ export default function LembreteDiario() {
   }, [pronto, historico])
 
   useEffect(() => {
-    if (!pronto || !config.notificacoes || !config.lembreteHora) return
+    if (!pronto || !lembreteLiberado || !config.notificacoes || !config.lembreteHora) return
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const [h, m] = config.lembreteHora.split(':').map(Number)
     if (!Number.isFinite(h) || !Number.isFinite(m)) return
@@ -44,7 +47,7 @@ export default function LembreteDiario() {
     verificar()
     const id = window.setInterval(verificar, 30_000)
     return () => window.clearInterval(id)
-  }, [pronto, config.notificacoes, config.lembreteHora, treinouHoje, tituloSessaoHoje, repo])
+  }, [pronto, lembreteLiberado, config.notificacoes, config.lembreteHora, treinouHoje, tituloSessaoHoje, repo])
 
   return null
 }

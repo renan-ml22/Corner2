@@ -69,9 +69,17 @@ test.describe('rotas de assinatura logado, sem o Stripe configurado', () => {
     expect(texto).not.toMatch(/sk_|stripe|price_|cus_/i)
   })
 
-  test('portal e estado sem chave do Stripe: também 503', async ({ pagina }) => {
-    expect((await pagina.request.post('/api/assinatura/portal', { headers: mesmoSite })).status()).toBe(503)
-    expect((await pagina.request.get('/api/assinatura/estado')).status()).toBe(503)
+  test('portal sem chave do Stripe: 503 claro', async ({ pagina }) => {
+    const r = await pagina.request.post('/api/assinatura/portal', { headers: mesmoSite })
+    expect(r.status()).toBe(503)
+    expect((await r.json()).codigo).toBe('nao_configurado')
+  })
+
+  test('estado sem chave do Stripe NÃO é erro: 200 dizendo que o pagamento está desligado (o app fica liberado)', async ({ pagina }) => {
+    const r = await pagina.request.get('/api/assinatura/estado')
+    expect(r.status()).toBe(200)
+    expect(r.headers()['cache-control']).toBe('no-store')
+    expect(await r.json()).toEqual({ pagamentoAtivo: false })
   })
 
   test('os métodos errados são recusados (405)', async ({ pagina }) => {

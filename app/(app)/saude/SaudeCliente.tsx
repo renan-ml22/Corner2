@@ -14,6 +14,8 @@ import { prontidao, resumoCabeca } from "@/lib/saude";
 import { REGIOES, type RegiaoCorpo } from "@/lib/tipos";
 import estilos from './saude.module.css'
 import { TEXTOS } from "@/lib/textos";
+import { ExigePlano } from "@/components/ConviteAoPlano";
+import { useAssinatura } from "@/hooks/useAssinatura";
 
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
 
@@ -25,6 +27,7 @@ export default function SaudeCliente() {
   const { checkins } = useCheckins();
   const { config, atualizarConfig } = usePreferencias();
   const showToast = useToast();
+  const { podeUsar, pronto: assinaturaPronta } = useAssinatura();
 
   const [kgTexto, setKgTexto] = useState("");
   const [erroPeso, setErroPeso] = useState("");
@@ -33,7 +36,7 @@ export default function SaudeCliente() {
   const [intensidade, setIntensidade] = useState(2);
   const [nota, setNota] = useState("");
 
-  if (!pronto) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
+  if (!pronto || !assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
 
   const hoje = new Date();
   const cabeca = resumoCabeca(historico, hoje, 30);
@@ -86,6 +89,7 @@ export default function SaudeCliente() {
 
       {/* ── Pancadas na cabeça ─────────────────────────── */}
       <div className="section-heading"><h2>Pancadas na cabeça</h2><span>Últimos 30 dias</span></div>
+      <ExigePlano recurso="sparringDetalhado">
       <section className={`surface-card ${estilos.cabecaCard}`}>
         <div className={`stat-grid ${estilos.tresColunas}`}>
           <div><p className="stat-label">Sparrings</p><p className="stat-value">{cabeca.sparrings}</p></div>
@@ -98,9 +102,11 @@ export default function SaudeCliente() {
             : `Último sparring com pancadas fortes: ${formatarDataCurta(cabeca.ultimoForte ?? hoje)}. Após pancadas fortes, evite sparring por 7 dias. Dor de cabeça persistente, tontura, náusea, visão turva ou confusão exigem atendimento médico.`}
         </p>
       </section>
+      </ExigePlano>
 
       {/* ── Peso ───────────────────────────────────────── */}
       <div className="section-heading"><h2>Peso corporal</h2>{ultimoPeso && <span>Último: {fmt(ultimoPeso.kg)} kg</span>}</div>
+      <ExigePlano recurso="saude">
       <section className="surface-card form-card">
         <form onSubmit={salvarPeso} className="linha-form" noValidate>
           <input className="field-input" inputMode="decimal" placeholder="Peso de hoje (kg)" value={kgTexto} onChange={e => setKgTexto(e.target.value)} aria-label="Peso de hoje em quilos" aria-invalid={erroPeso ? true : undefined} />
@@ -118,7 +124,7 @@ export default function SaudeCliente() {
             {diff > 0.05 ? `${fmt(diff)} kg acima da categoria. Ajuste com calma e acompanhamento de um nutricionista.` : diff < -0.05 ? `${fmt(-diff)} kg abaixo da categoria.` : "Você está exatamente no peso da categoria."}
           </p>
         )}
-        {perdaPct > 2 && (
+        {perdaPct > 2 && podeUsar("perdaRapidaPeso") && (
           <p role="alert" className={`${estilos.erroTexto} ${estilos.erroAbaixo}`}>
             <i className="ph-fill ph-warning" aria-hidden="true" /> Você perdeu {fmt(perdaPct)}% do peso em cerca de uma semana. Cortes rápidos reduzem o rendimento e aumentam o risco de lesão e desidratação. Converse com seu treinador e um nutricionista.
           </p>
@@ -137,6 +143,7 @@ export default function SaudeCliente() {
           </details>
         )}
       </section>
+      </ExigePlano>
 
       {/* ── Lesões ─────────────────────────────────────── */}
       <div className="section-heading"><h2>Lesões e dores</h2><span>{ativas.length} {ativas.length === 1 ? "ativa" : "ativas"}</span></div>
@@ -190,6 +197,7 @@ export default function SaudeCliente() {
 
       {/* ── Check-ins ──────────────────────────────────── */}
       <div className="section-heading"><h2>Check-ins recentes</h2></div>
+      <ExigePlano recurso="checkin">
       {checkins.length === 0 ? (
         <section className="surface-card empty-state">
           <i className="ph-fill ph-pulse" aria-hidden="true" />
@@ -207,6 +215,7 @@ export default function SaudeCliente() {
           </ul>
         </section>
       )}
+      </ExigePlano>
     </main>
   );
 }

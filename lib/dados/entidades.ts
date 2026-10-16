@@ -5,8 +5,8 @@ import type {
   AjusteDoDia, Checkin, ChecklistDoDia, Configuracoes, Lesao, PesoRegistro, PlanoAtivo, Reagendamentos, WorkoutEntry,
 } from '@/lib/tipos'
 import {
-  isAjuste, isArrayDe, isCheckin, isChecklist, isConfigParcial, isLembrete, isLesao, isPesoRegistro, isPlanoAtivo, isReag,
-  isWorkoutEntry, limparConfig, limparLista,
+  isAjuste, isArrayDe, isAssinaturaGuardada, isCheckin, isChecklist, isConfigParcial, isLembrete, isLesao, isPesoRegistro, isPlanoAtivo, isReag,
+  isWorkoutEntry, limparConfig, limparLista, type AssinaturaGuardada,
 } from './contrato'
 
 export interface DadosDoApp {
@@ -21,6 +21,8 @@ export interface DadosDoApp {
   reag: Reagendamentos
   /** Data (YYYY-MM-DD) do último lembrete diário disparado */
   lembrete: string
+  /** Último estado da assinatura informado pelo servidor (cópia local; quem manda é o Stripe) */
+  assinatura: AssinaturaGuardada | null
 }
 
 export type NomeEntidade = keyof DadosDoApp
@@ -48,6 +50,7 @@ export const ENTIDADES: { [N in NomeEntidade]: Entidade<DadosDoApp[N]> } = {
   ajuste: { inicial: { data: '', aplicado: false }, validar: isAjuste },
   reag: { inicial: {}, validar: isReag, erroBackup: 'Os reagendamentos do backup são inválidos.' },
   lembrete: { inicial: '', validar: isLembrete },
+  assinatura: { inicial: null, validar: isAssinaturaGuardada },
 }
 
 export const NOMES_ENTIDADES = Object.keys(ENTIDADES) as NomeEntidade[]

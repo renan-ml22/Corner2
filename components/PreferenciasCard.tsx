@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { ChangeEvent, useState } from "react";
 import { useHidratado } from "@/hooks/useEntidade";
+import { resumoDoEstado } from "@/lib/assinatura/apresentacao";
+import { useAssinatura } from "@/hooks/useAssinatura";
 import { usePlano } from "@/hooks/usePlano";
 import { usePreferencias } from "@/hooks/usePreferencias";
 import { useToast } from "@/hooks/useToast";
@@ -19,6 +21,7 @@ export default function PreferenciasCard() {
   const { plano } = usePlano();
   const { openOnboarding } = usePainelAcoes();
   const showToast = useToast();
+  const assinatura = useAssinatura();
   const [permissao, setPermissao] = useState<string>(() => (typeof Notification === "undefined" ? "indisponivel" : Notification.permission));
 
   if (!pronto) return <div className="skeleton" />;
@@ -86,18 +89,26 @@ export default function PreferenciasCard() {
               </button>
             </div>
           </li>
+          {!assinatura.podeUsar("lembrete") && (
+            <li>
+              <span className={estilos.settingsLabel}>Lembretes<small>Aviso diário no horário escolhido, a partir do plano Profissional</small></span>
+              <Link href="/assinatura" className={estilos.settingsLink}>Ver planos <i className="ph-bold ph-caret-right" aria-hidden="true" /></Link>
+            </li>
+          )}
+          {assinatura.podeUsar("lembrete") && (
           <li>
             <label htmlFor="pref-notif" className={estilos.settingsLabel}>Lembretes<small>Aviso diário no horário escolhido</small></label>
             <input id="pref-notif" type="checkbox" role="switch" className={estilos.switch} checked={config.notificacoes} onChange={e => void alternarNotificacoes(e.target.checked)} />
           </li>
-          {config.notificacoes && (
+          )}
+          {assinatura.podeUsar("lembrete") && config.notificacoes && (
             <li>
               <label htmlFor="pref-hora" className={estilos.settingsLabel}>Horário do lembrete<small>Só dispara com o app aberto neste aparelho</small></label>
               <input id="pref-hora" type="time" className={`field-input ${estilos.compacto}`} value={config.lembreteHora} onChange={e => void definirLembrete(e.target.value)} />
             </li>
           )}
         </ul>
-        {config.notificacoes && config.lembreteHora && permissao !== "granted" && (
+        {assinatura.podeUsar("lembrete") && config.notificacoes && config.lembreteHora && permissao !== "granted" && (
           <p className={`muted-copy ${estilos.rodapeLista}`}>
             {permissao === "denied" ? "As notificações estão bloqueadas neste navegador. Libere nas configurações do site para receber o lembrete." : permissao === "indisponivel" ? "Este navegador não oferece notificações." : "Falta permitir as notificações no navegador."}
           </p>
@@ -106,6 +117,11 @@ export default function PreferenciasCard() {
 
       <div className="section-heading"><h2>Ferramentas</h2></div>
       <div className="atalhos">
+        <Link href="/assinatura" className="surface-card cta-card">
+          <i className="ph-fill ph-crown-simple" aria-hidden="true" />
+          <span><strong>Assinatura</strong><small>{assinatura.fase === "indisponivel" || !assinatura.pronto ? "Planos e pagamento" : resumoDoEstado(assinatura.estado).titulo}</small></span>
+          <i className="ph-bold ph-caret-right" aria-hidden="true" />
+        </Link>
         <Link href="/saude" className="surface-card cta-card">
           <i className="ph-fill ph-heartbeat" aria-hidden="true" />
           <span><strong>Saúde e corpo</strong><small>Peso, lesões e pancadas na cabeça</small></span>
@@ -128,10 +144,16 @@ export default function PreferenciasCard() {
         <p className="muted-copy mt-0">Seus dados ficam só neste aparelho. Baixe um backup de vez em quando, principalmente antes de trocar de celular ou limpar o navegador.</p>
         <div className="linha-form mt-14">
           <button type="button" className={`btn-ghost ${estilos.botaoBackup}`} onClick={exportar}><i className="ph ph-download-simple" aria-hidden="true" /> Baixar backup</button>
-          <label className={`btn-ghost ${estilos.botaoImportar}`}>
-            <i className="ph ph-upload-simple" aria-hidden="true" /> Importar
-            <input type="file" accept="application/json,.json" className="sr-only" onChange={e => void importar(e)} />
-          </label>
+          {assinatura.podeUsar("importarDados") ? (
+            <label className={`btn-ghost ${estilos.botaoImportar}`}>
+              <i className="ph ph-upload-simple" aria-hidden="true" /> Importar
+              <input type="file" accept="application/json,.json" className="sr-only" onChange={e => void importar(e)} />
+            </label>
+          ) : (
+            <Link href="/assinatura" className={`btn-ghost ${estilos.botaoImportar}`} aria-label="Importar backup: disponível no plano Profissional">
+              <i className="ph ph-lock-simple" aria-hidden="true" /> Importar (Profissional)
+            </Link>
+          )}
         </div>
       </section>
     </>

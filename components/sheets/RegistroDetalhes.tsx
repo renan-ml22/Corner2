@@ -1,6 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useAssinatura } from '@/hooks/useAssinatura'
 import { usePlano } from '@/hooks/usePlano'
 import { usePreferencias } from '@/hooks/usePreferencias'
 import { nivelDoAtleta, urlTreino } from '@/lib/sessao'
@@ -19,6 +21,8 @@ export default function RegistroDetalhes() {
   const { regType, rounds, setRounds, roundMin, setRoundMin, rpe, setRpe, extras, setExtras, saveWorkout, viaCronometro } = usePainelEstado()
   const { plano } = usePlano()
   const { config } = usePreferencias()
+  const { podeUsar } = useAssinatura()
+  const detalhaSparring = podeUsar('sparringDetalhado')
 
   const iniciarCronometro = () => {
     closeSheet()
@@ -55,18 +59,22 @@ export default function RegistroDetalhes() {
 
       {regType === 'spa' && (
         <div className={estilos.sparring}>
-          <div>
-            <p className={estilos.pergunta}>Intensidade do sparring</p>
-            <Segmentos<Intensidade> rotulo="Intensidade do sparring" valor={extras.intensidade} onChange={v => setExtras({ intensidade: v })}
-              opcoes={(['leve', 'moderada', 'forte'] as Intensidade[]).map(id => ({ id, label: INTENSIDADE_LABEL[id] }))} />
-          </div>
+          {detalhaSparring && (
+            <div>
+              <p className={estilos.pergunta}>Intensidade do sparring</p>
+              <Segmentos<Intensidade> rotulo="Intensidade do sparring" valor={extras.intensidade} onChange={v => setExtras({ intensidade: v })}
+                opcoes={(['leve', 'moderada', 'forte'] as Intensidade[]).map(id => ({ id, label: INTENSIDADE_LABEL[id] }))} />
+            </div>
+          )}
           <div>
             <p className={estilos.pergunta}>Pancadas na cabeça</p>
             <Segmentos<ImpactoCabeca> rotulo="Pancadas na cabeça" valor={extras.cabeca} onChange={v => setExtras({ cabeca: v })}
               opcoes={(['nenhum', 'leves', 'fortes'] as ImpactoCabeca[]).map(id => ({ id, label: IMPACTO_LABEL[id] }))} />
             <p className={estilos.ajuda}>Esse registro ajuda o app a avisar quando você precisa se afastar do sparring.</p>
           </div>
-          <input className="field-input" placeholder="Parceiro de sparring (opcional)" maxLength={60} value={extras.parceiro} onChange={e => setExtras({ parceiro: e.target.value })} aria-label="Parceiro de sparring" />
+          {detalhaSparring
+            ? <input className="field-input" placeholder="Parceiro de sparring (opcional)" maxLength={60} value={extras.parceiro} onChange={e => setExtras({ parceiro: e.target.value })} aria-label="Parceiro de sparring" />
+            : <p className={estilos.ajuda}>Intensidade e parceiro do sparring fazem parte do <Link href="/assinatura" onClick={closeSheet}>plano Profissional</Link>.</p>}
         </div>
       )}
 

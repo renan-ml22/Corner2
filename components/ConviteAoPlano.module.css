@@ -1,0 +1,60 @@
+.cartao {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+  padding: 1.2rem;
+  border: 1px dashed var(--border);
+}
+
+.icone {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: color-mix(in oklch, var(--blue) 18%, var(--surface));
+  color: var(--blue);
+  font-size: 1.3rem;
+}
+
+.titulo {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.texto {
+  color: var(--color-neutral-300);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.acao {
+  margin-top: 0.3rem;
+}
+
+/* Versão em uma linha, para um recurso dentro de uma tela que já está aberta. */
+.compacto {
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  justify-items: stretch;
+  gap: 0.8rem;
+  padding: 0.9rem 1rem;
+}
+
+.compacto .icone {
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.1rem;
+}
+
+.compacto .texto {
+  font-size: 0.82rem;
+}
+
+.compacto .acao {
+  margin: 0;
+}
+
+.esqueleto {
+  min-height: 5rem;
+}

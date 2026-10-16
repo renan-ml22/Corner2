@@ -2,7 +2,7 @@
 // Puro (sem rede, sem navegador): quem decide é sempre o servidor, a partir do que o Stripe informou.
 
 import {
-  NIVEL_GRATUITO, RECURSO_DO_PLANO_DE_TREINO, ordemDoNivel, recurso,
+  NIVEIS, NIVEL_GRATUITO, RECURSO_DO_PLANO_DE_TREINO, ordemDoNivel, recurso,
   type NivelAssinatura, type Periodo, type RecursoId,
 } from './catalogo'
 
@@ -18,6 +18,22 @@ export interface EstadoAssinatura {
   fimDoTeste: string | null
   /** Marcada para cancelar no fim do período: continua valendo até lá. */
   cancelaNoFim: boolean
+}
+
+const SITUACOES: Situacao[] = ['nenhuma', 'teste', 'ativa', 'atrasada', 'cancelada']
+
+/** O valor tem o formato de um `EstadoAssinatura`? Usado ao ler cookie e dado guardado no aparelho. */
+export function isEstadoAssinatura(e: unknown): e is EstadoAssinatura {
+  if (typeof e !== 'object' || e === null) return false
+  const x = e as Record<string, unknown>
+  return (
+    SITUACOES.includes(x.situacao as Situacao) &&
+    (x.nivel === null || NIVEIS.includes(x.nivel as never)) &&
+    (x.periodo === null || x.periodo === 'mensal' || x.periodo === 'anual') &&
+    (x.fimDoPeriodo === null || typeof x.fimDoPeriodo === 'string') &&
+    (x.fimDoTeste === null || typeof x.fimDoTeste === 'string') &&
+    typeof x.cancelaNoFim === 'boolean'
+  )
 }
 
 export const SEM_ASSINATURA: EstadoAssinatura = {

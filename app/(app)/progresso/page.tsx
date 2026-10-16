@@ -9,6 +9,8 @@ import { CAT_ICONS, CAT_LABELS, IMPACTO_LABEL, INTENSIDADE_LABEL, TIPOS } from "
 import { calcularCarga, STATUS_CARGA_TEXTO, type StatusCarga } from "@/lib/saude";
 import { estatisticasDoMes, volumeSemanal } from "@/lib/treinos";
 import estilos from './progresso.module.css'
+import { ExigePlano } from "@/components/ConviteAoPlano";
+import { useAssinatura } from "@/hooks/useAssinatura";
 
 function formatarMinutos(min: number): string {
   if (min < 60) return `${min} min`;
@@ -23,9 +25,10 @@ export default function ProgressoPage() {
   const pronto = useHidratado();
   const { historico } = useHistorico();
   const { openRegister } = usePainelAcoes();
+  const { pronto: assinaturaPronta } = useAssinatura();
   const [barraAtiva, setBarraAtiva] = useState<number | null>(null);
 
-  if (!pronto) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
+  if (!pronto || !assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
 
   const hoje = new Date();
   const mes = estatisticasDoMes(historico, hoje);
@@ -101,6 +104,7 @@ export default function ProgressoPage() {
         <h2>Carga de treino</h2>
         <span>Esforço × minutos</span>
       </div>
+      <ExigePlano recurso="carga">
       <section className={`surface-card ${estilos.cargaCard}${carga ? ` ${CLASSE_CARGA[carga.status]}` : ""}`}>
         {carga ? (
           <>
@@ -121,6 +125,7 @@ export default function ProgressoPage() {
           <p className="muted-copy">A carga precisa de pelo menos duas semanas de treinos registrados para ser comparada. Continue registrando.</p>
         )}
       </section>
+      </ExigePlano>
 
       {/* ── Treinos por tipo ───────────────────────────── */}
       <div className="section-heading">

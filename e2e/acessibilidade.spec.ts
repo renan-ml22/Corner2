@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { DADOS_DE_EXEMPLO, semear } from './dados-exemplo'
 import { expect, test } from './fixtures'
+import { SEM_ASSINATURA_TESTE, ativa, emTeste, simularEstado } from './assinatura-simulada'
 import { E2E_EMAIL, E2E_SENHA } from './constantes'
 
 // Auditoria automática de acessibilidade (axe-core, regras WCAG 2.0/2.1 A e AA) em cada tela e painel.
@@ -163,5 +164,51 @@ test.describe('acessibilidade: títulos de página', () => {
       titulos.push(await pagina.title())
     }
     expect(new Set(titulos).size).toBe(titulos.length)
+  })
+})
+
+test.describe('acessibilidade: assinatura e telas bloqueadas', () => {
+  test.beforeEach(async ({ pagina }) => {
+    await pagina.clock.setFixedTime(HOJE)
+    await semear(pagina)
+  })
+
+  for (const [nome, estado] of [
+    ['gratuito', SEM_ASSINATURA_TESTE], ['em teste grátis', emTeste('amador', 5)], ['assinatura ativa', ativa('profissional', { periodo: 'anual' })], ['pagamento desligado', 'indisponivel'],
+  ] as const) {
+    test(`tela Assinatura (${nome}): sem violações do axe`, async ({ pagina }) => {
+      await simularEstado(pagina, estado)
+      await pagina.goto('/assinatura')
+      await pagina.getByRole('heading', { name: 'Assinatura', level: 1 }).waitFor()
+      expect(await auditar(pagina), `assinatura (${nome})`).toEqual([])
+    })
+  }
+
+  test('tela Assinatura com o período anual escolhido', async ({ pagina }) => {
+    await simularEstado(pagina, SEM_ASSINATURA_TESTE)
+    await pagina.goto('/assinatura')
+    await pagina.getByRole('radio', { name: 'Anual' }).click()
+    expect(await auditar(pagina), 'assinatura anual').toEqual([])
+  })
+
+  test('telas com recursos bloqueados (convites) no plano gratuito', async ({ pagina }) => {
+    await simularEstado(pagina, SEM_ASSINATURA_TESTE)
+    for (const rota of ['/hoje', '/plano', '/progresso', '/saude', '/tecnicas', '/perfil']) {
+      await pagina.goto(rota)
+      await pagina.getByRole('main').waitFor()
+      expect(await auditar(pagina), `${rota} no gratuito`).toEqual([])
+    }
+  })
+
+  test('painéis com recursos bloqueados no plano gratuito', async ({ pagina }) => {
+    await simularEstado(pagina, SEM_ASSINATURA_TESTE)
+    await pagina.goto('/hoje')
+    await pagina.getByRole('button', { name: 'Registrar treino', exact: true }).click()
+    await pagina.getByRole('dialog').getByRole('button', { name: /Sparring/ }).click()
+    expect(await auditar(pagina), 'registro de sparring no gratuito').toEqual([])
+    await pagina.keyboard.press('Escape')
+    await pagina.goto('/plano')
+    await pagina.getByRole('button', { name: 'Escolher outro plano' }).click()
+    expect(await auditar(pagina), 'escolher plano com planos bloqueados').toEqual([])
   })
 })

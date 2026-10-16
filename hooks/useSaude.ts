@@ -2,9 +2,11 @@
 
 import { useCallback, useMemo } from 'react'
 import { chaveDia } from '@/lib/datas'
+import { filtrarAlertas } from '@/lib/assinatura/alertas'
 import { checkinDeHoje, gerarAlertas } from '@/lib/saude'
 import { novoId } from '@/lib/id'
 import type { Checkin, RegiaoCorpo } from '@/lib/tipos'
+import { useAssinatura } from './useAssinatura'
 import { useEntidade, useHidratado } from './useEntidade'
 import { useHistorico } from './useHistorico'
 import { useSessaoDeHoje } from './usePlano'
@@ -75,11 +77,13 @@ export function useAlertas() {
   const { lesoes } = useLesoes()
   const { config } = usePreferencias()
   const sessaoHoje = useSessaoDeHoje()
+  const { podeUsar } = useAssinatura()
 
   return useMemo(
     () => (pronto
-      ? gerarAlertas({ historico, lesoes, sessaoHojeTipo: sessaoHoje && sessaoHoje.status !== 'feita' ? sessaoHoje.sessao.tipo : null, metaSemanal: config.metaSemanal, hoje: new Date() })
+      // Alertas de segurança aparecem em todos os planos; os de carga, só onde a carga é liberada.
+      ? filtrarAlertas(gerarAlertas({ historico, lesoes, sessaoHojeTipo: sessaoHoje && sessaoHoje.status !== 'feita' ? sessaoHoje.sessao.tipo : null, metaSemanal: config.metaSemanal, hoje: new Date() }), podeUsar)
       : []),
-    [pronto, historico, lesoes, sessaoHoje, config.metaSemanal],
+    [pronto, historico, lesoes, sessaoHoje, config.metaSemanal, podeUsar],
   )
 }

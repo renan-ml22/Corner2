@@ -13,6 +13,7 @@ import {
 import {
   isAjuste,
   isArrayDe,
+  isAssinaturaGuardada,
   isChave,
   isCheckin,
   isChecklist,
@@ -673,5 +674,27 @@ describe('isWorkoutEntry: data e limites numéricos', () => {
   it('aceita RPE nos extremos 1 e 10', () => {
     expect(isWorkoutEntry({ ...treino(), rpe: 1 })).toBe(true)
     expect(isWorkoutEntry({ ...treino(), rpe: 10 })).toBe(true)
+  })
+})
+
+describe('isAssinaturaGuardada (último estado da assinatura guardado no aparelho)', () => {
+  const estado = { situacao: 'ativa', nivel: 'amador', periodo: 'mensal', fimDoPeriodo: '2026-11-20T12:00:00.000Z', fimDoTeste: null, cancelaNoFim: false }
+
+  it('aceita null (nunca consultou) e um estado com a hora da consulta', () => {
+    expect(isAssinaturaGuardada(null)).toBe(true)
+    expect(isAssinaturaGuardada({ estado, em: '2026-10-20T12:00:00.000Z' })).toBe(true)
+  })
+
+  it.each([
+    ['sem a hora da consulta', { estado }],
+    ['hora que não é texto', { estado, em: 123 }],
+    ['situação inventada', { estado: { ...estado, situacao: 'vip' }, em: 'x' }],
+    ['nível inventado', { estado: { ...estado, nivel: 'ouro' }, em: 'x' }],
+    ['estado em texto', { estado: 'ativa', em: 'x' }],
+    ['texto solto', 'ativa'],
+    ['array', []],
+    ['undefined', undefined],
+  ])('rejeita %s', (_nome, valor) => {
+    expect(isAssinaturaGuardada(valor)).toBe(false)
   })
 })
