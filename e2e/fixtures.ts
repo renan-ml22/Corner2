@@ -3,6 +3,9 @@ import { E2E_EMAIL, E2E_SENHA, E2E_USUARIO_ID } from './constantes'
 
 export { expect }
 
+/** Quarta-feira, 14/10/2026, meio-dia (fuso de São Paulo). */
+export const DATA_PADRAO = new Date('2026-10-14T12:00:00-03:00')
+
 export async function entrar(page: Page) {
   await page.goto('/login')
   await page.fill('input[name=email]', E2E_EMAIL)
@@ -51,6 +54,9 @@ export const test = base.extend<{ pagina: Page; semRedeExterna: void }>({
     context.on('page', vigiar)
     vigiar(page)
     await entrar(page)
+    // Data fixa (quarta-feira): alertas como "a meta está apertada" só aparecem nos últimos dias da semana,
+    // e um teste que dependesse do dia real passaria de segunda a quinta e falharia de sexta a domingo.
+    await page.clock.setFixedTime(DATA_PADRAO)
     await aplicar(page)
     expect(erros, 'erros de página/console durante o teste').toEqual([])
   },
