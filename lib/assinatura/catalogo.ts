@@ -32,6 +32,15 @@ export const TESTE_GRATIS_DIAS = 7
 
 export const ordemDoNivel = (nivel: NivelAssinatura): number => NIVEIS.indexOf(nivel)
 
+/** Quem não tem assinatura (ou está com ela vencida) usa o modo gratuito, que é menor que o Iniciante. */
+export const NIVEL_GRATUITO = 'gratuito' as const
+export type NivelDeAcesso = typeof NIVEL_GRATUITO | NivelAssinatura
+
+/** Ordem de acesso: o gratuito vem antes de todos os planos pagos. */
+export const ordemDeAcesso = (nivel: NivelDeAcesso): number => (nivel === NIVEL_GRATUITO ? -1 : ordemDoNivel(nivel))
+
+export const NOME_DO_ACESSO: Record<NivelDeAcesso, string> = { gratuito: 'Gratuito', ...NOME_DO_NIVEL }
+
 export function precoEmCentavos(nivel: NivelAssinatura, periodo: Periodo): number {
   return PRECO_MENSAL_CENTAVOS[nivel] * (periodo === 'anual' ? ANUAL_EM_MESES : 1)
 }
@@ -63,27 +72,28 @@ export function nivelDeLookupKey(chave: string | null | undefined): { nivel: Niv
 
 export interface Recurso {
   nome: string
-  nivelMinimo: NivelAssinatura
-  /** Liberado mesmo sem assinatura (hoje, só exportar os próprios dados). */
-  semAssinatura?: true
+  /** Menor nível que libera o recurso. `gratuito` = qualquer pessoa, com ou sem assinatura. */
+  nivelMinimo: NivelDeAcesso
 }
 
 export const RECURSOS = {
-  registroTreino: { nome: 'Registrar treino, histórico e progresso', nivelMinimo: 'iniciante' },
-  cronometro: { nome: 'Cronômetro de rounds', nivelMinimo: 'iniciante' },
+  // Gratuito: o suficiente para treinar, registrar e se proteger. Segurança nunca fica atrás de plano pago.
+  registroTreino: { nome: 'Registrar treino, histórico e progresso', nivelMinimo: 'gratuito' },
+  cronometro: { nome: 'Cronômetro de rounds', nivelMinimo: 'gratuito' },
+  alertasSeguranca: { nome: 'Registrar pancadas na cabeça e lesões, com os alertas de segurança', nivelMinimo: 'gratuito' },
+  exportarDados: { nome: 'Exportar os próprios dados', nivelMinimo: 'gratuito' },
+
   biblioteca: { nome: 'Biblioteca técnica', nivelMinimo: 'iniciante' },
-  alertasSeguranca: { nome: 'Alertas de segurança (pancada na cabeça e lesão ativa)', nivelMinimo: 'iniciante' },
   planoFundamentos: { nome: 'Plano de treino Fundamentos', nivelMinimo: 'iniciante' },
-  exportarDados: { nome: 'Exportar os próprios dados', nivelMinimo: 'iniciante', semAssinatura: true },
 
   planosIntermediarios: { nome: 'Planos Base Aeróbica e Técnica Avançada', nivelMinimo: 'amador' },
   checkin: { nome: 'Check-in diário e ajuste do treino do dia', nivelMinimo: 'amador' },
   carga: { nome: 'Carga de treino e alerta de sobrecarga', nivelMinimo: 'amador' },
-  saude: { nome: 'Saúde: peso, categoria e lesões', nivelMinimo: 'amador' },
+  saude: { nome: 'Peso, categoria e gráfico de peso', nivelMinimo: 'amador' },
   reagendar: { nome: 'Reagendar sessões', nivelMinimo: 'amador' },
 
   planoPreCompeticao: { nome: 'Plano Pré-competição', nivelMinimo: 'profissional' },
-  sparringDetalhado: { nome: 'Sparring detalhado e resumo de pancadas na cabeça', nivelMinimo: 'profissional' },
+  sparringDetalhado: { nome: 'Intensidade e parceiro no sparring, e resumo de pancadas dos últimos 30 dias', nivelMinimo: 'profissional' },
   perdaRapidaPeso: { nome: 'Alerta de perda rápida de peso', nivelMinimo: 'profissional' },
   importarDados: { nome: 'Importar backup', nivelMinimo: 'profissional' },
   lembrete: { nome: 'Lembrete diário', nivelMinimo: 'profissional' },

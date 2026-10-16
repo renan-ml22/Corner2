@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { PLANOS } from '@/data/planos'
 import {
-  ANUAL_EM_MESES, NIVEIS, type RecursoId, PERIODOS, PRECO_MENSAL_CENTAVOS, RECURSOS, RECURSO_DO_PLANO_DE_TREINO, TESTE_GRATIS_DIAS,
-  formatarPreco, lookupKey, nivelDeLookupKey, ordemDoNivel, precoEmCentavos, recurso,
+  ANUAL_EM_MESES, NIVEIS, NIVEL_GRATUITO, type RecursoId, PERIODOS, PRECO_MENSAL_CENTAVOS, RECURSOS, RECURSO_DO_PLANO_DE_TREINO, TESTE_GRATIS_DIAS,
+  formatarPreco, lookupKey, nivelDeLookupKey, ordemDeAcesso, ordemDoNivel, precoEmCentavos, recurso,
 } from '@/lib/assinatura/catalogo'
 
 describe('preços', () => {
@@ -76,7 +76,7 @@ describe('recursos', () => {
   it('todo recurso tem nome e um nível mínimo válido', () => {
     for (const r of Object.values(RECURSOS)) {
       expect(r.nome.length).toBeGreaterThan(3)
-      expect(NIVEIS).toContain(r.nivelMinimo)
+      expect([NIVEL_GRATUITO, ...NIVEIS]).toContain(r.nivelMinimo)
     }
   })
 
@@ -91,13 +91,26 @@ describe('recursos', () => {
     }
   })
 
-  it('alertas de segurança (cabeça e lesão) ficam no plano mais barato', () => {
-    expect(RECURSOS.alertasSeguranca.nivelMinimo).toBe('iniciante')
+  it('registro de lesões e de pancadas na cabeça, com os alertas de segurança, é gratuito para todos', () => {
+    expect(RECURSOS.alertasSeguranca.nivelMinimo).toBe(NIVEL_GRATUITO)
   })
 
-  it('exportar os próprios dados nunca depende de assinatura', () => {
-    expect(recurso('exportarDados').semAssinatura).toBe(true)
-    for (const id of Object.keys(RECURSOS) as RecursoId[]) if (id !== 'exportarDados') expect(recurso(id).semAssinatura, id).toBeUndefined()
+  it('exportar os próprios dados é gratuito', () => {
+    expect(recurso('exportarDados').nivelMinimo).toBe(NIVEL_GRATUITO)
+  })
+
+  it('o plano gratuito tem exatamente: registrar treino, cronômetro, alertas de segurança e exportar dados', () => {
+    const gratis = (Object.keys(RECURSOS) as RecursoId[]).filter(id => recurso(id).nivelMinimo === NIVEL_GRATUITO).sort()
+    expect(gratis).toEqual(['alertasSeguranca', 'cronometro', 'exportarDados', 'registroTreino'])
+  })
+
+  it('o gratuito é menor que o Iniciante: o Iniciante acrescenta biblioteca técnica e plano Fundamentos', () => {
+    const novos = (Object.keys(RECURSOS) as RecursoId[]).filter(id => recurso(id).nivelMinimo === 'iniciante').sort()
+    expect(novos).toEqual(['biblioteca', 'planoFundamentos'])
+  })
+
+  it('o gratuito vem antes de qualquer plano pago na ordem de acesso', () => {
+    expect(ordemDeAcesso(NIVEL_GRATUITO)).toBeLessThan(ordemDeAcesso('iniciante'))
   })
 
   it('todo plano de treino do app está ligado a um recurso (senão ficaria liberado ou bloqueado por acidente)', () => {
@@ -106,6 +119,12 @@ describe('recursos', () => {
       expect(recurso, p.id).toBeDefined()
       expect(RECURSOS[recurso]).toBeDefined()
     }
+  })
+
+  it('lesões e pancadas na cabeça não ficam atrás de plano pago (senão o alerta de segurança nunca dispararia)', () => {
+    expect(recurso('alertasSeguranca').nivelMinimo).toBe(NIVEL_GRATUITO)
+    expect(recurso('saude').nome).not.toMatch(/lesõ/i)
+    expect(recurso('sparringDetalhado').nome).not.toMatch(/pancadas? na cabeça\)?$/i)
   })
 
   it('Fundamentos no Iniciante; Base Aeróbica e Técnica Avançada no Amador; Pré-competição no Profissional', () => {

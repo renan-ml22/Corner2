@@ -40,8 +40,9 @@ describe('o que deve existir no Stripe', () => {
   })
 
   it('a descrição de cada nível lista o que ele acrescenta e cita o nível anterior', () => {
-    expect(descricaoDoNivel('iniciante')).toContain('Cronômetro de rounds')
-    expect(descricaoDoNivel('iniciante')).not.toContain('Tudo do')
+    expect(descricaoDoNivel('iniciante')).toContain('Biblioteca técnica')
+    expect(descricaoDoNivel('iniciante')).toContain('Tudo do plano gratuito')
+    expect(descricaoDoNivel('iniciante')).not.toContain('Cronômetro')
     expect(descricaoDoNivel('amador')).toContain('Tudo do Iniciante')
     expect(descricaoDoNivel('amador')).toContain('Check-in diário')
     expect(descricaoDoNivel('profissional')).toContain('Tudo do Amador')

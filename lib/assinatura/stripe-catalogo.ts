@@ -24,10 +24,11 @@ export interface PrecoDesejado {
 /** Lista o que o nível acrescenta em relação ao anterior, para a descrição do produto. */
 export function descricaoDoNivel(nivel: NivelAssinatura): string {
   const novos = (Object.keys(RECURSOS) as (keyof typeof RECURSOS)[])
-    .filter(id => recurso(id).nivelMinimo === nivel && !recurso(id).semAssinatura)
+    .filter(id => recurso(id).nivelMinimo === nivel)
     .map(id => recurso(id).nome)
   const anterior = NIVEIS[NIVEIS.indexOf(nivel) - 1]
-  return [anterior ? `Tudo do ${NOME_DO_NIVEL[anterior]}` : null, ...novos].filter(Boolean).join(' · ')
+  const base = anterior ? `Tudo do ${NOME_DO_NIVEL[anterior]}` : 'Tudo do plano gratuito'
+  return [base, ...novos].join(' · ')
 }
 
 export const produtosDesejados = (): ProdutoDesejado[] =>

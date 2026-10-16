@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { NIVEIS, RECURSOS, recurso, type RecursoId } from '@/lib/assinatura/catalogo'
+import { NIVEIS, NIVEL_GRATUITO, RECURSOS, ordemDeAcesso, recurso, type RecursoId } from '@/lib/assinatura/catalogo'
 import {
   DIAS_DE_TOLERANCIA, SEM_ASSINATURA, planoDeTreinoLiberado, podeUsar, temAcesso, type EstadoAssinatura,
 } from '@/lib/assinatura/regras'
@@ -72,7 +72,7 @@ describe('podeUsar', () => {
 
   it.each(NIVEIS)('com assinatura ativa %s: libera exatamente os recursos do nível ou abaixo', nivel => {
     for (const id of ids) {
-      const esperado = recurso(id).semAssinatura === true || NIVEIS.indexOf(recurso(id).nivelMinimo) <= NIVEIS.indexOf(nivel)
+      const esperado = ordemDeAcesso(recurso(id).nivelMinimo) <= ordemDeAcesso(nivel)
       expect(podeUsar(id, estado({ nivel }), AGORA), `${id} no ${nivel}`).toBe(esperado)
     }
   })
@@ -82,6 +82,7 @@ describe('podeUsar', () => {
     expect(podeUsar('checkin', e, AGORA)).toBe(false)
     expect(podeUsar('planoPreCompeticao', e, AGORA)).toBe(false)
     expect(podeUsar('registroTreino', e, AGORA)).toBe(true)
+    expect(podeUsar('biblioteca', e, AGORA)).toBe(true)
   })
 
   it('Profissional vê tudo', () => {
@@ -94,13 +95,35 @@ describe('podeUsar', () => {
     expect(podeUsar('planoPreCompeticao', e, AGORA)).toBe(true)
   })
 
-  it('sem assinatura, só exportar os próprios dados continua liberado', () => {
-    for (const id of ids) expect(podeUsar(id, SEM_ASSINATURA, AGORA), id).toBe(id === 'exportarDados')
-  })
+  describe('modo gratuito (sem assinatura, cancelada ou vencida): só os recursos gratuitos', () => {
+    const gratis = (id: RecursoId) => recurso(id).nivelMinimo === NIVEL_GRATUITO
 
-  it('assinatura cancelada: também só exportar os próprios dados', () => {
-    const e = estado({ situacao: 'cancelada' })
-    for (const id of ids) expect(podeUsar(id, e, AGORA), id).toBe(id === 'exportarDados')
+    it('sem assinatura', () => {
+      for (const id of ids) expect(podeUsar(id, SEM_ASSINATURA, AGORA), id).toBe(gratis(id))
+    })
+
+    it('assinatura cancelada', () => {
+      const e = estado({ situacao: 'cancelada' })
+      for (const id of ids) expect(podeUsar(id, e, AGORA), id).toBe(gratis(id))
+    })
+
+    it('teste grátis que já terminou', () => {
+      const e = estado({ situacao: 'teste', fimDoTeste: dias(-1) })
+      for (const id of ids) expect(podeUsar(id, e, AGORA), id).toBe(gratis(id))
+    })
+
+    it('pagamento atrasado além da tolerância', () => {
+      const e = estado({ situacao: 'atrasada', fimDoPeriodo: dias(-10) })
+      for (const id of ids) expect(podeUsar(id, e, AGORA), id).toBe(gratis(id))
+    })
+
+    it('o gratuito permite registrar treino, cronômetro, alertas de segurança e exportar', () => {
+      for (const id of ['registroTreino', 'cronometro', 'alertasSeguranca', 'exportarDados'] as RecursoId[]) expect(podeUsar(id, SEM_ASSINATURA, AGORA), id).toBe(true)
+    })
+
+    it('e bloqueia o resto', () => {
+      for (const id of ['biblioteca', 'checkin', 'carga', 'saude', 'planoPreCompeticao', 'lembrete'] as RecursoId[]) expect(podeUsar(id, SEM_ASSINATURA, AGORA), id).toBe(false)
+    })
   })
 })
 
@@ -129,7 +152,7 @@ describe('planoDeTreinoLiberado', () => {
     expect(planoDeTreinoLiberado('inexistente', estado({ nivel: 'profissional' }), AGORA)).toBe(false)
   })
 
-  it('sem assinatura, nenhum plano de treino fica liberado', () => {
+  it('sem assinatura, nenhum plano de treino fica liberado (todos são de plano pago)', () => {
     expect(planoDeTreinoLiberado('fundamentos', SEM_ASSINATURA, AGORA)).toBe(false)
   })
 })

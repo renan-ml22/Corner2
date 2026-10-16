@@ -2,7 +2,7 @@
 // Puro (sem rede, sem navegador): quem decide é sempre o servidor, a partir do que o Stripe informou.
 
 import {
-  RECURSO_DO_PLANO_DE_TREINO, ordemDoNivel, recurso,
+  NIVEL_GRATUITO, RECURSO_DO_PLANO_DE_TREINO, ordemDoNivel, recurso,
   type NivelAssinatura, type Periodo, type RecursoId,
 } from './catalogo'
 
@@ -47,10 +47,10 @@ export function temAcesso(estado: EstadoAssinatura, agora: Date = new Date()): b
 }
 
 export function podeUsar(id: RecursoId, estado: EstadoAssinatura, agora: Date = new Date()): boolean {
-  const r = recurso(id)
-  if (r.semAssinatura) return true
+  const { nivelMinimo } = recurso(id)
+  if (nivelMinimo === NIVEL_GRATUITO) return true // vale para todos, com ou sem assinatura
   if (!temAcesso(estado, agora) || estado.nivel === null) return false
-  return ordemDoNivel(estado.nivel) >= ordemDoNivel(r.nivelMinimo)
+  return ordemDoNivel(estado.nivel) >= ordemDoNivel(nivelMinimo)
 }
 
 /** Um plano de treino do app (`fundamentos`, `base-aerobica`...) está liberado? Plano desconhecido: não. */
