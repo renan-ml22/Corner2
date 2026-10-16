@@ -13,7 +13,8 @@
     "verificar-env": "node scripts/verificar-env.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "e2e": "playwright test",
-    "stripe:sincronizar": "tsx scripts/stripe-sincronizar.ts"
+    "stripe:sincronizar": "tsx scripts/stripe-sincronizar.ts",
+    "stripe:fumaca": "tsx scripts/stripe-fumaca.ts"
   },
   "dependencies": {
     "jose": "^6.2.12",

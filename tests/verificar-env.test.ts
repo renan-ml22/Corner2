@@ -76,6 +76,41 @@ describe('verificarEnv', () => {
   })
 })
 
+describe('verificarEnv: pagamento (Stripe)', () => {
+  it('sem chave do Stripe é só um aviso: o app funciona, o pagamento fica desativado', () => {
+    const r = verificarEnv(OK())
+    expect(r.ok).toBe(true)
+    expect(r.avisos.join(' ')).toContain('STRIPE_SECRET_KEY')
+  })
+
+  it.each(['sk_test_' + 'a'.repeat(30), 'sk_live_' + 'B1'.repeat(15), 'rk_test_' + 'c'.repeat(30)])('aceita uma chave bem formada', chave => {
+    const r = verificarEnv({ ...OK(), STRIPE_SECRET_KEY: chave })
+    expect(r.ok).toBe(true)
+    expect(r.avisos.join(' ')).not.toContain('STRIPE_SECRET_KEY')
+  })
+
+  it.each([
+    ['chave publicável no lugar da secreta', 'pk_test_' + 'a'.repeat(30)],
+    ['sem prefixo', 'a'.repeat(40)],
+    ['curta demais', 'sk_test_abc'],
+    ['com aspas coladas junto', '"sk_test_' + 'a'.repeat(30) + '"'],
+  ])('recusa %s', (_nome, chave) => {
+    const r = verificarEnv({ ...OK(), STRIPE_SECRET_KEY: chave })
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toContain('STRIPE_SECRET_KEY')
+  })
+
+  it('chave publicável com formato errado: erro', () => {
+    expect(verificarEnv({ ...OK(), STRIPE_PUBLISHABLE_KEY: 'sk_test_' + 'a'.repeat(30) }).ok).toBe(false)
+    expect(verificarEnv({ ...OK(), STRIPE_PUBLISHABLE_KEY: 'pk_test_' + 'a'.repeat(30) }).ok).toBe(true)
+  })
+
+  it('nunca mostra o valor das chaves do Stripe nas mensagens', () => {
+    const r = verificarEnv({ ...OK(), STRIPE_SECRET_KEY: 'pk_test_SEGREDINHO' + 'x'.repeat(20) })
+    expect([...r.erros, ...r.avisos].join(' | ')).not.toContain('SEGREDINHO')
+  })
+})
+
 describe('lerArquivoEnv', () => {
   it('lê CHAVE=valor, ignora comentários e linhas em branco, aceita CRLF', () => {
     const r = lerArquivoEnv('# comentário\r\nA=1\r\n\r\nB=dois=com=igual\r\n  # outro\r\nC=\r\n')

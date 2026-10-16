@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const OBRIGATORIAS = ['SESSION_SECRET', 'AUTH_TEST_EMAIL', 'AUTH_TEST_PASSWORD_HASH']
-const OPCIONAIS = ['AUTH_TEST_NAME']
+const OPCIONAIS = ['AUTH_TEST_NAME', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY']
 const SEGREDO_MIN = 32
 const HASH_MIN_BYTES = 32
 const BASE64URL = /^[A-Za-z0-9_-]+$/
@@ -40,7 +40,8 @@ export function verificarEnv(env) {
     if (!valor(nome)) erros.push(`${nome} não está definida`)
   }
   for (const nome of OPCIONAIS) {
-    if (!valor(nome)) avisos.push(`${nome} não está definida (o app usa o nome padrão "Atleta")`)
+    if (valor(nome)) continue
+    avisos.push(nome === 'AUTH_TEST_NAME' ? `${nome} não está definida (o app usa o nome padrão "Atleta")` : `${nome} não está definida (o pagamento fica desativado)`)
   }
 
   if (valor('SESSION_SECRET') && valor('SESSION_SECRET').length < SEGREDO_MIN) {
@@ -48,6 +49,14 @@ export function verificarEnv(env) {
   }
   if (valor('AUTH_TEST_EMAIL') && !valor('AUTH_TEST_EMAIL').includes('@')) {
     erros.push('AUTH_TEST_EMAIL não parece um e-mail (falta o @)')
+  }
+
+  // Pagamento: opcional (sem a chave secreta o app roda e o pagamento fica desativado), mas, se vier, tem de estar certa.
+  if (valor('STRIPE_SECRET_KEY') && !/^(sk|rk)_(test|live)_[A-Za-z0-9]{16,}$/.test(valor('STRIPE_SECRET_KEY'))) {
+    erros.push('STRIPE_SECRET_KEY está mal formada (esperado sk_test_... ou sk_live_..., sem aspas)')
+  }
+  if (valor('STRIPE_PUBLISHABLE_KEY') && !/^pk_(test|live)_[A-Za-z0-9]{16,}$/.test(valor('STRIPE_PUBLISHABLE_KEY'))) {
+    erros.push('STRIPE_PUBLISHABLE_KEY está mal formada (esperado pk_test_... ou pk_live_...)')
   }
 
   const hash = valor('AUTH_TEST_PASSWORD_HASH')

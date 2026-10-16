@@ -41,6 +41,10 @@ export default defineConfig({
       AUTH_TEST_EMAIL: E2E_EMAIL,
       AUTH_TEST_NAME: 'Atleta de Teste',
       AUTH_TEST_PASSWORD_HASH: hashDaSenha,
+      // Vazias de propósito: o `next start` leria as chaves reais do .env.local da máquina de quem roda os testes.
+      // Os testes de navegador nunca falam com o Stripe de verdade.
+      STRIPE_SECRET_KEY: '',
+      STRIPE_PUBLISHABLE_KEY: '',
     },
   },
 })

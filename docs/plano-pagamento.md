@@ -1,6 +1,6 @@
 # Corner — Plano de pagamento com Stripe
 
-Estado: **em andamento.** P0 (chaves de teste) e P1 (regras puras) concluídas; P2 (produtos e preços no Stripe) em construção. Pontos com ❓ ainda dependem de confirmação.
+Estado: **em andamento.** Concluídas: P0 (chaves de teste), P1 (regras puras), P2 (produtos, preços e Portal no Stripe) e P3 (rotas de servidor). Próxima: P4 (tela de assinatura e liberação de recursos). Pontos com ❓ ainda dependem de confirmação.
 
 ## Decisões já tomadas
 
@@ -96,7 +96,7 @@ Cada fase com teste primeiro, como no resto do projeto, e em uma branch com CI v
 **Fase P2 — produtos e preços no Stripe (script único, repetível)**
 - `scripts/stripe-criar-produtos.mjs`: cria 3 produtos e 6 preços em **BRL** com `lookup_key` (`iniciante_mensal`, `amador_anual` etc.). Rodar duas vezes não duplica. Valores em centavos, vindos do mesmo catálogo.
 
-**Fase P3 — rotas de servidor**
+**Fase P3 — rotas de servidor (concluída)**
 - `POST /api/assinatura/checkout`: exige sessão; cria o Customer (por e-mail) e a Checkout Session; devolve o endereço.
 - `POST /api/assinatura/portal`: abre o Portal do Cliente.
 - `GET /api/assinatura/estado`: consulta o Stripe e renova o cookie de estado.
@@ -125,6 +125,18 @@ Ver abaixo.
 6. **Direito de arrependimento** (compra online no Brasil, em geral 7 dias, CDC art. 49) e política de cancelamento e reembolso: confirmar com contador ou advogado.
 7. **Pix e boleto** em assinatura recorrente têm restrições: confirmar no painel o que a sua conta oferece. No teste, cartão.
 8. E-mails de recibo e de falha de pagamento configurados no Stripe.
+
+## Limitação importante da versão sem banco: a liberação é só de interface
+
+Os dados do atleta (treinos, plano, saúde) ficam **no navegador dele**, não num servidor nosso. Por isso, esconder um recurso de quem não assinou é uma decisão **de tela**: quem souber usar as ferramentas do navegador consegue contornar. Isso é aceitável para um teste e para o produto de hoje (não há conteúdo nosso protegido no servidor), mas **não é uma proteção real**. A proteção de verdade só existe quando o dado e a regra moram no servidor, o que depende da conta com banco de dados.
+
+O que já é protegido de verdade, no servidor: quem pode **criar a cobrança** e **abrir o portal** (só usuário logado, vindo do próprio site, com plano de uma lista fechada, uma assinatura por pessoa, teste grátis só na primeira vez).
+
+## Como testar a integração
+
+- `npm run stripe:sincronizar`: cria ou conserta produtos, preços e Portal (só conta de teste; pode rodar quantas vezes quiser).
+- `npm run stripe:fumaca`: exercita o mesmo código das rotas contra o Stripe de teste de verdade (teste grátis, assinatura duplicada, portal, troca de plano, cancelamento) e limpa o que criou.
+- Pagamento de verdade na página do Stripe (cartão `4242 4242 4242 4242`) é o teste manual da fase P4.
 
 ## Riscos
 
