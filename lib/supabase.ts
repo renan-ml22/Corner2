@@ -42,7 +42,7 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 /** Tudo o que faria o cliente guardar a sessão de uma pessoa. */
-const FORMAS_DE_ENTRAR = ['signInWithPassword', 'signInWithOtp', 'signInWithOAuth', 'signInWithIdToken', 'signInWithSSO', 'signInAnonymously', 'setSession', 'exchangeCodeForSession', 'verifyOtp'] as const
+const FORMAS_DE_ENTRAR = ['signInWithPassword', 'signInWithOtp', 'signInWithOAuth', 'signInWithIdToken', 'signInWithSSO', 'signInAnonymously', 'signUp', 'setSession', 'refreshSession', 'reauthenticate', 'linkIdentity', 'exchangeCodeForSession', 'verifyOtp'] as const
 
 /**
  * O cliente compartilhado recusa qualquer forma de entrar: assim o erro (ficar com a sessão de uma pessoa e rodar todas

@@ -13,6 +13,8 @@ class AuthFalso implements AuthLike {
   falhar: { message: string; code?: string; status?: number } | null = null
   sem_usuario = false
   proximoId = 1
+  saidas: unknown[] = []
+  falharSaida = false
 
   admin = {
     createUser: async (atributos: { email: string; password: string; email_confirm: boolean; user_metadata: { name: string } }): Promise<Resposta> => {
@@ -24,6 +26,12 @@ class AuthFalso implements AuthLike {
       this.usuarios.set(atributos.email, { id, email: atributos.email, senha: atributos.password, nome: atributos.user_metadata.name })
       return { data: { user: { id, email: atributos.email, user_metadata: { name: atributos.user_metadata.name } } }, error: null }
     },
+  }
+
+  async signOut(opcoes?: { scope?: string }) {
+    if (this.falharSaida) throw new Error('falhou ao sair')
+    this.saidas.push(opcoes)
+    return { error: null }
   }
 
   async signInWithPassword({ email, password }: { email: string; password: string }): Promise<Resposta> {
@@ -126,5 +134,55 @@ describe('entrarNoSupabase', () => {
     const auth = new AuthFalso()
     auth.signInWithPassword = async () => ({ data: { user: { id: '11111111-1111-4111-8111-111111111111', email: 'renan@exemplo.com', user_metadata: {} } }, error: null })
     expect((await entrarNoSupabase(auth, 'renan@exemplo.com', 'x'))?.name).toBe('renan')
+  })
+})
+
+describe('limite de tentativas do Supabase (429)', () => {
+  it('entrar com muitas tentativas NÃO vira "serviço fora do ar": a mensagem manda esperar', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const auth = new AuthFalso()
+    auth.falhar = { message: 'Request rate limit reached', code: 'over_request_rate_limit', status: 429 }
+    const erro = await entrarNoSupabase(auth, 'renan@exemplo.com', 'x').catch(e => e)
+    expect(erro).toBeInstanceOf(ErroConta)
+    expect(erro).toMatchObject({ codigo: 'muitas_tentativas', status: 429 })
+    expect(erro.message).toMatch(/muitas tentativas/i)
+  })
+
+  it('criar conta com muitas tentativas também pede para esperar', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const auth = new AuthFalso()
+    auth.falhar = { message: 'rate limit', status: 429 }
+    await expect(criarConta(auth, cadastro)).rejects.toMatchObject({ codigo: 'muitas_tentativas', status: 429 })
+  })
+})
+
+describe('encerrar a sessão do Supabase criada só para conferir a senha', () => {
+  it('depois de entrar com sucesso, encerra a sessão local do cliente descartável (não deixa sessão sobrando no Supabase)', async () => {
+    const auth = new AuthFalso()
+    await criarConta(auth, cadastro)
+    await entrarNoSupabase(auth, 'renan@exemplo.com', 'senha-forte-123')
+    expect(auth.saidas).toEqual([{ scope: 'local' }])
+  })
+
+  it('senha errada não cria sessão, então não há o que encerrar', async () => {
+    const auth = new AuthFalso()
+    await criarConta(auth, cadastro)
+    await entrarNoSupabase(auth, 'renan@exemplo.com', 'errada')
+    expect(auth.saidas).toEqual([])
+  })
+
+  it('se encerrar a sessão falhar, o login continua valendo (é só uma limpeza)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const auth = new AuthFalso()
+    const criado = await criarConta(auth, cadastro)
+    auth.falharSaida = true
+    expect(await entrarNoSupabase(auth, 'renan@exemplo.com', 'senha-forte-123')).toEqual(criado)
+  })
+
+  it('um cliente sem signOut (versões antigas) também funciona', async () => {
+    const auth = new AuthFalso()
+    await criarConta(auth, cadastro)
+    ;(auth as { signOut?: unknown }).signOut = undefined
+    expect((await entrarNoSupabase(auth, 'renan@exemplo.com', 'senha-forte-123'))?.email).toBe('renan@exemplo.com')
   })
 })

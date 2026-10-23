@@ -17,10 +17,12 @@ export interface AuthLike {
     createUser(atributos: { email: string; password: string; email_confirm: boolean; user_metadata: { name: string } }): Promise<Resposta>
   }
   signInWithPassword(credenciais: { email: string; password: string }): Promise<Resposta>
+  /** Encerra a sessão que o login acabou de criar no cliente descartável. Opcional: nem todo cliente (ou versão) tem. */
+  signOut?(opcoes?: { scope?: 'local' | 'global' | 'others' }): Promise<unknown>
 }
 
 export class ErroConta extends Error {
-  constructor(readonly codigo: 'email_ja_cadastrado' | 'falha_ao_criar' | 'indisponivel', message: string, readonly status: number) {
+  constructor(readonly codigo: 'email_ja_cadastrado' | 'falha_ao_criar' | 'indisponivel' | 'muitas_tentativas', message: string, readonly status: number) {
     super(message)
     this.name = 'ErroConta'
   }
@@ -29,6 +31,7 @@ export class ErroConta extends Error {
 const emailJaCadastrado = () => new ErroConta('email_ja_cadastrado', 'Este e-mail já tem uma conta. Entre com a sua senha.', 409)
 const falhaAoCriar = () => new ErroConta('falha_ao_criar', 'Não foi possível criar a conta agora. Tente novamente em instantes.', 502)
 const indisponivel = () => new ErroConta('indisponivel', 'Não foi possível entrar agora. Tente novamente em instantes.', 503)
+const muitasTentativas = () => new ErroConta('muitas_tentativas', 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.', 429)
 
 /** Registra só o status e o código: a mensagem do serviço pode citar o e-mail da pessoa. */
 function registrar(onde: string, erro: unknown) {
@@ -36,6 +39,7 @@ function registrar(onde: string, erro: unknown) {
   console.error(`[contas] ${onde} (status ${e.status ?? '?'}, código ${e.code ?? '?'})`)
 }
 
+const limiteDeTentativas = (e: ErroDoSupabase) => e.status === 429 || e.code === 'over_request_rate_limit' || e.code === 'over_email_send_rate_limit'
 const jaExiste = (e: ErroDoSupabase) => e.code === 'email_exists' || e.code === 'user_already_exists' || /already (been )?registered/i.test(e.message)
 const credenciaisInvalidas = (e: ErroDoSupabase) => e.code === 'invalid_credentials' || e.code === 'user_not_found' || (e.status === 400 && /invalid login credentials/i.test(e.message))
 
@@ -63,6 +67,7 @@ export async function criarConta(auth: AuthLike, cadastro: Cadastro, opcoes: { e
   if (resposta.error) {
     if (jaExiste(resposta.error)) throw emailJaCadastrado()
     registrar('falha ao criar conta', resposta.error)
+    if (limiteDeTentativas(resposta.error)) throw muitasTentativas()
     throw falhaAoCriar()
   }
   if (!resposta.data.user) {
@@ -88,7 +93,12 @@ export async function entrarNoSupabase(auth: AuthLike, email: string, senha: str
   if (resposta.error) {
     if (credenciaisInvalidas(resposta.error)) return null
     registrar('falha ao entrar', resposta.error)
-    throw indisponivel()
+    throw limiteDeTentativas(resposta.error) ? muitasTentativas() : indisponivel()
   }
-  return resposta.data.user ? paraUsuario(resposta.data.user, email) : null
+  if (!resposta.data.user) return null
+
+  // O login criou uma sessão no cliente descartável só para conferir a senha: encerra, para não acumular sessões no Supabase.
+  // É uma limpeza; se falhar, o login continua valendo.
+  try { await auth.signOut?.({ scope: 'local' }) } catch (e) { registrar('falha ao encerrar a sessão de conferência', e) }
+  return paraUsuario(resposta.data.user, email)
 }

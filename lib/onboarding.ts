@@ -68,9 +68,19 @@ export interface Cadastro { nome: string; email: string; senha: string }
 export type CampoDoCadastro = keyof Cadastro
 export type ResultadoDoCadastro = { ok: true; valores: Cadastro } | { ok: false; erros: Partial<Record<CampoDoCadastro, string>> }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+/**
+ * Sem partes que se sobrepõem (o domínio não aceita ponto dentro de cada pedaço): o custo é linear. A forma mais
+ * comum, `[^\s@]+\.[^\s@]+`, tem retrocesso quadrático: um "a@....@" de 40 mil caracteres leva mais de 1 s, um de
+ * 200 mil levou 35 s, e o formulário aceita até 1 MB. Também recusa domínios com pontos seguidos ("a@b..c").
+ */
+const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/
 const NOME_MAX = 80
 const EMAIL_MAX = 254
+
+/** E-mail com formato válido. O tamanho é conferido ANTES da regex, para entrada enorme nem chegar a ela. */
+export function emailValido(email: string): boolean {
+  return email.length <= EMAIL_MAX && EMAIL.test(email)
+}
 const SENHA_MIN = 8
 /** O Supabase (bcrypt) ignora tudo depois de 72 bytes: melhor recusar do que aceitar uma senha cortada em silêncio. */
 const SENHA_MAX_BYTES = 72
@@ -87,8 +97,7 @@ export function validarCadastro(entrada: Partial<Record<CampoDoCadastro, unknown
   if ((nome.match(/\p{L}/gu) ?? []).length < 2) erros.nome = 'Digite o seu nome completo.'
   else if (nome.length > NOME_MAX) erros.nome = `O nome pode ter no máximo ${NOME_MAX} caracteres.`
 
-  if (!EMAIL.test(email)) erros.email = 'Digite um e-mail válido.'
-  else if (email.length > EMAIL_MAX) erros.email = 'Este e-mail é comprido demais.'
+  if (!emailValido(email)) erros.email = 'Digite um e-mail válido.'
 
   if (senha.trim() === '' || [...senha].length < SENHA_MIN) erros.senha = `A senha precisa ter pelo menos ${SENHA_MIN} caracteres.`
   else if (new TextEncoder().encode(senha).length > SENHA_MAX_BYTES) erros.senha = 'A senha é comprida demais. Use até 72 caracteres.'

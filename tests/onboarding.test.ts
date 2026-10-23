@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  NIVEIS, OPCOES_DE_DIAS, experienciaDoNivel, metaDoOnboarding, nivelDaExperiencia, planoDoOnboarding, validarCadastro,
+  NIVEIS, OPCOES_DE_DIAS, emailValido, experienciaDoNivel, metaDoOnboarding, nivelDaExperiencia, planoDoOnboarding, validarCadastro,
   type Nivel,
 } from '@/lib/onboarding'
 import { PLANOS } from '@/data/planos'
@@ -142,5 +142,42 @@ describe('validarCadastro', () => {
 
   it('valores que não são texto (formulário adulterado) são recusados sem lançar erro', () => {
     expect(validarCadastro({ nome: null, email: undefined, senha: 5 } as never).ok).toBe(false)
+  })
+})
+
+describe('emailValido e a proteção contra entrada hostil (ReDoS)', () => {
+  it.each(['renan@exemplo.com', 'a.b+c@sub.dominio.com.br', 'nome_com-hifen@dominio.io'])('aceita %s', email => {
+    expect(emailValido(email)).toBe(true)
+  })
+
+  it.each(['', 'sem-arroba', 'a@b', 'a@@b.c', 'a b@c.com', 'a@b.c ', 'a@b..c', 'a@.b.c', 'a@b.c.', '@b.c'])('recusa %j', email => {
+    expect(emailValido(email)).toBe(false)
+  })
+
+  it('recusa e-mail com mais de 254 caracteres, sem nem olhar o resto', () => {
+    expect(emailValido(`${'a'.repeat(250)}@exemplo.com`)).toBe(false)
+  })
+
+  it('entrada hostil de 1 MB (muitos pontos e um @ no fim) é recusada em milissegundos, não em minutos', () => {
+    for (const hostil of [`a@${'.'.repeat(1_000_000)}@`, `a@${'b.'.repeat(500_000)}@`, `${'a'.repeat(1_000_000)}@`, `a@${'b'.repeat(1_000_000)}`]) {
+      const inicio = performance.now()
+      expect(emailValido(hostil)).toBe(false)
+      expect(performance.now() - inicio, 'tempo para recusar').toBeLessThan(200)
+    }
+  })
+
+  it('validarCadastro também recusa o e-mail hostil depressa, e aponta só o campo do e-mail', () => {
+    const inicio = performance.now()
+    const r = validarCadastro({ nome: 'Renan Lopes', email: `a@${'.'.repeat(200_000)}@`, senha: 'senha-forte-123' })
+    expect(performance.now() - inicio).toBeLessThan(200)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(Object.keys(r.erros)).toEqual(['email'])
+  })
+
+  it('nome e senha gigantes também são recusados depressa', () => {
+    const inicio = performance.now()
+    const r = validarCadastro({ nome: 'a'.repeat(1_000_000), email: 'ok@exemplo.com', senha: 'x'.repeat(1_000_000) })
+    expect(performance.now() - inicio).toBeLessThan(500)
+    expect(r.ok).toBe(false)
   })
 })

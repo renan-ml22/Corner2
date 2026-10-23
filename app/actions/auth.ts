@@ -2,19 +2,18 @@
 
 import { redirect } from 'next/navigation'
 import { ErroConta } from '@/lib/contas'
+import { emailValido } from '@/lib/onboarding'
 import { createSession, deleteSession } from '@/lib/session'
 import { verifyCredentials } from '@/lib/users'
 
 export type LoginState = { error: string; email: string; at: number } | undefined
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const fail = (error: string) => ({ error, email, at: Date.now() })
 
-  if (!EMAIL_RE.test(email)) return fail('Digite um e-mail válido.')
+  if (!emailValido(email)) return fail('Digite um e-mail válido.')
   if (!password) return fail('Digite sua senha.')
 
   let user

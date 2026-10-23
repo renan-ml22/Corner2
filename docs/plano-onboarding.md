@@ -56,12 +56,27 @@ O que protege:
 
 ## Limitações conhecidas (leia antes de abrir o app ao público)
 
-- **O cadastro é aberto e não confirma o e-mail.** Qualquer pessoa com o endereço do site cria uma conta com qualquer e-mail, inclusive de outra pessoa. Não há captcha nem limite de cadastros por IP. Para uso público: e-mail de confirmação (exige um serviço de e-mail próprio no Supabase, porque o padrão envia poucos e-mails por hora) e proteção contra cadastros em massa.
+- **O cadastro é aberto e não confirma o e-mail.** Qualquer pessoa com o endereço do site cria uma conta com qualquer e-mail, inclusive de outra pessoa. Não há captcha nem limite de cadastros por IP. Para uso público: e-mail de confirmação (exige um serviço de e-mail próprio no Supabase, porque o padrão envia poucos e-mails por hora) e proteção contra cadastros em massa. Consequências concretas:
+  - **Tomada prévia de um e-mail alheio:** alguém cria a conta com o e-mail de outra pessoa, que depois recebe "este e-mail já tem uma conta" e não consegue se cadastrar nem recuperar (não há "esqueci a senha").
+  - **Teste grátis ilimitado:** cada conta nova ganha os 7 dias de teste de um plano pago, sem cartão. Contas em massa dão acesso pago de graça.
+  - **Armazenamento:** cada conta pode gravar até 3 MB por envio; contas em massa enchem o plano gratuito do Supabase.
+- **O limite de tentativas do Supabase é por endereço de IP, e todos os logins saem do IP do servidor.** Alguém pode esgotar o limite com tentativas erradas e impedir o login das contas do Supabase por alguns minutos (a tela mostra "Muitas tentativas em pouco tempo. Aguarde alguns minutos"). O usuário de teste não é afetado. Confira o limite em Authentication → Rate Limits no painel do Supabase; a solução definitiva é captcha ou um limite próprio.
+- **Sessão válida, mas sem usuário:** se as variáveis `AUTH_TEST_*` forem removidas enquanto o usuário de teste está logado, o app entra em laço de redirecionamento até o cookie expirar. Limpar os cookies do site resolve. Não acontece com contas do Supabase.
 - **A sessão dura 7 dias e não é revogada.** Apagar um usuário no Supabase não derruba quem já está logado até a sessão expirar.
 - **O cadastro revela se um e-mail já tem conta** ("este e-mail já tem uma conta"). É a escolha de usabilidade mais comum; o login, ao contrário, nunca revela.
 - **Não há "esqueci a senha", troca de senha nem exclusão de conta** ainda. Exclusão é obrigação da LGPD antes de abrir ao público.
 - **Termos de uso e política de privacidade** ainda não existem e devem ser aceitos no cadastro antes de abrir ao público.
 - Quem criou conta e abandonou no meio do onboarding entra direto em `/hoje`, sem plano. O perfil de atleta (Perfil → Montar perfil de atleta) continua disponível.
+
+## O que a revisão de segurança achou e foi corrigido
+
+Uma segunda leitura independente do código achou, entre outras coisas:
+- **Regex de e-mail com custo quadrático (ReDoS):** um e-mail hostil de 200 KB levava **35 segundos de CPU** para ser recusado, e o formulário aceita até 1 MB (cerca de 13 minutos). Qualquer pessoa, sem login, podia travar o servidor. A regex agora é linear, o tamanho é conferido antes dela, e há testes com entradas de 1 MB. O login (que já tinha o problema) usa a mesma conferência.
+- **Limite de tentativas do Supabase** aparecia como "serviço fora do ar": agora tem mensagem própria.
+- **Sessões sobrando no Supabase:** cada login criava uma sessão que nunca era encerrada; agora é encerrada logo depois de conferir a senha.
+- **Cliente compartilhado:** a trava que recusa entrar passou a cobrir também `signUp`, `refreshSession`, `reauthenticate` e `linkIdentity`.
+
+Não há como forjar sessão, colidir com o usuário de teste, acessar dados de outra pessoa nem vazar a chave de serviço para o navegador (conferido e coberto por testes).
 
 ## Como testar
 

@@ -227,6 +227,10 @@ describe('o cliente compartilhado se recusa a entrar (o erro fica impossível, e
     ['signInWithOtp', (c: ReturnType<typeof getSupabase>) => c!.auth.signInWithOtp({ email: credenciais.email })],
     ['signInAnonymously', (c: ReturnType<typeof getSupabase>) => c!.auth.signInAnonymously()],
     ['setSession', (c: ReturnType<typeof getSupabase>) => c!.auth.setSession({ access_token: 'a', refresh_token: 'b' })],
+    ['signUp', (c: ReturnType<typeof getSupabase>) => c!.auth.signUp(credenciais)],
+    ['refreshSession', (c: ReturnType<typeof getSupabase>) => c!.auth.refreshSession()],
+    ['reauthenticate', (c: ReturnType<typeof getSupabase>) => c!.auth.reauthenticate()],
+    ['linkIdentity', (c: ReturnType<typeof getSupabase>) => c!.auth.linkIdentity({ provider: 'google' })],
   ])('%s no cliente compartilhado falha com uma mensagem que explica o motivo, sem tocar na rede', (_nome, tentar) => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'x'.repeat(40)
     const rede = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('não devia chamar a rede'))
