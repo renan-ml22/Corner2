@@ -51,3 +51,53 @@ describe('segredos do Stripe fora do repositório', () => {
     expect(vazando).toEqual([])
   })
 })
+
+// Supabase: a chave pública (anon / publishable) é feita para ficar visível, a secreta (service_role) ignora todas as
+// regras do banco e nunca pode ir para o GitHub nem para o navegador.
+
+const B64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url')
+const JWT = (dados: object) => `${B64({ alg: 'HS256', typ: 'JWT' })}.${B64(dados)}.${'a'.repeat(43)}`
+
+/** Chave secreta do Supabase no formato novo (sb_secret_...) ou no antigo (JWT com o papel service_role). */
+function achaSegredoDoSupabase(texto: string): boolean {
+  if (/\bsb_secret_[A-Za-z0-9_-]{20,}/.test(texto)) return true
+  for (const [jwt] of texto.matchAll(/\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{20,}/g)) {
+    try {
+      if (JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString()).role === 'service_role') return true
+    } catch { /* não é um JWT de verdade */ }
+  }
+  return false
+}
+
+describe('segredos do Supabase fora do repositório', () => {
+  const todos = arquivos(RAIZ)
+
+  it('nenhum arquivo versionado contém a chave secreta do Supabase', () => {
+    const achados = todos.filter(f => achaSegredoDoSupabase(readFileSync(f, 'utf8'))).map(f => path.relative(RAIZ, f).replace(/\\/g, '/'))
+    expect(achados).toEqual([])
+  })
+
+  it('o detector reconhece as duas formas da chave secreta e ignora a pública e o prefixo sozinho', () => {
+    expect(achaSegredoDoSupabase('SUPABASE_SERVICE_ROLE_KEY=sb_secret_' + 'A1b2'.repeat(8))).toBe(true)
+    expect(achaSegredoDoSupabase(`chave: ${JWT({ iss: 'supabase', ref: 'abcdefghijklmnopqrst', role: 'service_role' })}`)).toBe(true)
+    expect(achaSegredoDoSupabase(JWT({ iss: 'supabase', ref: 'abcdefghijklmnopqrst', role: 'anon' }))).toBe(false) // a pública pode aparecer
+    expect(achaSegredoDoSupabase('sb_publishable_' + 'a'.repeat(30))).toBe(false)
+    expect(achaSegredoDoSupabase('começa com sb_secret_ e termina')).toBe(false)
+    expect(achaSegredoDoSupabase('eyJabcdefgh.eyJabcdefgh.' + 'a'.repeat(30))).toBe(false) // parece JWT, mas os dados não são JSON
+  })
+
+  it('nenhum arquivo do navegador lê SUPABASE_SERVICE_ROLE_KEY, e o cliente do Supabase só existe no servidor', () => {
+    const doNavegador = todos.filter(f => /\.(tsx|ts)$/.test(f) && /^['"]use client['"]/.test(readFileSync(f, 'utf8').trimStart()))
+    const vazando = doNavegador.filter(f => readFileSync(f, 'utf8').includes('SUPABASE_SERVICE_ROLE_KEY')).map(f => path.relative(RAIZ, f))
+    expect(vazando).toEqual([])
+    for (const arquivo of ['lib/supabase.ts', 'lib/dados/servidor/banco-supabase.ts']) {
+      expect(readFileSync(path.join(RAIZ, arquivo), 'utf8').trimStart(), arquivo).toMatch(/^import ['"]server-only['"]/)
+    }
+  })
+
+  it('nenhum arquivo do navegador importa o cliente do Supabase', () => {
+    const doNavegador = todos.filter(f => /\.(tsx|ts)$/.test(f) && /^['"]use client['"]/.test(readFileSync(f, 'utf8').trimStart()))
+    const importando = doNavegador.filter(f => /@supabase\/supabase-js|@\/lib\/supabase['"]|servidor\/banco-supabase/.test(readFileSync(f, 'utf8'))).map(f => path.relative(RAIZ, f))
+    expect(importando).toEqual([])
+  })
+})

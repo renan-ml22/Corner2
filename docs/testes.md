@@ -43,6 +43,14 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - `tests/sem-segredos.test.ts` falha se qualquer chave do Stripe aparecer em arquivo versionado.
 - Teste manual com a página de pagamento do Stripe: roteiro em `docs/plano-pagamento.md`.
 
+## Conta na nuvem (Supabase)
+
+- Testes de unidade: `tests/supabase-*.test.ts` (mapeamento entre dados do app e linhas, serviço com banco de mentira, adaptador com cliente de mentira, leitura do corpo e erros), `tests/fusao.test.ts`, `tests/repositorio-sincronizado.test.ts` (aparelho offline, falhas, gravar durante um envio, primeira vez neste aparelho) e `tests/remoto-http.test.ts`.
+- Testes de navegador: `e2e/api-dados.spec.ts`. O servidor de teste sobe **sem** as variáveis do Supabase (vazias de propósito, pelo mesmo motivo do Stripe), então a conta na nuvem fica desligada e nenhum teste automático fala com o banco.
+- `npm run supabase:fumaca`: exercita o código da rota contra o Supabase **de verdade** com dois usuários de mentira e limpa o que criou. Precisa do `supabase/schema.sql` já rodado e das variáveis no `.env.local`.
+- `tests/sem-segredos.test.ts` também falha se a chave secreta do Supabase aparecer em arquivo versionado ou for lida por um arquivo do navegador.
+- Passo a passo para ligar e testar à mão: [`plano-supabase.md`](plano-supabase.md).
+
 ## Quando escrever cada tipo
 
 - Regra de cálculo, validador, migração: teste de unidade em `tests/` (primeiro o teste, depois o código).

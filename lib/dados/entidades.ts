@@ -53,6 +53,13 @@ export const ENTIDADES: { [N in NomeEntidade]: Entidade<DadosDoApp[N]> } = {
   assinatura: { inicial: null, validar: isAssinaturaGuardada },
 }
 
+/**
+ * O que vai para a conta (banco). `lembrete` (data do último aviso neste aparelho) e `assinatura` (cópia do que
+ * o Stripe informou) ficam só no aparelho de propósito.
+ */
+export const ENTIDADES_SINCRONIZADAS = ['historico', 'plano', 'config', 'checklist', 'checkins', 'lesoes', 'pesos', 'ajuste', 'reag'] as const satisfies readonly NomeEntidade[]
+export type EntidadeSincronizada = (typeof ENTIDADES_SINCRONIZADAS)[number]
+
 export const NOMES_ENTIDADES = Object.keys(ENTIDADES) as NomeEntidade[]
 
 /** O que vai para o arquivo de backup (o que é só do dia, como checklist e ajuste, fica de fora). */

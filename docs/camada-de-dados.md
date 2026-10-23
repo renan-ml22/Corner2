@@ -12,9 +12,17 @@ lib/dados/
   backup.ts             montarBackup / lerBackup (puros)
   repositorio.ts        interface Repositorio (a "porta")
   repositorio-local.ts  implementação sobre o localStorage
+  repositorio-sincronizado.ts  por cima do local: sincroniza com a conta (Supabase) em segundo plano
+  fusao.ts              fusão dos dados do aparelho com os da conta (só na primeira vez de cada aparelho)
+  remoto-http.ts        fala com a rota /api/dados
+  sincronia-texto.ts    textos do estado da sincronização (Perfil)
   fonte.ts              liga uma entidade ao useSyncExternalStore (testável sem navegador)
+  servidor/             só no servidor: validação e gravação nas tabelas (mapeamento, servico, banco-supabase, http)
 hooks/useEntidade.ts    hook fino: useEntidade(repo, 'pesos')
+hooks/useSincronia.ts   estado da sincronização para a tela
 components/CornerProvider.tsx   cria o repositório e expõe o estado às telas
+app/api/dados/route.ts  GET e PUT dos dados do usuário logado
+supabase/schema.sql     as tabelas (rode no SQL Editor do Supabase)
 ```
 
 As telas e o provider **não citam chaves nem `localStorage`**. Só falam com o `Repositorio`.
@@ -33,12 +41,16 @@ As telas e o provider **não citam chaves nem `localStorage`**. Só falam com o 
 4. **Falha de gravação não derruba o app:** o valor fica em memória.
 5. **`assinar`** avisa mudanças locais e de outras abas/dispositivos.
 
-## Trocar o armazenamento por um banco (próxima etapa)
+## Conta na nuvem (feito: Supabase)
 
-1. Criar `repositorio-api.ts` que implemente `Repositorio`: carrega as entidades ao entrar (preenchendo o cache), `gravar` atualiza o cache na hora e envia ao servidor em segundo plano.
-2. Rodar contra ele o mesmo conjunto de testes de `tests/repositorio-local.test.ts` (leitura, gravação, assinatura, falhas). Se passa, as telas não percebem a troca.
-3. Em `CornerProvider.tsx`, trocar `criarRepositorioLocal(...)` pela nova fábrica. É a única linha que muda.
-4. Importar para a conta os dados que já estão no aparelho usando o fluxo de backup (`lerBackup`), que já valida e migra.
+O banco entrou como previsto: uma segunda implementação por cima da primeira, sem as telas perceberem. O aparelho continua sendo a fonte do que a tela mostra; `repositorio-sincronizado.ts` carrega a conta ao abrir, envia o que muda em segundo plano e guarda as pendências no aparelho. Como funciona, as decisões e as limitações estão em [`plano-supabase.md`](plano-supabase.md).
+
+Regras que a sincronização acrescenta às de cima:
+
+6. **Primeira vez que um aparelho encontra uma conta com dados:** fundir, nunca sobrescrever, e guardar o original do aparelho na quarentena.
+7. **Pendência nunca se perde:** alteração ainda não enviada fica marcada no aparelho (`corner:{usuário}:sync`) e vence a conta no próximo acesso.
+8. **Só dado do atleta vai para a conta** (`ENTIDADES_SINCRONIZADAS`); `lembrete` e `assinatura` ficam no aparelho.
+9. **Sem as variáveis do Supabase, nada muda:** a rota responde `ativo: false` e o repositório se comporta como o local.
 
 ## Mudar o formato de uma entidade
 

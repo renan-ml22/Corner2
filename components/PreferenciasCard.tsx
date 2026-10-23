@@ -7,7 +7,9 @@ import { resumoDoEstado } from "@/lib/assinatura/apresentacao";
 import { useAssinatura } from "@/hooks/useAssinatura";
 import { usePlano } from "@/hooks/usePlano";
 import { usePreferencias } from "@/hooks/usePreferencias";
+import { useSincronia } from "@/hooks/useSincronia";
 import { useToast } from "@/hooks/useToast";
+import { textoDaSincronia, textoDeOndeFicamOsDados } from "@/lib/dados/sincronia-texto";
 import { usePainelAcoes } from "./PainelProvider";
 import { chaveDia } from "@/lib/datas";
 import { pedirPermissaoNotificacao } from "@/lib/notificar";
@@ -22,6 +24,7 @@ export default function PreferenciasCard() {
   const { openOnboarding } = usePainelAcoes();
   const showToast = useToast();
   const assinatura = useAssinatura();
+  const sincronia = useSincronia();
   const [permissao, setPermissao] = useState<string>(() => (typeof Notification === "undefined" ? "indisponivel" : Notification.permission));
 
   if (!pronto) return <div className="skeleton" />;
@@ -141,7 +144,8 @@ export default function PreferenciasCard() {
 
       <div className="section-heading"><h2>Backup dos dados</h2></div>
       <section className="surface-card form-card">
-        <p className="muted-copy mt-0">Seus dados ficam só neste aparelho. Baixe um backup de vez em quando, principalmente antes de trocar de celular ou limpar o navegador.</p>
+        <p className="muted-copy mt-0">{textoDeOndeFicamOsDados(sincronia)}</p>
+        {textoDaSincronia(sincronia) && <p className="muted-copy mt-10" role="status">{textoDaSincronia(sincronia)}</p>}
         <div className="linha-form mt-14">
           <button type="button" className={`btn-ghost ${estilos.botaoBackup}`} onClick={exportar}><i className="ph ph-download-simple" aria-hidden="true" /> Baixar backup</button>
           {assinatura.podeUsar("importarDados") ? (

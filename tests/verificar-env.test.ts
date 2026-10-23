@@ -111,6 +111,89 @@ describe('verificarEnv: pagamento (Stripe)', () => {
   })
 })
 
+describe('verificarEnv: conta na nuvem (Supabase)', () => {
+  const REF = 'abcdefghijklmnopqrst' // referência de projeto: 20 letras e números
+  const URL = `https://${REF}.supabase.co`
+  const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url')
+  /** Chave no formato antigo do Supabase: três partes (cabeçalho.dados.assinatura). */
+  const jwt = (dados: object) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ iss: 'supabase', ...dados })}.${'a'.repeat(43)}`
+  const secreta = (ref = REF) => jwt({ ref, role: 'service_role' })
+  const publica = (ref = REF) => jwt({ ref, role: 'anon' })
+  const com = (url: string | undefined, chave: string | undefined) => ({ ...OK(), NEXT_PUBLIC_SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: chave } as Record<string, string | undefined>)
+
+  it('sem nenhuma das duas é só um aviso: o app funciona só com o aparelho', () => {
+    const r = verificarEnv(OK())
+    expect(r.ok).toBe(true)
+    expect(r.avisos.join(' ')).toContain('SUPABASE_SERVICE_ROLE_KEY')
+  })
+
+  it('URL e chave secreta bem formadas e do mesmo projeto: aceita, sem aviso', () => {
+    const r = verificarEnv(com(URL, secreta()))
+    expect(r.ok).toBe(true)
+    expect([...r.erros, ...r.avisos].join(' ')).not.toContain('SUPABASE')
+  })
+
+  it('aceita a chave secreta no formato novo (sb_secret_...)', () => {
+    expect(verificarEnv(com(URL, 'sb_secret_' + 'A1b2'.repeat(10))).ok).toBe(true)
+  })
+
+  it('só a URL, ou só a chave: erro, porque sozinhas não servem para nada', () => {
+    expect(verificarEnv(com(URL, undefined)).erros.join(' ')).toContain('SUPABASE_SERVICE_ROLE_KEY')
+    expect(verificarEnv(com(undefined, secreta())).erros.join(' ')).toContain('NEXT_PUBLIC_SUPABASE_URL')
+  })
+
+  it.each([
+    ['uma letra a menos (19 em vez de 20)', 'https://abcdefghijklmnopqrs.supabase.co'],
+    ['sem https', `http://${REF}.supabase.co`],
+    ['com caminho no fim', `${URL}/rest/v1`],
+    ['com maiúsculas', `https://${REF.toUpperCase()}.supabase.co`],
+    ['de outro serviço', `https://${REF}.exemplo.com`],
+    ['com aspas coladas', `"${URL}"`],
+  ])('URL %s: erro', (_nome, url) => {
+    const r = verificarEnv(com(url, secreta()))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toContain('NEXT_PUBLIC_SUPABASE_URL')
+  })
+
+  it('a chave pública (anon) no lugar da secreta: erro explicando a troca', () => {
+    const r = verificarEnv(com(URL, publica()))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toMatch(/anon|pública/)
+  })
+
+  it('a chave publicável do formato novo no lugar da secreta: erro', () => {
+    expect(verificarEnv(com(URL, 'sb_publishable_' + 'a'.repeat(30))).ok).toBe(false)
+  })
+
+  it('chave de outro projeto (a referência não bate com a URL): erro', () => {
+    const r = verificarEnv(com(URL, secreta('zyxwvutsrqponmlkjihg')))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toMatch(/outro projeto|não bate/)
+  })
+
+  it.each([
+    ['cortada (só duas partes)', jwt({ ref: REF, role: 'service_role' }).split('.').slice(0, 2).join('.')],
+    ['terminada em reticências', secreta().slice(0, 60) + '...'],
+    ['com espaço no meio', secreta().slice(0, 30) + ' ' + secreta().slice(30)],
+    ['com aspas coladas', `"${secreta()}"`],
+    ['sem o formato de chave', 'x'.repeat(40)],
+    ['partes que não são JSON', 'abc.def.ghi'],
+  ])('chave %s: erro', (_nome, chave) => {
+    const r = verificarEnv(com(URL, chave))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toContain('SUPABASE_SERVICE_ROLE_KEY')
+  })
+
+  it('nunca mostra o valor da chave nem da URL nas mensagens', () => {
+    const chave = publica() // formato certo, papel errado: gera erro com a chave em mãos
+    const r = verificarEnv(com(URL, chave))
+    const texto = [...r.erros, ...r.avisos].join(' | ')
+    expect(texto).not.toContain(chave)
+    expect(texto).not.toContain(chave.split('.')[1])
+    expect(texto).not.toContain(REF)
+  })
+})
+
 describe('lerArquivoEnv', () => {
   it('lê CHAVE=valor, ignora comentários e linhas em branco, aceita CRLF', () => {
     const r = lerArquivoEnv('# comentário\r\nA=1\r\n\r\nB=dois=com=igual\r\n  # outro\r\nC=\r\n')

@@ -213,6 +213,21 @@ describe('quarentena (nunca apagar dado antigo em silêncio)', () => {
     repo.gravar('pesos', [peso(), peso('p2')])
     expect(repo.quarentena('pesos')).toBe('{quebrado')
   })
+
+  it('guardarQuarentena grava uma cópia de segurança a pedido (usada antes de fundir com a conta) sem mexer no valor atual', () => {
+    const { repo, storage } = criar()
+    repo.gravar('pesos', [peso()])
+    const antes = storage.dados.get('corner:u1:pesos')
+    repo.guardarQuarentena('pesos', '[{"copia":true}]')
+    expect(repo.quarentena('pesos')).toBe('[{"copia":true}]')
+    expect(storage.dados.get('corner:u1:pesos')).toBe(antes)
+  })
+
+  it('guardarQuarentena não derruba o app quando o navegador não deixa gravar', () => {
+    const { repo, storage } = criar()
+    storage.falharGravacao = true
+    expect(() => repo.guardarQuarentena('pesos', 'x')).not.toThrow()
+  })
 })
 
 describe('assinatura', () => {

@@ -45,6 +45,9 @@ export default defineConfig({
       // Os testes de navegador nunca falam com o Stripe de verdade.
       STRIPE_SECRET_KEY: '',
       STRIPE_PUBLISHABLE_KEY: '',
+      // Idem para o Supabase: sem estas duas, a conta na nuvem fica desligada e os testes só usam o aparelho.
+      NEXT_PUBLIC_SUPABASE_URL: '',
+      SUPABASE_SERVICE_ROLE_KEY: '',
     },
   },
 })

@@ -34,11 +34,13 @@ export interface OpcoesRepositorioLocal {
 export interface RepositorioLocal extends Repositorio {
   /** Texto original guardado em quarentena para a entidade, se houver. */
   quarentena(nome: NomeEntidade): string | null
+  /** Guarda uma cópia de segurança na quarentena (ex.: antes de fundir os dados do aparelho com os da conta). */
+  guardarQuarentena(nome: NomeEntidade, texto: string): void
 }
 
 interface Entrada { raw: string | null; valor: unknown }
 
-function armazenamentoPadrao(): ArmazenamentoLike | null {
+export function armazenamentoPadrao(): ArmazenamentoLike | null {
   try {
     return typeof window !== 'undefined' ? window.localStorage : null
   } catch {
@@ -171,6 +173,10 @@ export function criarRepositorioLocal(opcoes: OpcoesRepositorioLocal): Repositor
 
     quarentena(nome) {
       return lerBruto(`${chave(nome)}:quarentena`)
+    },
+
+    guardarQuarentena(nome, texto) {
+      gravarBruto(`${chave(nome)}:quarentena`, texto)
     },
   }
 }
