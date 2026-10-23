@@ -218,6 +218,27 @@
   color: var(--color-neutral-400);
 }
 
+/* Linha de troca entre entrar e criar conta, e ajuda curta sob um campo */
+.alternativa {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-neutral-400);
+}
+
+.link {
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ajuda {
+  margin-top: -6px;
+  font-size: 12.5px;
+  color: var(--color-neutral-400);
+}
+
 /* ── Formulário ───────────────────────────────────────────── */
 .form {
   display: grid;

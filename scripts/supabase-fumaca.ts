@@ -9,9 +9,11 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { iguais } from '../lib/dados/fusao'
+import { ErroConta, criarConta, entrarNoSupabase, type AuthLike } from '../lib/contas'
 import { criarBancoSupabase } from '../lib/dados/servidor/banco-supabase'
 import { ErroDados, carregarDados, salvarEntidades } from '../lib/dados/servidor/servico'
-import { getSupabase } from '../lib/supabase'
+import { criarClienteParaEntrar, getSupabase } from '../lib/supabase'
+import { usuarioDaSessao, verifyCredentials } from '../lib/users'
 import { verificarEnv } from './verificar-env.mjs'
 
 try { process.loadEnvFile('.env.local') } catch { /* usa só o ambiente */ }
@@ -62,8 +64,15 @@ const TUDO = {
   ajuste: { data: '2026-10-14', aplicado: true },
 }
 
+/** Entrar como o app faz: cada login usa um cliente descartável (o compartilhado se recusa a entrar). */
+const entrar = (email: string, senha: string) => entrarNoSupabase(criarClienteParaEntrar()!.auth as unknown as AuthLike, email, senha)
+
+/** Contas criadas no Supabase Auth durante o teste: são apagadas (usuário e dados) no fim. */
+const contasCriadas: string[] = []
+
 async function limpar() {
-  for (const id of [ana.id, bia.id]) {
+  for (const id of contasCriadas) await db.auth.admin.deleteUser(id)
+  for (const id of [ana.id, bia.id, ...contasCriadas]) {
     await db.from('workouts').delete().eq('user_id', id)
     await db.from('active_plans').delete().eq('user_id', id)
     await db.from('profiles').delete().eq('id', id)
@@ -73,7 +82,11 @@ async function limpar() {
 
 async function contarLinhas(): Promise<number> {
   let total = 0
-  for (const id of [ana.id, bia.id]) {
+  for (const id of contasCriadas) {
+    const { data } = await db.auth.admin.getUserById(id)
+    if (data?.user) total++ // o usuário ainda existe no Auth
+  }
+  for (const id of [ana.id, bia.id, ...contasCriadas]) {
     for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id']] as const) {
       const { count } = await db.from(tabela).select('*', { count: 'exact', head: true }).eq(coluna, id)
       total += count ?? 0
@@ -101,7 +114,7 @@ async function principal() {
   confere('tudo volta idêntico (inclui ordem, decimais, milissegundos, emoji e quebra de linha)', iguais(lido, TUDO), JSON.stringify(lido).slice(0, 300))
   confere('a ordem do histórico é a do app, e não a da data', lido.historico?.map(t => t.id).join(',') === 'z-novo,a-meio,m-velho', lido.historico?.map(t => t.id).join(','))
   const { data: perfil } = await db.from('profiles').select('name,level,days_per_week').eq('id', ana.id).single()
-  confere('o nome do perfil vem do login; nível e meta ficam nas colunas', perfil?.name === ana.nome && perfil?.level === '1a3' && perfil?.days_per_week === 4, JSON.stringify(perfil))
+  confere('o nome do perfil vem do login; nível e meta ficam nas colunas', perfil?.name === ana.nome && perfil?.level === 'intermediario' && perfil?.days_per_week === 4, JSON.stringify(perfil))
 
   // 3. Trocar a lista: o que saiu some, a ordem nova vale.
   await salvarEntidades(banco, ana, { historico: [TUDO.historico[2], TUDO.historico[0]] })
@@ -139,7 +152,32 @@ async function principal() {
   const invalido = await salvarEntidades(banco, ana, { historico: [treino('x', { rpe: 99 })] }).catch(e => e)
   confere('dado inválido é recusado (400) e não altera o que já estava gravado', invalido instanceof ErroDados && invalido.status === 400 && (await carregarDados(banco, ana.id)).historico?.length === 400)
 
-  // 9. As chaves públicas não podem ler nem gravar nada.
+  // 9. Contas de usuário no Supabase Auth (cadastro do onboarding e login).
+  const email = `fumaca+${agora}@corner.test`
+  const senha = 'Senha-da-fumaça-123'
+  const criada = await criarConta(db.auth as unknown as AuthLike, { nome: 'Conta da fumaça', email, senha })
+  contasCriadas.push(criada.id)
+  confere('a conta é criada já confirmada, com id uuid, e-mail e nome certos', /^[0-9a-f]{8}-[0-9a-f-]{27}$/.test(criada.id) && criada.email === email && criada.name === 'Conta da fumaça', JSON.stringify(criada))
+
+  const entrou = await entrar(email, senha)
+  confere('entrar com a senha certa devolve a mesma conta', entrou?.id === criada.id && entrou?.name === 'Conta da fumaça')
+  confere('senha errada: null', (await entrar(email, 'senha-errada-123')) === null)
+  confere('e-mail que não existe: null (a mesma resposta da senha errada)', (await entrar(`ninguem+${agora}@corner.test`, senha)) === null)
+
+  const repetida = await criarConta(db.auth as unknown as AuthLike, { nome: 'Outra', email: email.toUpperCase(), senha }).catch(e => e)
+  confere('o mesmo e-mail (até em maiúsculas) não cria outra conta (409)', repetida instanceof ErroConta && repetida.codigo === 'email_ja_cadastrado' && repetida.status === 409, String(repetida?.message))
+
+  const login = await verifyCredentials(`  ${email.toUpperCase()} `, senha)
+  confere('o login do app (verifyCredentials) aceita a conta, com o e-mail normalizado', login?.id === criada.id)
+  confere('o login do app recusa a senha errada', (await verifyCredentials(email, 'errada-errada')) === null)
+  confere('a sessão reconhece a conta pelo token (e-mail e nome vêm assinados)', iguais(usuarioDaSessao({ userId: criada.id, email: criada.email, nome: criada.name }), criada))
+
+  await salvarEntidades(banco, { id: criada.id, nome: criada.name }, { config: { experiencia: '1a3', metaSemanal: 4, onboardingFeito: true }, plano: { planoId: 'base-aerobica', inicio: '2026-10-12' } })
+  const { data: perfilNovo } = await db.from('profiles').select('name,level,days_per_week').eq('id', criada.id).single()
+  const { data: planoNovo } = await db.from('active_plans').select('plan_id,started_at').eq('user_id', criada.id).single()
+  confere('os dados do onboarding ficam no perfil e no plano ativo da conta nova', perfilNovo?.name === 'Conta da fumaça' && perfilNovo?.level === 'intermediario' && perfilNovo?.days_per_week === 4 && planoNovo?.plan_id === 'base-aerobica' && planoNovo?.started_at === '2026-10-12', JSON.stringify({ perfilNovo, planoNovo }))
+
+  // 10. As chaves públicas não podem ler nem gravar nada.
   const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
   const papel = (() => { try { return JSON.parse(Buffer.from(chavePublica!.split('.')[1], 'base64url').toString()).role } catch { return null } })()
   if (!chavePublica || (papel !== 'anon' && !chavePublica.startsWith('sb_publishable_'))) {

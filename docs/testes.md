@@ -50,6 +50,7 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - `npm run supabase:fumaca`: exercita o código da rota contra o Supabase **de verdade** com dois usuários de mentira e limpa o que criou. Precisa do `supabase/schema.sql` já rodado e das variáveis no `.env.local`.
 - `tests/sem-segredos.test.ts` também falha se a chave secreta do Supabase aparecer em arquivo versionado ou for lida por um arquivo do navegador.
 - Passo a passo para ligar e testar à mão: [`plano-supabase.md`](plano-supabase.md).
+- **Onboarding e contas:** `tests/onboarding.test.ts`, `tests/contas.test.ts`, `tests/cadastro.test.ts`, `e2e/onboarding.spec.ts`; e `npm run supabase:fumaca` também cria uma conta de verdade, confere e apaga. Detalhes em [`plano-onboarding.md`](plano-onboarding.md).
 
 ## Quando escrever cada tipo
 

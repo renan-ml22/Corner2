@@ -97,8 +97,18 @@ describe('configurações <-> linha da tabela profiles', () => {
 
   it('o nome vai para a coluna name; experiência e meta semanal, para level e days_per_week', () => {
     const linha = configParaPerfil(cfg, 'Renan')
-    expect(linha).toMatchObject({ name: 'Renan', level: '1a3', days_per_week: 4 })
+    expect(linha).toMatchObject({ name: 'Renan', level: 'intermediario', days_per_week: 4 })
     expect(linha.settings).toStrictEqual(cfg)
+  })
+
+  it('a coluna level guarda o nível em palavras (iniciante, intermediario, avancado), e não o código interno da experiência', () => {
+    const nivel = (experiencia: Configuracoes['experiencia']) => configParaPerfil({ experiencia }, 'x').level
+    expect(nivel('nenhuma')).toBe('iniciante')
+    expect(nivel('ate1')).toBe('iniciante')
+    expect(nivel('1a3')).toBe('intermediario')
+    expect(nivel('mais3')).toBe('avancado')
+    expect(nivel(null)).toBeNull()
+    expect(configParaPerfil({}, 'x').level).toBeNull()
   })
 
   it('configuração vazia: colunas null e settings vazio', () => {

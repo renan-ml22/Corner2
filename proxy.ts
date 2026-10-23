@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { decrypt, SESSION_COOKIE } from '@/lib/session'
 
-const PUBLIC_ROUTES = ['/login']
+// /onboarding (só a tela de cadastro, o primeiro passo) é pública; quem já está logado vai direto para /hoje.
+// Os passos seguintes (/onboarding/nivel, /frequencia e /plano) exigem login e usam a sessão aberta no cadastro.
+const PUBLIC_ROUTES = ['/login', '/onboarding']
 
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname

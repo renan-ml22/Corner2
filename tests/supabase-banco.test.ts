@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { criarBancoSupabase } from '@/lib/dados/servidor/banco-supabase'
-import { getSupabase } from '@/lib/supabase'
+import { criarClienteParaEntrar, getSupabase } from '@/lib/supabase'
 
 interface Chamada { tabela: string; operacao: string; args: unknown[]; filtros: [string, unknown][]; ordem?: [string, unknown] }
 
@@ -177,5 +177,77 @@ describe('getSupabase: o cliente só existe no servidor e só com as duas variá
     const a = getSupabase()
     expect(a).not.toBeNull()
     expect(getSupabase()).toBe(a)
+  })
+})
+
+describe('criarClienteParaEntrar: o login nunca usa o cliente compartilhado', () => {
+  const guardado = { url: process.env.NEXT_PUBLIC_SUPABASE_URL, chave: process.env.SUPABASE_SERVICE_ROLE_KEY }
+  afterEach(() => {
+    if (guardado.url === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = guardado.url
+    if (guardado.chave === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = guardado.chave
+  })
+
+  it('sem as variáveis: null', () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY
+    expect(criarClienteParaEntrar()).toBeNull()
+  })
+
+  it('cada chamada devolve um cliente NOVO, diferente do compartilhado: quem entra por ele não contamina os dados dos outros', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'x'.repeat(40)
+    const compartilhado = getSupabase()
+    const a = criarClienteParaEntrar()
+    const b = criarClienteParaEntrar()
+    expect(a).not.toBeNull()
+    expect(a).not.toBe(b)
+    expect(a).not.toBe(compartilhado)
+    expect(b).not.toBe(compartilhado)
+  })
+
+  it('URL que não é uma URL: null, sem derrubar nada e sem imprimir a chave', () => {
+    const erro = vi.spyOn(console, 'error').mockImplementation(() => {})
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'isso não é url'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'segredo-que-nao-pode-vazar'
+    expect(criarClienteParaEntrar()).toBeNull()
+    expect(JSON.stringify(erro.mock.calls)).not.toContain('segredo-que-nao-pode-vazar')
+    erro.mockRestore()
+  })
+})
+
+describe('o cliente compartilhado se recusa a entrar (o erro fica impossível, e não só desaconselhado)', () => {
+  const guardado = { url: process.env.NEXT_PUBLIC_SUPABASE_URL, chave: process.env.SUPABASE_SERVICE_ROLE_KEY }
+  afterEach(() => {
+    if (guardado.url === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = guardado.url
+    if (guardado.chave === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = guardado.chave
+    vi.restoreAllMocks()
+  })
+
+  const credenciais = { email: 'ana@exemplo.com', password: 'senha-da-ana' }
+
+  it.each([
+    ['signInWithPassword', (c: ReturnType<typeof getSupabase>) => c!.auth.signInWithPassword(credenciais)],
+    ['signInWithOtp', (c: ReturnType<typeof getSupabase>) => c!.auth.signInWithOtp({ email: credenciais.email })],
+    ['signInAnonymously', (c: ReturnType<typeof getSupabase>) => c!.auth.signInAnonymously()],
+    ['setSession', (c: ReturnType<typeof getSupabase>) => c!.auth.setSession({ access_token: 'a', refresh_token: 'b' })],
+  ])('%s no cliente compartilhado falha com uma mensagem que explica o motivo, sem tocar na rede', (_nome, tentar) => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'x'.repeat(40)
+    const rede = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('não devia chamar a rede'))
+    expect(() => tentar(getSupabase())).toThrow(/compartilhado.*criarClienteParaEntrar/)
+    expect(rede).not.toHaveBeenCalled()
+  })
+
+  it('o cliente descartável de cada login continua podendo entrar (chega a tentar a rede)', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'x'.repeat(40)
+    const rede = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('sem rede'))
+    const resposta = await criarClienteParaEntrar()!.auth.signInWithPassword(credenciais)
+    expect(rede).toHaveBeenCalled()
+    expect(resposta.error).not.toBeNull()
+  })
+
+  it('criar contas (admin) continua funcionando no cliente compartilhado', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co'; process.env.SUPABASE_SERVICE_ROLE_KEY = 'x'.repeat(40)
+    const rede = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: '3f2b8c1e-9d4a-4e6b-8a57-1c2d3e4f5a6b', email: credenciais.email }), { status: 200, headers: { 'content-type': 'application/json' } }))
+    const { data, error } = await getSupabase()!.auth.admin.createUser({ email: credenciais.email, password: credenciais.password, email_confirm: true })
+    expect(rede).toHaveBeenCalled()
+    expect(error).toBeNull()
+    expect(data.user?.email).toBe(credenciais.email)
   })
 })

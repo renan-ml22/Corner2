@@ -189,3 +189,28 @@ describe('deleteSession', () => {
     expect(cookieStore.delete).toHaveBeenCalledWith(SESSION_COOKIE)
   })
 })
+
+describe('createSession com os dados da conta (contas do Supabase)', () => {
+  const UUID = '3f2b8c1e-9d4a-4e6b-8a57-1c2d3e4f5a6b'
+  const tokenGravado = () => cookieStore.set.mock.calls[0][1] as string
+
+  it('com e-mail e nome, o token assinado carrega os dois', async () => {
+    await createSession(UUID, { email: 'ana@exemplo.com', name: 'Ana Souza' })
+    expect(await decrypt(tokenGravado())).toMatchObject({ userId: UUID, email: 'ana@exemplo.com', nome: 'Ana Souza' })
+  })
+
+  it('sem os dados (usuário de teste), o token só tem o id e a validade', async () => {
+    await createSession('u_test')
+    const payload = await decrypt(tokenGravado())
+    expect(payload).not.toHaveProperty('email')
+    expect(payload).not.toHaveProperty('nome')
+  })
+
+  it('trocar o nome ou o e-mail dentro do token invalida a assinatura', async () => {
+    await createSession(UUID, { email: 'ana@exemplo.com', name: 'Ana Souza' })
+    const [h, p, s] = tokenGravado().split('.')
+    const payload = JSON.parse(Buffer.from(p, 'base64url').toString())
+    payload.email = 'invasor@exemplo.com'
+    expect(await decrypt(`${h}.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.${s}`)).toBeNull()
+  })
+})

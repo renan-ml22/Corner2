@@ -1,0 +1,199 @@
+/* Passos 2 a 4 do onboarding: nível, dias por semana e plano recomendado.
+   Mesmo tema escuro do app (tokens de app/estilos/base.css) e as cores dos dois corners. */
+
+.pagina {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: max(28px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(60% 40% at 0% 0%, oklch(0.62 0.17 258 / 0.12), transparent 70%),
+    radial-gradient(60% 40% at 100% 100%, oklch(0.63 0.21 25 / 0.1), transparent 70%),
+    var(--color-bg);
+}
+
+.coluna {
+  width: 100%;
+  max-width: 460px;
+  display: grid;
+  gap: 22px;
+  align-content: start;
+}
+
+/* ── Topo: voltar, "Passo n de 4" e a barra de progresso ───── */
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+.voltar:hover { color: var(--foreground); }
+.voltar:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.passo {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.barra {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.segmento {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border);
+}
+
+.segmentoFeito { background: linear-gradient(90deg, var(--red), var(--blue)); }
+
+.titulo {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.subtitulo {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* ── Opções de escolha (cartões e grade) ───────────────────── */
+.opcoes { display: grid; gap: 12px; }
+.grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+.opcao {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.opcao:hover { border-color: var(--color-neutral-600); }
+.opcao:active { transform: scale(0.99); }
+.opcao:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.opcaoAtiva {
+  border-color: var(--red);
+  background: color-mix(in oklch, var(--red) 12%, var(--surface));
+}
+.opcaoAtiva:hover { border-color: var(--red); }
+
+.icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  font-size: 1.6rem;
+  color: oklch(0.8 0.1 258);
+  background: color-mix(in oklch, var(--blue) 18%, var(--surface-raised));
+  border-radius: 14px;
+}
+.opcaoAtiva .icone {
+  color: var(--color-red-texto);
+  background: color-mix(in oklch, var(--red) 24%, var(--surface-raised));
+}
+
+.textos { display: grid; flex: 1; gap: 2px; }
+.textos strong { font-size: 1.05rem; }
+.descricao { color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+
+/* A seleção não depende só da cor: o círculo ganha um ✓. */
+.marca {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0.8rem;
+  color: transparent;
+  border: 2px solid var(--color-neutral-600);
+  border-radius: 50%;
+}
+.opcaoAtiva .marca { color: #fff; background: var(--red); border-color: var(--red); }
+
+/* Dias por semana: cartões altos, número grande */
+.dia {
+  flex-direction: column;
+  justify-content: center;
+  min-height: 124px;
+  padding: 20px 12px;
+  text-align: center;
+}
+.numero { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+.unidade { color: var(--muted); font-size: 0.85rem; }
+.dia .marca { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; font-size: 0.7rem; }
+
+/* ── Plano recomendado ─────────────────────────────────────── */
+.plano {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--red);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px -16px oklch(0.63 0.21 25 / 0.5);
+}
+
+.planoTopo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.planoNome { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+.planoResumo { color: var(--color-neutral-300); font-size: 0.92rem; line-height: 1.5; }
+
+.metas { display: flex; flex-wrap: wrap; gap: 8px; }
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--surface-raised);
+  border-radius: 99px;
+}
+.meta i { color: var(--color-red-texto); }
+
+.aviso {
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  background: color-mix(in oklch, var(--blue) 14%, var(--surface));
+  border-radius: 12px;
+}
+
+/* ── Ações ─────────────────────────────────────────────────── */
+.acoes { display: grid; gap: 4px; }
+.acoes :global(.btn-primary):disabled { opacity: 0.5; cursor: not-allowed; filter: none; transform: none; }
+.dica { color: var(--muted); font-size: 0.82rem; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .opcao { transition: none; }
+}

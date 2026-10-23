@@ -30,5 +30,6 @@ export function usePreferencias() {
     return { ok: true }
   }, [repo])
 
-  return { config, atualizarConfig, exportarDados, importarDados }
+  // `configSalva` é só o que a pessoa já definiu (sem os valores padrão): serve para saber se ela já escolheu algo.
+  return { config, configSalva, atualizarConfig, exportarDados, importarDados }
 }

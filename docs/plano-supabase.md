@@ -4,7 +4,7 @@ Estado: **código pronto e testado com um banco de mentira.** Falta você rodar 
 
 ## Decisões (suas)
 
-- **Manter o login atual** (usuário de teste por variáveis de ambiente). O Supabase é só o armazenamento.
+- **Manter o login atual** (usuário de teste por variáveis de ambiente). O Supabase é só o armazenamento. *(Atualizado: o onboarding passou a criar contas no Supabase Auth, mantendo a sessão do app, e o usuário de teste continua valendo. Veja [`plano-onboarding.md`](plano-onboarding.md).)*
 - **Tudo vai para o banco**: treinos, plano, configurações, check-ins, lesões, peso, reagendamentos e o estado do dia.
 
 ## Como funciona
@@ -71,7 +71,7 @@ Em **Perfil → Backup dos dados** aparece a situação: "Tudo salvo na sua cont
 ## Limitações conhecidas
 
 - **Dois aparelhos usados ao mesmo tempo:** cada entidade é enviada inteira e vale a última que chegar. Se você registrar treinos em dois aparelhos offline e depois conectar os dois, o último a enviar prevalece naquela entidade. A fusão linha a linha só acontece na primeira vez de cada aparelho.
-- **Um usuário só** (`u_test`). Para várias pessoas, o próximo passo é migrar o login para o Supabase Auth, trocar `user_id` por `uuid` e as regras de linha por `auth.uid()`.
+- **Contas:** além do usuário de teste (`u_test`), as contas criadas no onboarding usam o uuid do Supabase Auth como `user_id` (por isso a coluna é `text`). O acesso aos dados continua sendo só pelo servidor; migrar para regras de linha por `auth.uid()` (o navegador falando direto com o banco) seria uma etapa à parte.
 - **Mudar o formato de uma entidade** exige migrar também as linhas do banco: a versão do esquema (`VERSAO_ESQUEMA`) só é aplicada aos dados do aparelho.
 - **Sair da conta não apaga os dados do aparelho** (já era assim). Em aparelho compartilhado, limpe os dados do site no navegador.
 - **O bloqueio de recursos por plano continua só na tela.** Com o banco, dá para movê-lo para o servidor.

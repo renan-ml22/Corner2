@@ -4,6 +4,7 @@
 // uma linha corrompida é descartada, nunca derruba a tela, e o que sai daqui é sempre um dado válido.
 
 import { getPlano } from '@/data/planos'
+import { nivelDaExperiencia } from '@/lib/onboarding'
 import { isObj, isPlanoAtivo, isWorkoutEntry, limparConfig } from '../contrato'
 import type { Configuracoes, PlanoAtivo, WorkoutEntry } from '@/lib/tipos'
 
@@ -80,9 +81,12 @@ export interface LinhaPerfil {
   settings: Record<string, unknown>
 }
 
-/** `level` e `days_per_week` repetem dois campos de `settings` só para ficarem visíveis no painel do Supabase. */
+/**
+ * `level` (iniciante, intermediario ou avancado) e `days_per_week` resumem dois campos de `settings` para ficarem
+ * legíveis no painel do Supabase. São só de escrita: o app lê as configurações sempre de `settings`.
+ */
 export function configParaPerfil(cfg: Partial<Configuracoes>, nome: string): LinhaPerfil {
-  return { name: nome, level: cfg.experiencia ?? null, days_per_week: cfg.metaSemanal ?? null, settings: { ...cfg } }
+  return { name: nome, level: nivelDaExperiencia(cfg.experiencia), days_per_week: cfg.metaSemanal ?? null, settings: { ...cfg } }
 }
 
 export function perfilParaConfig(l: LinhaPerfil): Partial<Configuracoes> {

@@ -12,7 +12,7 @@
 create table if not exists public.profiles (
   id          text primary key,                       -- id do usuário do app (hoje: u_test)
   name        text,
-  level       text,                                   -- experiência: nenhuma | ate1 | 1a3 | mais3
+  level       text,                                   -- nível: iniciante | intermediario | avancado
   days_per_week int,                                  -- meta semanal de treinos
   settings    jsonb not null default '{}'::jsonb,     -- configurações completas (fonte da verdade do app)
   updated_at  timestamptz not null default now()

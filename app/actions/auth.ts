@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { ErroConta } from '@/lib/contas'
 import { createSession, deleteSession } from '@/lib/session'
 import { verifyCredentials } from '@/lib/users'
 
@@ -16,10 +17,17 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   if (!EMAIL_RE.test(email)) return fail('Digite um e-mail válido.')
   if (!password) return fail('Digite sua senha.')
 
-  const user = await verifyCredentials(email, password)
+  let user
+  try {
+    user = await verifyCredentials(email, password)
+  } catch (e) {
+    // Serviço de contas fora do ar: não é "senha incorreta".
+    if (e instanceof ErroConta) return fail(e.message)
+    throw e
+  }
   if (!user) return fail('E-mail ou senha incorretos.')
 
-  await createSession(user.id)
+  await createSession(user.id, { email: user.email, name: user.name })
   redirect('/hoje')
 }
 

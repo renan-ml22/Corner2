@@ -1,7 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { decrypt, SESSION_COOKIE } from '@/lib/session'
-import { getUserById } from '@/lib/users'
+import { usuarioDaSessao } from '@/lib/users'
 import { origemDoSite, origemPermitida } from './http'
 import { ErroAssinatura, type UsuarioDoApp } from './servico'
 
@@ -25,7 +25,7 @@ export async function prepararRota(request: Request, { mutavel }: { mutavel: boo
   if (mutavel && !origemPermitida(request)) return { ok: false, resposta: erro('origem_invalida', 'Pedido recusado.', 403) }
 
   const sessao = await decrypt((await cookies()).get(SESSION_COOKIE)?.value)
-  const usuario = sessao ? getUserById(sessao.userId) : null
+  const usuario = usuarioDaSessao(sessao)
   if (!usuario) return { ok: false, resposta: erro('nao_autenticado', 'Entre na sua conta para continuar.', 401) }
 
   return { ok: true, usuario, origem: origemDoSite(request) }
