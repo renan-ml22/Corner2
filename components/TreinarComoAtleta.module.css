@@ -1,0 +1,47 @@
+.trancado,
+.ativo {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.trancado { border-style: dashed; }
+
+.ativo { border-color: color-mix(in oklch, var(--blue) 55%, var(--border)); }
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.linha > i { font-size: 1.3rem; color: var(--blue); }
+
+.rotulo { flex: 1; }
+
+/* Etiqueta PRO: fundo escuro e letra clara, para ler bem em qualquer botão. */
+.pro {
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: oklch(0.2 0.03 260);
+  color: oklch(0.88 0.12 85);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.explicacao {
+  color: var(--color-neutral-300);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.trancado :global(.btn-primary),
+.ativo :global(.btn-primary) { margin-top: 0.3rem; }
+
+.esqueleto {
+  height: 4.5rem;
+  margin-top: 0;
+}

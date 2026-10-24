@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AtalhosDeEstilo from "@/components/AtalhosDeEstilo";
 import ChecklistCard from "@/components/ChecklistCard";
 import CheckinCard from "@/components/CheckinCard";
 import SessaoCard from "@/components/SessaoCard";
@@ -213,6 +214,7 @@ export default function HojePage() {
 
       <div className="section-heading"><h2>Para evoluir</h2></div>
       <div className="atalhos">
+        <AtalhosDeEstilo />
         <Link href="/tecnicas" className="surface-card cta-card">
           <i className="ph-fill ph-books" aria-hidden="true" />
           <span><strong>Biblioteca técnica</strong><small>Golpes, combinações e defesa</small></span>

@@ -1,0 +1,76 @@
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.1rem 0 0.9rem;
+}
+
+.cabecalho :global(.eyebrow) { margin-bottom: 0.3rem; }
+
+.cabecalho :global(.page-title) { font-size: clamp(1.6rem, 7vw, 2.1rem); }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+  list-style: none;
+}
+
+.pro {
+  margin-left: 0.4rem;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: oklch(0.2 0.03 260);
+  color: oklch(0.88 0.12 85);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.semanas { display: grid; gap: 0.7rem; margin-top: 1rem; }
+
+.semana { padding: 0.9rem 1.1rem 0.5rem; }
+
+.semana h3 { font-size: 0.9rem; letter-spacing: -0.01em; }
+
+.semana ul { margin-top: 0.4rem; list-style: none; }
+
+.semana li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.semana li:first-child { border-top: 0; }
+
+.dia {
+  flex: none;
+  width: 2.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.titulo { display: grid; flex: 1; gap: 1px; font-weight: 600; }
+
+.titulo small { color: var(--muted); font-size: 0.72rem; font-weight: 500; }
+
+.rounds { flex: none; color: var(--color-neutral-300); font-size: 0.78rem; }
+
+.aviso { margin: 1.75rem 0 1rem; font-size: 0.75rem; }

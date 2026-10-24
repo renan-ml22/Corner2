@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AtalhosDeEstilo from "@/components/AtalhosDeEstilo";
 import SessaoCard from "@/components/SessaoCard";
 import { usePainelAcoes } from "@/components/PainelProvider";
 import { useHidratado } from "@/hooks/useEntidade";
@@ -31,6 +32,14 @@ export default function PlanoPage() {
 
   if (!pronto || !assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
 
+  // Exercícios e quiz de estilo: gratuitos, e sempre à mão nesta aba, com ou sem plano.
+  const atalhos = (
+    <>
+      <div className="section-heading"><h2>Para evoluir</h2></div>
+      <div className="atalhos"><AtalhosDeEstilo /></div>
+    </>
+  );
+
   // O plano escolhido não está no plano de assinatura atual: os dados ficam guardados e o convite aparece no lugar.
   if (planoBloqueado) {
     return (
@@ -42,6 +51,7 @@ export default function PlanoPage() {
         </header>
         <div className="mt-22"><ConviteAoPlano recurso={RECURSO_DO_PLANO_DE_TREINO[planoBloqueado.id]} /></div>
         <button type="button" className="btn-ghost mt-12" onClick={openPlanos}>Escolher outro plano</button>
+        {atalhos}
       </main>
     );
   }
@@ -60,6 +70,7 @@ export default function PlanoPage() {
           <p>São 4 planos, do iniciante à pré-competição.</p>
           <button type="button" className="btn-primary" onClick={openPlanos}>Escolher plano</button>
         </section>
+        {atalhos}
       </main>
     );
   }
@@ -147,6 +158,8 @@ export default function PlanoPage() {
           );
         })}
       </div>
+
+      {atalhos}
 
       <button
         type="button"

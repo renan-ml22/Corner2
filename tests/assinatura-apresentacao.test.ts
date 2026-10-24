@@ -23,7 +23,7 @@ describe('recursosNovosDoNivel (o que cada plano acrescenta)', () => {
 
   it('o gratuito lista o que o app oferece sem assinatura', () => {
     expect(recursosNovosDoNivel('gratuito')).toContain(recurso('cronometro').nome)
-    expect(recursosNovosDoNivel('gratuito')).toHaveLength(4)
+    expect(recursosNovosDoNivel('gratuito')).toHaveLength(6)
   })
 })
 

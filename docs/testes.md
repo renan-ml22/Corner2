@@ -53,6 +53,12 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - **Métricas (PostHog):** `tests/analytics.test.ts`, `tests/analytics-uso.test.ts`, `e2e/analytics.spec.ts` e `npm run posthog:verificar` (chave de mentira e rede interceptada). Detalhes em [`plano-posthog.md`](plano-posthog.md).
 - **Onboarding e contas:** `tests/onboarding.test.ts`, `tests/contas.test.ts`, `tests/cadastro.test.ts`, `e2e/onboarding.spec.ts`; e `npm run supabase:fumaca` também cria uma conta de verdade, confere e apaga. Detalhes em [`plano-onboarding.md`](plano-onboarding.md).
 
+## Exercícios, quiz e atletas
+
+- `tests/exercicios.test.ts`, `tests/atletas.test.ts`, `tests/quiz.test.ts`, `tests/planos-atletas.test.ts` e `tests/navegacao.test.ts`. O de quiz percorre as **576 combinações** de resposta e exige que nenhum atleta fique de fora (nem domine) o resultado.
+- `tests/icones.test.ts` confere que todo ícone `ph-…` do app existe na lista oficial do Phosphor 2.1.1 (`tests/phosphor-2.1.1-icones.txt`). Ao **atualizar a versão do Phosphor** no CDN, gere a lista de novo a partir do CSS da nova versão.
+- `e2e/exercicios-quiz.spec.ts`. Detalhes em [`plano-exercicios-quiz.md`](plano-exercicios-quiz.md).
+
 ## Quando escrever cada tipo
 
 - Regra de cálculo, validador, migração: teste de unidade em `tests/` (primeiro o teste, depois o código).

@@ -99,9 +99,15 @@ describe('recursos', () => {
     expect(recurso('exportarDados').nivelMinimo).toBe(NIVEL_GRATUITO)
   })
 
-  it('o plano gratuito tem exatamente: registrar treino, cronômetro, alertas de segurança e exportar dados', () => {
+  it('o plano gratuito tem exatamente: registrar treino, cronômetro, alertas de segurança, exportar dados, exercícios e quiz de estilo', () => {
     const gratis = (Object.keys(RECURSOS) as RecursoId[]).filter(id => recurso(id).nivelMinimo === NIVEL_GRATUITO).sort()
-    expect(gratis).toEqual(['alertasSeguranca', 'cronometro', 'exportarDados', 'registroTreino'])
+    expect(gratis).toEqual(['alertasSeguranca', 'cronometro', 'exercicios', 'exportarDados', 'quizDeEstilo', 'registroTreino'])
+  })
+
+  it('os treinos no estilo dos atletas são do Profissional, e a biblioteca de exercícios e o quiz são gratuitos', () => {
+    expect(recurso('treinosDeAtletas').nivelMinimo).toBe('profissional')
+    expect(recurso('exercicios').nivelMinimo).toBe(NIVEL_GRATUITO)
+    expect(recurso('quizDeEstilo').nivelMinimo).toBe(NIVEL_GRATUITO)
   })
 
   it('o gratuito é menor que o Iniciante: o Iniciante acrescenta biblioteca técnica e plano Fundamentos', () => {

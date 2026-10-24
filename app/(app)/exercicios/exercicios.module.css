@@ -1,0 +1,133 @@
+/* Categorias: uma fileira que rola para o lado (são cinco, e os nomes não cabem lado a lado em telas estreitas). */
+.abas {
+  display: flex;
+  gap: 0.4rem;
+  margin: 1.5rem -1.25rem 0;
+  padding: 0.2rem 1.25rem 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.abas::-webkit-scrollbar { display: none; }
+
+.abas button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.abas button i { font-size: 1.05rem; }
+
+.abas button.ativa {
+  border-color: var(--red);
+  background: color-mix(in oklch, var(--red) 18%, transparent);
+  color: var(--foreground);
+}
+
+.abas button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.lista { display: grid; gap: 0.6rem; margin-top: 0.9rem; list-style: none; }
+
+.cartao {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cartao:hover { background: var(--surface-raised); }
+
+.cartao:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.icone {
+  display: grid;
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: color-mix(in oklch, var(--red) 15%, transparent);
+  color: var(--red);
+  font-size: 1.3rem;
+}
+
+.nome { flex: 1; font-size: 0.95rem; font-weight: 700; }
+
+.seta { flex: none; color: var(--muted); }
+
+/* ── Painel de detalhe ──────────────────────────────────────── */
+
+.detalhe { display: grid; gap: 0.2rem; padding-bottom: 0.5rem; }
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.descricao {
+  margin-top: 0.6rem;
+  color: var(--color-neutral-300);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.subtitulo {
+  margin-top: 1.2rem;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.itens { display: grid; gap: 0.55rem; margin-top: 0.55rem; list-style: none; }
+
+.itens li {
+  display: flex;
+  gap: 0.6rem;
+  color: var(--color-neutral-300);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.itens i { flex: none; margin-top: 0.1rem; font-size: 1.1rem; }
+
+.dicas i { color: oklch(0.75 0.15 150); }
+
+.erros i { color: oklch(0.72 0.14 25); }
+
+.video {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1.4rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed color-mix(in oklch, var(--blue) 60%, var(--border));
+  border-radius: 1rem;
+  background: color-mix(in oklch, var(--blue) 12%, var(--surface));
+}
+
+.video > i { flex: none; color: var(--blue); font-size: 1.6rem; }
+
+.video span { display: grid; gap: 2px; }
+
+.video strong { font-size: 0.92rem; }
+
+.video small { color: var(--color-neutral-300); font-size: 0.8rem; }

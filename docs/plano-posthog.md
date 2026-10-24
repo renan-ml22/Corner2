@@ -10,7 +10,7 @@ Estado: **código pronto e verificado** (testes de unidade, testes de navegador 
 | `onboarding_completed` | clica em "Começar agora" no último passo | `nivel`, `dias_por_semana`, `plano_escolhido` | `app/onboarding/(passos)/plano/PlanoCliente.tsx` |
 | `workout_registered` | salva um treino | `tipo`, `rounds`, `rpe`, `duracao_segundos` | `hooks/useHistorico.ts` |
 | `plan_selected` | escolhe um plano (em qualquer tela) | `plano_id`, `nivel` (do plano) | `hooks/usePlano.ts` |
-| `sheet_opened` | abre um painel (fechado → aberto) | `sheet_name`: `registro_treino`, `alertas`, `escolher_plano` ou `perfil_atleta` | `components/PainelProvider.tsx` |
+| `sheet_opened` | abre um painel (fechado → aberto) | `sheet_name`: `registro_treino`, `alertas`, `escolher_plano`, `perfil_atleta` ou `exercicio` (painel de um exercício; não diz qual) | `components/PainelProvider.tsx` |
 | `tab_changed` | troca de aba na barra de baixo (clicar na aba atual não conta) | `tab_name`: `hoje`, `plano`, `progresso` ou `perfil` | `components/BottomNav.tsx` |
 
 Além deles, o `$identify`: depois do login, o app liga as métricas à pessoa **pelo id** (o uuid da conta). Ao sair da conta, o PostHog esquece a pessoa no aparelho (`reset`).

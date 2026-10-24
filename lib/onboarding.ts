@@ -20,7 +20,7 @@ export interface OpcaoDeNivel {
 }
 
 export const NIVEIS: OpcaoDeNivel[] = [
-  { id: 'iniciante', titulo: 'Iniciante', descricao: 'Estou começando ou treino há menos de 1 ano.', icone: 'ph-seedling', experiencia: 'ate1' },
+  { id: 'iniciante', titulo: 'Iniciante', descricao: 'Estou começando ou treino há menos de 1 ano.', icone: 'ph-plant', experiencia: 'ate1' },
   { id: 'intermediario', titulo: 'Intermediário', descricao: 'Treino há 1 a 3 anos e já domino o básico.', icone: 'ph-lightning', experiencia: '1a3' },
   { id: 'avancado', titulo: 'Avançado', descricao: 'Treino há mais de 3 anos ou já compito.', icone: 'ph-trophy', experiencia: 'mais3' },
 ]

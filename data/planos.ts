@@ -1,4 +1,5 @@
 import type { RegType } from '@/lib/tipos'
+import { PLANOS_DE_ATLETAS } from './planos-atletas'
 
 export type Nivel = 'iniciante' | 'intermediario' | 'avancado'
 
@@ -276,10 +277,12 @@ const preCompeticao: Plano = {
   ],
 }
 
+/** Os quatro planos da tela Plano. Os treinos dos atletas (data/planos-atletas.ts) ficam de fora de propósito. */
 export const PLANOS: Plano[] = [fundamentos, baseAerobica, tecnicaAvancada, preCompeticao]
 
+/** Acha qualquer plano do app: os quatro de sempre e os treinos dos atletas. */
 export function getPlano(id: string | null | undefined): Plano | null {
-  return PLANOS.find(p => p.id === id) ?? null
+  return PLANOS.find(p => p.id === id) ?? PLANOS_DE_ATLETAS.find(p => p.id === id) ?? null
 }
 
 /** Sessões de uma semana do plano (1-based), ordenadas de segunda a domingo. */

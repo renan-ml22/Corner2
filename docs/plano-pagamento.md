@@ -54,6 +54,8 @@ Fica toda em **uma tabela** (`lib/assinatura/catalogo.ts`): mudar um recurso de 
 | Cronômetro de rounds | ✓ | ✓ | ✓ | ✓ |
 | **Registrar pancadas na cabeça e lesões, com os alertas de segurança** | ✓ | ✓ | ✓ | ✓ |
 | Exportar os próprios dados | ✓ | ✓ | ✓ | ✓ |
+| Biblioteca de exercícios: 20 exercícios com dicas e erros comuns | ✓ | ✓ | ✓ | ✓ |
+| Quiz de estilo: descubra com qual atleta você mais se parece | ✓ | ✓ | ✓ | ✓ |
 | Biblioteca técnica | | ✓ | ✓ | ✓ |
 | Plano de treino Fundamentos | | ✓ | ✓ | ✓ |
 | Planos Base Aeróbica e Técnica Avançada | | | ✓ | ✓ |
@@ -66,6 +68,7 @@ Fica toda em **uma tabela** (`lib/assinatura/catalogo.ts`): mudar um recurso de 
 | Alerta de perda rápida de peso | | | | ✓ |
 | Importar backup | | | | ✓ |
 | Lembrete diário | | | | ✓ |
+| Treinos no estilo de 10 atletas (Muhammad Ali, Mike Tyson e outros) | | | | ✓ |
 
 **Os alertas de segurança ficam em todos os planos, inclusive no gratuito, e o registro que os alimenta também.** Aviso de pancada forte na cabeça e de lesão ativa protege a saúde de quem treina, e esconder isso atrás de pagamento é arriscado para as pessoas e para a marca. Um teste de navegador garante isso para o gratuito, o Iniciante e a assinatura cancelada. Os alertas de **carga** são do plano Amador.
 

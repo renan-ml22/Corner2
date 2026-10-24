@@ -82,6 +82,8 @@ export const RECURSOS = {
   cronometro: { nome: 'Cronômetro de rounds', nivelMinimo: 'gratuito' },
   alertasSeguranca: { nome: 'Registrar pancadas na cabeça e lesões, com os alertas de segurança', nivelMinimo: 'gratuito' },
   exportarDados: { nome: 'Exportar os próprios dados', nivelMinimo: 'gratuito' },
+  exercicios: { nome: 'Biblioteca de exercícios: 20 exercícios com dicas e erros comuns', nivelMinimo: 'gratuito' },
+  quizDeEstilo: { nome: 'Quiz de estilo: descubra com qual atleta você mais se parece', nivelMinimo: 'gratuito' },
 
   biblioteca: { nome: 'Biblioteca técnica', nivelMinimo: 'iniciante' },
   planoFundamentos: { nome: 'Plano de treino Fundamentos', nivelMinimo: 'iniciante' },
@@ -97,6 +99,7 @@ export const RECURSOS = {
   perdaRapidaPeso: { nome: 'Alerta de perda rápida de peso', nivelMinimo: 'profissional' },
   importarDados: { nome: 'Importar backup', nivelMinimo: 'profissional' },
   lembrete: { nome: 'Lembrete diário', nivelMinimo: 'profissional' },
+  treinosDeAtletas: { nome: 'Treinos no estilo de 10 atletas (Muhammad Ali, Mike Tyson e outros)', nivelMinimo: 'profissional' },
 } as const satisfies Record<string, Recurso>
 
 export type RecursoId = keyof typeof RECURSOS
@@ -110,4 +113,15 @@ export const RECURSO_DO_PLANO_DE_TREINO: Record<string, RecursoId> = {
   'base-aerobica': 'planosIntermediarios',
   'tecnica-avancada': 'planosIntermediarios',
   'pre-competicao': 'planoPreCompeticao',
+  // Os treinos "no estilo de" cada atleta (data/planos-atletas.ts): o id do plano é `atleta-<id do atleta>`.
+  'atleta-ali': 'treinosDeAtletas',
+  'atleta-tyson': 'treinosDeAtletas',
+  'atleta-mayweather': 'treinosDeAtletas',
+  'atleta-pacquiao': 'treinosDeAtletas',
+  'atleta-stevenson': 'treinosDeAtletas',
+  'atleta-robinson': 'treinosDeAtletas',
+  'atleta-frazier': 'treinosDeAtletas',
+  'atleta-foreman': 'treinosDeAtletas',
+  'atleta-canelo': 'treinosDeAtletas',
+  'atleta-conceicao': 'treinosDeAtletas',
 }

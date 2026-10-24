@@ -1,0 +1,20 @@
+.bolinha {
+  display: grid;
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px oklch(1 0 0 / 0.18);
+  /* Texto escuro: todas as cores dos atletas são claras o bastante para ele ter contraste. */
+  color: oklch(0.18 0.02 260);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.grande {
+  width: 5rem;
+  height: 5rem;
+  font-size: 1.7rem;
+}
