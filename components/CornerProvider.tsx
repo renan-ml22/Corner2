@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { RepositorioProvider, type UsuarioApp } from '@/hooks/useRepositorio'
 import { ToastProvider } from '@/hooks/useToast'
 import { AssinaturaProvider } from '@/hooks/useAssinatura'
+import IdentificarNoPostHog from './IdentificarNoPostHog'
 import LembreteDiario from './LembreteDiario'
 import { PainelProvider } from './PainelProvider'
 
@@ -18,6 +19,7 @@ import { PainelProvider } from './PainelProvider'
 export function CornerProvider({ usuario, children }: { usuario: UsuarioApp; children: ReactNode }) {
   return (
     <RepositorioProvider usuario={usuario}>
+      <IdentificarNoPostHog usuarioId={usuario.id} />
       <ToastProvider>
         <AssinaturaProvider>
           <PainelProvider>

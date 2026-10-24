@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { criarContaAction } from '@/app/actions/onboarding'
+import { track } from '@/lib/posthog'
 import styles from '@/app/(auth)/login/login.module.css'
 
 /** Tela 1 do onboarding: nome, e-mail e senha. Usa o mesmo visual dos campos do login. */
@@ -9,6 +10,14 @@ export default function CadastroForm() {
   const [state, action, pending] = useActionState(criarContaAction, undefined)
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const erros = state?.erros ?? {}
+
+  // "Abriu o onboarding": uma vez por visita (o ref evita a contagem dupla do modo de desenvolvimento do React).
+  const avisado = useRef(false)
+  useEffect(() => {
+    if (avisado.current) return
+    avisado.current = true
+    track('onboarding_started', {})
+  }, [])
 
   const dados = (campo: 'nome' | 'email' | 'senha') => ({
     'aria-invalid': erros[campo] ? true : undefined,

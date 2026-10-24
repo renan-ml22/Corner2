@@ -12,6 +12,7 @@ import { usePreferencias } from '@/hooks/usePreferencias'
 import { useRepositorioSincronizado } from '@/hooks/useRepositorio'
 import { NOME_DO_ACESSO, RECURSO_DO_PLANO_DE_TREINO, TESTE_GRATIS_DIAS, recurso } from '@/lib/assinatura/catalogo'
 import { metaDoOnboarding, nivelDaExperiencia, planoDoOnboarding } from '@/lib/onboarding'
+import { track } from '@/lib/posthog'
 
 /** Quanto esperar o envio para a conta antes de seguir: sem rede, o app segue e envia depois (fica pendente no aparelho). */
 const ESPERA_MAXIMA_MS = 4000
@@ -43,6 +44,7 @@ export default function PlanoCliente() {
     setSalvando(true)
     atualizarConfig({ metaSemanal: meta, onboardingFeito: true })
     escolherPlano(plano.id)
+    track('onboarding_completed', { nivel, dias_por_semana: dias, plano_escolhido: plano.id })
     // Antes de abrir o app, tenta levar tudo para a conta. Sem rede, segue assim mesmo: o que ficou pendente é enviado depois.
     await Promise.race([repo.reenviarAgora().catch(() => {}), new Promise(resolve => setTimeout(resolve, ESPERA_MAXIMA_MS))])
     router.replace('/hoje')

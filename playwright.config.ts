@@ -48,6 +48,10 @@ export default defineConfig({
       // Idem para o Supabase: sem estas duas, a conta na nuvem fica desligada e os testes só usam o aparelho.
       NEXT_PUBLIC_SUPABASE_URL: '',
       SUPABASE_SERVICE_ROLE_KEY: '',
+      // O PostHog também: a chave NEXT_PUBLIC_ entra no código na hora do BUILD (que este comando também faz, lendo o
+      // .env.local). Sem isto, cada teste automático mandaria eventos falsos para o PostHog de verdade.
+      NEXT_PUBLIC_POSTHOG_KEY: '',
+      NEXT_PUBLIC_POSTHOG_HOST: '',
     },
   },
 })

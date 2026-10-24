@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const OBRIGATORIAS = ['SESSION_SECRET', 'AUTH_TEST_EMAIL', 'AUTH_TEST_PASSWORD_HASH']
-const OPCIONAIS = ['AUTH_TEST_NAME', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
+const OPCIONAIS = ['AUTH_TEST_NAME', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_POSTHOG_KEY', 'NEXT_PUBLIC_POSTHOG_HOST']
 const SEGREDO_MIN = 32
 const HASH_MIN_BYTES = 32
 const BASE64URL = /^[A-Za-z0-9_-]+$/
@@ -64,6 +64,7 @@ export function verificarEnv(env) {
     avisos.push(
       nome === 'AUTH_TEST_NAME' ? `${nome} não está definida (o app usa o nome padrão "Atleta")`
         : nome.includes('SUPABASE') ? `${nome} não está definida (a conta na nuvem fica desligada: os dados ficam só no aparelho)`
+          : nome.includes('POSTHOG') ? `${nome} não está definida (as métricas de produto ficam desligadas)`
           : `${nome} não está definida (o pagamento fica desativado)`,
     )
   }
@@ -97,6 +98,18 @@ export function verificarEnv(env) {
   }
   if (valor('STRIPE_PUBLISHABLE_KEY') && !/^pk_(test|live)_[A-Za-z0-9]{16,}$/.test(valor('STRIPE_PUBLISHABLE_KEY'))) {
     erros.push('STRIPE_PUBLISHABLE_KEY está mal formada (esperado pk_test_... ou pk_live_...)')
+  }
+
+  // Métricas (PostHog): opcionais. A chave do PROJETO (phc_) é pública e vai para o navegador; a pessoal (phx_) e a secreta
+  // do projeto (phs_) dão acesso à conta e jamais podem ser colocadas numa variável NEXT_PUBLIC_.
+  const chavePostHog = valor('NEXT_PUBLIC_POSTHOG_KEY')
+  if (chavePostHog) {
+    if (/^ph[xs]_/.test(chavePostHog)) erros.push('NEXT_PUBLIC_POSTHOG_KEY é uma chave pessoal ou secreta (phx_/phs_), e esta variável vai para o navegador de todo mundo: use a chave do projeto, que começa com phc_')
+    else if (!/^phc_[A-Za-z0-9]{20,}$/.test(chavePostHog)) erros.push('NEXT_PUBLIC_POSTHOG_KEY está mal formada (esperado a chave do projeto, phc_..., inteira, sem aspas, espaços nem reticências)')
+  }
+  const enderecoPostHog = valor('NEXT_PUBLIC_POSTHOG_HOST')
+  if (enderecoPostHog && !/^https:\/\/[a-z0-9.-]+$/i.test(enderecoPostHog)) {
+    erros.push('NEXT_PUBLIC_POSTHOG_HOST está mal formado (esperado https://us.i.posthog.com ou https://eu.i.posthog.com, sem aspas, caminho nem barra no fim)')
   }
 
   const hash = valor('AUTH_TEST_PASSWORD_HASH')

@@ -15,12 +15,14 @@
     "e2e": "playwright test",
     "stripe:sincronizar": "tsx scripts/stripe-sincronizar.ts",
     "stripe:fumaca": "tsx scripts/stripe-fumaca.ts",
-    "supabase:fumaca": "tsx --conditions=react-server scripts/supabase-fumaca.ts"
+    "supabase:fumaca": "tsx --conditions=react-server scripts/supabase-fumaca.ts",
+    "posthog:verificar": "node scripts/posthog-verificar.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
     "jose": "^6.2.12",
     "next": "16.4.3",
+    "posthog-js": "^1.438.21",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",

@@ -4,9 +4,16 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useHistorico } from '@/hooks/useHistorico'
 import { usePlano } from '@/hooks/usePlano'
 import { novoId } from '@/lib/id'
+import { track } from '@/lib/posthog'
 import type { ImpactoCabeca, Intensidade, RegType, WorkoutEntry } from '@/lib/tipos'
 
 export type Sheet = null | 'type' | 'details' | 'done' | 'notif' | 'planos' | 'onboarding'
+
+/** Nome de cada painel nas métricas. Os três passos do registro de treino são um painel só. */
+const NOME_DO_PAINEL: Record<Exclude<Sheet, null>, string> = {
+  type: 'registro_treino', details: 'registro_treino', done: 'registro_treino',
+  notif: 'alertas', planos: 'escolher_plano', onboarding: 'perfil_atleta',
+}
 
 export interface PresetTreino {
   tipo: RegType
@@ -75,7 +82,11 @@ export function PainelProvider({ children }: { children: ReactNode }) {
 
   // Guarda quem abriu o painel para devolver o foco a esse elemento quando o painel fecha.
   const setSheet = useCallback((s: Sheet) => {
-    if (s !== null && sheetRef.current === null) abridorRef.current = document.activeElement as HTMLElement | null
+    if (s !== null && sheetRef.current === null) {
+      abridorRef.current = document.activeElement as HTMLElement | null
+      // Conta só quando um painel ABRE (fechado -> aberto); passar de um passo do registro para o seguinte não conta.
+      track('sheet_opened', { sheet_name: NOME_DO_PAINEL[s] })
+    }
     if (s === null) { restaurarRef.current = abridorRef.current; abridorRef.current = null }
     sheetRef.current = s
     setSheetBruto(s)

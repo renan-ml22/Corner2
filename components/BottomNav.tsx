@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { track } from '@/lib/posthog'
 import estilos from './BottomNav.module.css'
 import { usePainelAcoes } from './PainelProvider'
 
@@ -22,7 +23,7 @@ export default function BottomNav() {
   const tabBtn = (tab: typeof TABS[0]) => {
     const active = pathname.startsWith(tab.href)
     return (
-      <Link key={tab.href} href={tab.href} aria-current={active ? 'page' : undefined} className={`${estilos.aba} ${active ? estilos.ativa : ''}`}>
+      <Link key={tab.href} href={tab.href} aria-current={active ? 'page' : undefined} className={`${estilos.aba} ${active ? estilos.ativa : ''}`} onClick={() => { if (!active) track('tab_changed', { tab_name: tab.href.slice(1) }) }}>
         <i className={active ? `ph-fill ${tab.base}` : `ph ${tab.base}`} />
         <span>{tab.label}</span>
       </Link>

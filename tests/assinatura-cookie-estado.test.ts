@@ -38,7 +38,10 @@ describe('cookie do estado da assinatura (guarda o que o Stripe disse por poucos
     const [a, b, c] = token.split('.')
     const forjado = Buffer.from(JSON.stringify({ u: 'u1', e: { ...ativa, nivel: 'profissional' }, aud: 'corner-assinatura' })).toString('base64url')
     expect(await lerEstado(`${a}.${forjado}.${c}`, 'u1', SEGREDO)).toBeNull()
-    expect(await lerEstado(`${a}.${b}.${c.slice(0, -2)}xx`, 'u1', SEGREDO)).toBeNull()
+    // Muda o PRIMEIRO caractere da assinatura (usa os 6 bits): trocar os últimos poderia não alterar nada, porque o
+    // último caractere em base64 só usa parte dos bits, e o teste falharia de vez em quando.
+    const assinaturaAdulterada = (c[0] === 'A' ? 'B' : 'A') + c.slice(1)
+    expect(await lerEstado(`${a}.${b}.${assinaturaAdulterada}`, 'u1', SEGREDO)).toBeNull()
   })
 
   it.each([undefined, '', 'lixo', 'a.b.c'])('token ausente ou inválido (%s): null', async token => {

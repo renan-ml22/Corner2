@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react'
 import { getPlano } from '@/data/planos'
 import { chaveDia, inicioDaSemana } from '@/lib/datas'
 import { ENTIDADES } from '@/lib/dados/entidades'
+import { track } from '@/lib/posthog'
 import type { RegType } from '@/lib/tipos'
 import { chaveReagendamento, sessaoDeHoje } from '@/lib/treinos'
 import { useEntidade, useHidratado } from './useEntidade'
@@ -35,6 +36,7 @@ export function usePlano() {
     // A semana 1 do plano é a semana atual (a partir de segunda). Trocar de plano zera os reagendamentos.
     setPlanoAtivo({ planoId, inicio: chaveDia(inicioDaSemana(new Date())) })
     setReag({})
+    track('plan_selected', { plano_id: planoId, nivel: getPlano(planoId)?.nivel ?? 'desconhecido' })
   }, [setPlanoAtivo, setReag])
 
   const encerrarPlano = useCallback(() => {

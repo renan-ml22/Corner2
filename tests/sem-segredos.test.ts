@@ -101,3 +101,24 @@ describe('segredos do Supabase fora do repositório', () => {
     expect(importando).toEqual([])
   })
 })
+
+// PostHog: a chave do PROJETO (phc_) é pública e vai no navegador; a pessoal (phx_) e a secreta do projeto (phs_) dão
+// acesso à conta e nunca podem ir para o GitHub.
+
+const SEGREDO_POSTHOG = /\bph[xs]_[A-Za-z0-9]{20,}/
+
+describe('segredos do PostHog fora do repositório', () => {
+  const todos = arquivos(RAIZ)
+
+  it('nenhum arquivo versionado contém chave pessoal (phx_) nem secreta (phs_) do PostHog', () => {
+    const achados = todos.filter(f => SEGREDO_POSTHOG.test(readFileSync(f, 'utf8'))).map(f => path.relative(RAIZ, f).replace(/\\/g, '/'))
+    expect(achados).toEqual([])
+  })
+
+  it('o detector reconhece as duas e ignora a chave pública e o prefixo sozinho', () => {
+    expect(SEGREDO_POSTHOG.test('phx_' + 'a1B2'.repeat(8))).toBe(true)
+    expect(SEGREDO_POSTHOG.test('phs_' + 'a1B2'.repeat(8))).toBe(true)
+    expect(SEGREDO_POSTHOG.test('phc_' + 'a1B2'.repeat(8))).toBe(false) // a do projeto é pública
+    expect(SEGREDO_POSTHOG.test('começa com phx_ e termina')).toBe(false)
+  })
+})

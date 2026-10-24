@@ -204,3 +204,65 @@ describe('lerArquivoEnv', () => {
     expect(lerArquivoEnv('A="x y"\nB=\'z\'')).toEqual({ A: 'x y', B: 'z' })
   })
 })
+
+describe('verificarEnv: métricas de produto (PostHog)', () => {
+  const CHAVE = 'phc_' + 'A1b2C3d4'.repeat(5)
+  const com = (chave: string | undefined, host?: string) => ({ ...OK(), NEXT_PUBLIC_POSTHOG_KEY: chave, NEXT_PUBLIC_POSTHOG_HOST: host } as Record<string, string | undefined>)
+
+  it('sem chave é só um aviso: o app funciona e as métricas ficam desligadas', () => {
+    const r = verificarEnv(OK())
+    expect(r.ok).toBe(true)
+    expect(r.avisos.join(' ')).toContain('NEXT_PUBLIC_POSTHOG_KEY')
+  })
+
+  it('chave do projeto (phc_) bem formada: aceita, sem aviso', () => {
+    const r = verificarEnv(com(CHAVE))
+    expect(r.ok).toBe(true)
+    expect(r.avisos.join(' ')).not.toContain('NEXT_PUBLIC_POSTHOG_KEY')
+  })
+
+  it('chave com endereço dos Estados Unidos, da Europa ou próprio (https): aceita', () => {
+    for (const host of ['https://us.i.posthog.com', 'https://eu.i.posthog.com', 'https://analytics.minhaempresa.com.br']) {
+      expect(verificarEnv(com(CHAVE, host)).ok, host).toBe(true)
+    }
+  })
+
+  it('a chave PESSOAL (phx_) é recusada: ela é secreta e esta variável vai para o navegador de todo mundo', () => {
+    const r = verificarEnv(com('phx_' + 'A1b2C3d4'.repeat(5)))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toMatch(/pessoal|secreta/)
+  })
+
+  it('a chave secreta do projeto (phs_) também é recusada', () => {
+    expect(verificarEnv(com('phs_' + 'A1b2C3d4'.repeat(5))).ok).toBe(false)
+  })
+
+  it.each([
+    ['sem prefixo', 'A1b2C3d4'.repeat(6)],
+    ['curta demais', 'phc_abc'],
+    ['com aspas coladas', `"${CHAVE}"`],
+    ['com espaço no meio', CHAVE.slice(0, 20) + ' ' + CHAVE.slice(20)],
+    ['com reticências', CHAVE.slice(0, 30) + '...'],
+  ])('chave %s: erro', (_nome, chave) => {
+    const r = verificarEnv(com(chave))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toContain('NEXT_PUBLIC_POSTHOG_KEY')
+  })
+
+  it.each([
+    ['sem https', 'http://us.i.posthog.com'],
+    ['com caminho', 'https://us.i.posthog.com/capture'],
+    ['com barra no fim', 'https://us.i.posthog.com/'],
+    ['sem endereço', 'us.i.posthog.com'],
+    ['com aspas', '"https://us.i.posthog.com"'],
+  ])('endereço %s: erro', (_nome, host) => {
+    const r = verificarEnv(com(CHAVE, host))
+    expect(r.ok).toBe(false)
+    expect(r.erros.join(' ')).toContain('NEXT_PUBLIC_POSTHOG_HOST')
+  })
+
+  it('nunca mostra o valor da chave nas mensagens', () => {
+    const r = verificarEnv(com('phx_SEGREDINHO' + 'x'.repeat(20)))
+    expect([...r.erros, ...r.avisos].join(' | ')).not.toContain('SEGREDINHO')
+  })
+})

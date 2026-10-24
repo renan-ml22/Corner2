@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PostHogProvider from "@/components/PostHogProvider";
 import RegistrarSW from "@/components/RegistrarSW";
 
 export const metadata: Metadata = {
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
       </head>
       <body>
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
         <RegistrarSW />
       </body>
     </html>
