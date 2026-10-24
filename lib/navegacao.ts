@@ -1,6 +1,6 @@
 // Qual aba da barra de baixo fica acesa em cada tela.
 
-const ABAS = ['/hoje', '/plano', '/progresso', '/perfil'] as const
+const ABAS = ['/hoje', '/plano', '/timer', '/progresso', '/perfil'] as const
 
 /** Telas que não são uma aba, mas moram dentro de uma: exercícios, quiz e atletas ficam na aba Plano. */
 const TELAS_DA_ABA: Record<string, readonly string[]> = {

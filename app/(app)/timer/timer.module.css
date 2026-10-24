@@ -1,0 +1,233 @@
+/* Timer: a tela inteira muda de cor a cada fase. O texto é escuro sobre azul, vermelho e verde (contraste conferido em tests/timer.test.ts). */
+
+/* ── Cores das fases ─────────────────────────────────────────── */
+.pronto {
+  --fundo: var(--color-surface);
+  --texto: var(--color-text);
+  --botao-fundo: oklch(0.55 0.21 25);
+  --botao-texto: #f4f2f2;
+  --apoio: oklch(1 0 0 / 0.1);
+}
+
+.preparo {
+  --fundo: oklch(0.66 0.16 258);
+  --texto: oklch(0.18 0.02 260);
+  --botao-fundo: oklch(0.18 0.02 260);
+  --botao-texto: #f4f2f2;
+  --apoio: oklch(1 0 0 / 0.2);
+}
+
+.round {
+  --fundo: oklch(0.63 0.21 25);
+  --texto: oklch(0.18 0.02 260);
+  --botao-fundo: oklch(0.18 0.02 260);
+  --botao-texto: #f4f2f2;
+  --apoio: oklch(1 0 0 / 0.2);
+}
+
+.descanso {
+  --fundo: oklch(0.72 0.15 150);
+  --texto: oklch(0.18 0.02 260);
+  --botao-fundo: oklch(0.18 0.02 260);
+  --botao-texto: #f4f2f2;
+  --apoio: oklch(1 0 0 / 0.2);
+}
+
+.fim {
+  --fundo: var(--color-surface);
+  --texto: var(--color-text);
+  --botao-fundo: oklch(0.55 0.21 25);
+  --botao-texto: #f4f2f2;
+  --apoio: oklch(1 0 0 / 0.1);
+}
+
+/* ── Estrutura ───────────────────────────────────────────────── */
+.tela {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: calc(70px + max(22px, env(safe-area-inset-bottom)));
+  left: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top)) 20px 20px;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.4s;
+}
+
+.conteudo {
+  display: flex;
+  width: min(100%, 32rem);
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+
+.titulo { font-size: 1.5rem; letter-spacing: -0.03em; }
+
+.resumoTopo { margin-top: 0.15rem; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+
+.iconesTopo { display: flex; gap: 0.5rem; }
+
+.icone,
+.lateral {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: var(--apoio);
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.icone { width: 44px; height: 44px; border-radius: 14px; font-size: 1.3rem; }
+
+.centro {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 0;
+  padding: 0.5rem 0;
+}
+
+.numeroDoRound { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.rotulo { font-size: 1rem; font-weight: 800; letter-spacing: 0.16em; }
+
+.anel {
+  position: relative;
+  display: grid;
+  width: min(72vw, 300px);
+  aspect-ratio: 1;
+  place-items: center;
+}
+
+.anel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.anelFundo { fill: none; stroke: var(--apoio); stroke-width: 10; }
+.anelProgresso { fill: none; stroke: var(--texto); stroke-width: 10; stroke-linecap: round; }
+
+.tempo {
+  font-size: clamp(4rem, 20vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; }
+
+.aviso i { font-size: 1.15rem; }
+
+/* ── Botões ──────────────────────────────────────────────────── */
+.controles {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.principal,
+.botaoPrincipal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 64px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--botao-fundo);
+  color: var(--botao-texto);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.principal i,
+.botaoPrincipal i { font-size: 1.5rem; }
+
+.lateral {
+  flex-direction: column;
+  gap: 0.2rem;
+  min-height: 64px;
+  border-radius: 20px;
+  font-size: 1.3rem;
+}
+
+.lateral span { font-size: 0.72rem; font-weight: 700; }
+
+.lateral:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.principal:active,
+.botaoPrincipal:active,
+.lateral:not(:disabled):active { transform: scale(0.96); }
+
+.icone:focus-visible,
+.lateral:focus-visible,
+.principal:focus-visible,
+.botaoPrincipal:focus-visible,
+.botaoSecundario:focus-visible,
+.encerrar:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
+
+.encerrar,
+.botaoSecundario {
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.nota { margin-top: 0.4rem; font-size: 0.75rem; line-height: 1.5; text-align: center; }
+
+/* ── Resumo do fim ───────────────────────────────────────────── */
+.resumo { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; padding-top: 1.5rem; text-align: center; }
+
+.resumoIcone {
+  display: grid;
+  width: 84px;
+  height: 84px;
+  place-items: center;
+  border-radius: 28px;
+  background: linear-gradient(145deg, oklch(0.66 0.21 25), oklch(0.55 0.21 25));
+  color: #f4f2f2;
+  font-size: 2.6rem;
+  box-shadow: 0 10px 24px oklch(0.63 0.21 25 / 0.45);
+}
+
+.resumoTitulo { font-size: 1.6rem; letter-spacing: -0.03em; }
+
+.numeros {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.numeros div { padding: 0.9rem 1rem; border-radius: 1.1rem; background: var(--apoio); text-align: left; }
+
+.numeros dt { font-size: 0.75rem; font-weight: 700; }
+
+.numeros dd { margin-top: 0.2rem; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.tipo { display: grid; width: 100%; gap: 0.5rem; margin-top: 0.4rem; text-align: left; }
+
+.tipo p { font-size: 0.85rem; font-weight: 700; }
+
+.resumo .botaoPrincipal { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tela, .principal, .botaoPrincipal, .lateral { transition: none; }
+}

@@ -51,7 +51,7 @@ Fica toda em **uma tabela** (`lib/assinatura/catalogo.ts`): mudar um recurso de 
 | Recurso | Gratuito | Iniciante | Amador | Profissional |
 |---|:-:|:-:|:-:|:-:|
 | Registrar treino, histórico e progresso | ✓ | ✓ | ✓ | ✓ |
-| Cronômetro de rounds | ✓ | ✓ | ✓ | ✓ |
+| Cronômetro de rounds e Timer livre (rounds, tempos e sons configuráveis) | ✓ | ✓ | ✓ | ✓ |
 | **Registrar pancadas na cabeça e lesões, com os alertas de segurança** | ✓ | ✓ | ✓ | ✓ |
 | Exportar os próprios dados | ✓ | ✓ | ✓ | ✓ |
 | Biblioteca de exercícios: 20 exercícios com dicas e erros comuns | ✓ | ✓ | ✓ | ✓ |

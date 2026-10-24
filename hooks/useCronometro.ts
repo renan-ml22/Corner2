@@ -14,14 +14,14 @@ export interface FaseCrono {
   inicio: number
 }
 
-export function montarFases(rounds: number, roundSeg: number, descansoSeg: number): FaseCrono[] {
+export function montarFases(rounds: number, roundSeg: number, descansoSeg: number, preparoSeg: number = PREPARO_SEG): FaseCrono[] {
   const fases: FaseCrono[] = []
   let t = 0
   const add = (tipo: FaseCrono['tipo'], round: number, duracao: number) => {
     fases.push({ tipo, round, duracao, inicio: t })
     t += duracao
   }
-  add('preparo', 1, PREPARO_SEG)
+  if (preparoSeg > 0) add('preparo', 1, preparoSeg)
   for (let r = 1; r <= rounds; r++) {
     add('round', r, roundSeg)
     if (r < rounds && descansoSeg > 0) add('descanso', r, descansoSeg)
@@ -29,9 +29,14 @@ export function montarFases(rounds: number, roundSeg: number, descansoSeg: numbe
   return fases
 }
 
+function fecharAudio(ctx: AudioContext | null, depoisDeMs: number) {
+  if (!ctx) return
+  window.setTimeout(() => { void ctx.close().catch(() => undefined) }, depoisDeMs)
+}
+
 export type EstadoCrono = 'pronto' | 'rodando' | 'pausado' | 'fim'
 
-interface Execucao {
+export interface Execucao {
   inicio: number
   pausadoEm: number | null
   pausadoTotal: number
@@ -40,27 +45,67 @@ interface Execucao {
   fimEm: number | null
 }
 
+/** Os avisos sonoros do cronômetro. Cada tela escolhe os seus (o treino do plano usa o sino; o Timer usa bipes). */
+export interface SonsDoCronometro {
+  inicioRound: (ctx: AudioContext | null) => void
+  inicioDescanso: (ctx: AudioContext | null) => void
+  /** Faltam 10 segundos para o fim do round */
+  aviso: (ctx: AudioContext | null) => void
+  /** Últimos 3 segundos do preparo e do descanso */
+  contagem: (ctx: AudioContext | null) => void
+  fim: (ctx: AudioContext | null) => void
+}
+
+export const SONS_DO_TREINO: SonsDoCronometro = {
+  inicioRound: ctx => tocarSino(ctx, 1),
+  inicioDescanso: ctx => tocarSino(ctx, 2),
+  aviso: ctx => tocarMatraca(ctx),
+  contagem: ctx => tocarBip(ctx),
+  fim: ctx => tocarSino(ctx, 3),
+}
+
+/**
+ * Quanto tempo passou, pelo relógio. `decorrido` é o andamento do treino (conta os segundos pulados);
+ * `decorridoReal` é o tempo de fato treinado. Nenhum dos dois passa do total: voltar de segundo plano
+ * minutos depois do fim não pode inflar o tempo do treino.
+ */
+export function medirRelogio(exec: Execucao | null, agora: number, total: number): { decorridoReal: number; decorrido: number } {
+  if (!exec) return { decorridoReal: 0, decorrido: 0 }
+  const fimDoRelogio = exec.fimEm ?? exec.pausadoEm ?? agora
+  const bruto = Math.max(0, (fimDoRelogio - exec.inicio - exec.pausadoTotal) / 1000)
+  const decorrido = Math.min(bruto + exec.adiantado, total)
+  return { decorridoReal: decorrido - exec.adiantado, decorrido }
+}
+
+/** Encerra o treino. Se estiver pausado, termina no momento da pausa: o tempo parado não é treino. */
+export function encerrarExecucao(e: Execucao, agora: number): Execucao {
+  return e.fimEm === null ? { ...e, fimEm: e.pausadoEm ?? agora } : e
+}
+
 interface Opcoes {
   rounds: number
   roundSeg: number
   descansoSeg: number
+  /** Segundos de contagem antes do primeiro round (0 = sem preparo). Padrão: 10. */
+  preparoSeg?: number
+  sons?: SonsDoCronometro
+  /** Vibrar a cada troca de fase (onde o aparelho deixa). Padrão: sim. */
+  vibracao?: boolean
 }
 
 /**
  * Cronômetro de rounds. O tempo vem do relógio (Date.now) e não de contar "ticks",
  * então segue correto mesmo quando o navegador reduz a frequência dos timers em segundo plano.
  */
-export function useCronometro({ rounds, roundSeg, descansoSeg }: Opcoes) {
-  const [fases] = useState(() => montarFases(rounds, roundSeg, descansoSeg))
+export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREPARO_SEG, sons = SONS_DO_TREINO, vibracao = true }: Opcoes) {
+  const [fases] = useState(() => montarFases(rounds, roundSeg, descansoSeg, preparoSeg))
   const [exec, setExec] = useState<Execucao | null>(null)
   const [agora, setAgora] = useState(0)
   const audioRef = useRef<AudioContext | null>(null)
   const disparados = useRef(new Set<string>())
 
   const total = fases[fases.length - 1].inicio + fases[fases.length - 1].duracao
-  const fimDoRelogio = exec ? (exec.fimEm ?? exec.pausadoEm ?? agora) : 0
-  const decorridoReal = exec ? Math.max(0, (fimDoRelogio - exec.inicio - exec.pausadoTotal) / 1000) : 0
-  const decorrido = exec ? decorridoReal + exec.adiantado : 0
+  const { decorridoReal, decorrido } = medirRelogio(exec, agora, total)
 
   const estado: EstadoCrono = !exec ? 'pronto' : exec.fimEm !== null || decorrido >= total ? 'fim' : exec.pausadoEm !== null ? 'pausado' : 'rodando'
 
@@ -118,18 +163,31 @@ export function useCronometro({ rounds, roundSeg, descansoSeg }: Opcoes) {
       fn()
     }
     if (estado === 'fim') {
-      disparar('fim', () => { tocarSino(ctx, 3); vibrar([300, 100, 300]) })
+      disparar('fim', () => { sons.fim(ctx); if (vibracao) vibrar([300, 100, 300]) })
       return
     }
-    if (fase.tipo === 'round') disparar('inicio', () => { tocarSino(ctx, 1); vibrar(250) })
-    if (fase.tipo === 'descanso') disparar('inicio', () => { tocarSino(ctx, 2); vibrar([120, 80, 120]) })
+    // Voltar de segundo plano no meio de uma fase não toca o sino de início atrasado.
+    const atrasada = decorrido - fase.inicio > 2
+    if (fase.tipo === 'round') disparar('inicio', () => { if (atrasada) return; sons.inicioRound(ctx); if (vibracao) vibrar(250) })
+    if (fase.tipo === 'descanso') disparar('inicio', () => { if (atrasada) return; sons.inicioDescanso(ctx); if (vibracao) vibrar([120, 80, 120]) })
     if (fase.tipo === 'round' && fase.duracao > 25 && restante <= 10 && restante > 0) {
-      disparar('aviso', () => { tocarMatraca(ctx); vibrar([80, 60, 80]) })
+      disparar('aviso', () => { sons.aviso(ctx); if (vibracao) vibrar([80, 60, 80]) })
     }
-    if (fase.tipo !== 'round' && restante >= 1 && restante <= 3) disparar(`c${restante}`, () => tocarBip(ctx))
-  }, [estado, idx, fase, restante])
+    if (fase.tipo !== 'round' && restante >= 1 && restante <= 3) disparar(`c${restante}`, () => sons.contagem(ctx))
+  }, [estado, idx, fase, restante, decorrido, sons, vibracao])
+
+  // O áudio é fechado ao sair da tela (com uma folga para o som do fim terminar de tocar) e ao iniciar de novo: o Safari limita quantos ficam abertos.
+  useEffect(() => () => fecharAudio(audioRef.current, 3000), [])
+
+  // Bloquear a tela suspende o áudio no iPhone: ao voltar, religa.
+  useEffect(() => {
+    const aoVoltar = () => { if (document.visibilityState === 'visible' && audioRef.current?.state !== 'running') void audioRef.current?.resume().catch(() => undefined) }
+    document.addEventListener('visibilitychange', aoVoltar)
+    return () => document.removeEventListener('visibilitychange', aoVoltar)
+  }, [])
 
   const iniciar = useCallback(() => {
+    fecharAudio(audioRef.current, 0)
     audioRef.current = criarAudio() // precisa nascer de um toque do usuário
     const t = Date.now()
     disparados.current.clear()
@@ -156,7 +214,7 @@ export function useCronometro({ rounds, roundSeg, descansoSeg }: Opcoes) {
 
   const encerrar = useCallback(() => {
     const t = Date.now()
-    setExec(e => (e && e.fimEm === null ? { ...e, fimEm: t } : e))
+    setExec(e => (e ? encerrarExecucao(e, t) : e))
     setAgora(t)
   }, [])
 

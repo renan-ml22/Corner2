@@ -79,7 +79,7 @@ export interface Recurso {
 export const RECURSOS = {
   // Gratuito: o suficiente para treinar, registrar e se proteger. Segurança nunca fica atrás de plano pago.
   registroTreino: { nome: 'Registrar treino, histórico e progresso', nivelMinimo: 'gratuito' },
-  cronometro: { nome: 'Cronômetro de rounds', nivelMinimo: 'gratuito' },
+  cronometro: { nome: 'Cronômetro de rounds e Timer livre (rounds, tempos e sons configuráveis)', nivelMinimo: 'gratuito' },
   alertasSeguranca: { nome: 'Registrar pancadas na cabeça e lesões, com os alertas de segurança', nivelMinimo: 'gratuito' },
   exportarDados: { nome: 'Exportar os próprios dados', nivelMinimo: 'gratuito' },
   exercicios: { nome: 'Biblioteca de exercícios: 20 exercícios com dicas e erros comuns', nivelMinimo: 'gratuito' },

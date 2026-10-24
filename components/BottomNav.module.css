@@ -4,9 +4,9 @@
   right: 0;
   bottom: 0;
   height: calc(70px + max(22px, env(safe-area-inset-bottom)));
-  padding: 0 12px max(22px, env(safe-area-inset-bottom));
+  padding: 0 8px max(22px, env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   align-items: center;
   background: oklch(0.2 0.02 275 / 0.82);
   -webkit-backdrop-filter: blur(20px);

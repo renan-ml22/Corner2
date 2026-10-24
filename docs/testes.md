@@ -59,6 +59,10 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - `tests/icones.test.ts` confere que todo ícone `ph-…` do app existe na lista oficial do Phosphor 2.1.1 (`tests/phosphor-2.1.1-icones.txt`). Ao **atualizar a versão do Phosphor** no CDN, gere a lista de novo a partir do CSS da nova versão.
 - `e2e/exercicios-quiz.spec.ts`. Detalhes em [`plano-exercicios-quiz.md`](plano-exercicios-quiz.md).
 
+## Timer
+
+- `tests/timer.test.ts`, `tests/som-timer.test.ts`, `tests/cronometro.test.ts` e `e2e/timer.spec.ts`. No navegador o relógio é falso (`page.clock.install`) e o app é espionado (um `AudioContext`, `navigator.vibrate` e `navigator.wakeLock` de mentira anotam o que seria tocado, vibrado e travado): o teste "avança" minutos sem esperar. `tests/contraste.ts` calcula o contraste de cores oklch. Detalhes em [`plano-timer.md`](plano-timer.md).
+
 ## Quando escrever cada tipo
 
 - Regra de cálculo, validador, migração: teste de unidade em `tests/` (primeiro o teste, depois o código).

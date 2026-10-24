@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { timerEstaAndando } from '@/hooks/useTimerAndando'
 import { abaAtiva } from '@/lib/navegacao'
+import { TEXTOS } from '@/lib/textos'
 import { track } from '@/lib/posthog'
 import estilos from './BottomNav.module.css'
 import { usePainelAcoes } from './PainelProvider'
@@ -10,6 +12,7 @@ import { usePainelAcoes } from './PainelProvider'
 const TABS = [
   { href: '/hoje',      label: 'Hoje',      base: 'ph-house' },
   { href: '/plano',     label: 'Plano',     base: 'ph-calendar-dots' },
+  { href: '/timer',     label: 'Timer',     base: 'ph-timer' },
   { href: '/progresso', label: 'Progresso', base: 'ph-chart-line-up' },
   { href: '/perfil',    label: 'Perfil',    base: 'ph-user-circle' },
 ]
@@ -26,7 +29,11 @@ export default function BottomNav() {
   const tabBtn = (tab: typeof TABS[0]) => {
     const active = acesa === tab.href
     return (
-      <Link key={tab.href} href={tab.href} aria-current={active ? 'page' : undefined} className={`${estilos.aba} ${active ? estilos.ativa : ''}`} onClick={() => { if (!active) track('tab_changed', { tab_name: tab.href.slice(1) }) }}>
+      <Link key={tab.href} href={tab.href} aria-current={active ? 'page' : undefined} className={`${estilos.aba} ${active ? estilos.ativa : ''}`} onClick={e => {
+        // Com o Timer contando, sair da tela perde a contagem: pergunta antes (o aviso do navegador não vale para navegação interna).
+        if (!active && timerEstaAndando() && !window.confirm(TEXTOS.confirmar.sairDoTimer)) { e.preventDefault(); return }
+        if (!active) track('tab_changed', { tab_name: tab.href.slice(1) })
+      }}>
         <i className={active ? `ph-fill ${tab.base}` : `ph ${tab.base}`} />
         <span>{tab.label}</span>
       </Link>
@@ -44,6 +51,7 @@ export default function BottomNav() {
       </div>
       {tabBtn(TABS[2])}
       {tabBtn(TABS[3])}
+      {tabBtn(TABS[4])}
     </nav>
   )
 }

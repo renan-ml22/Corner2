@@ -25,6 +25,8 @@ export const TEXTOS = {
     encerrarPlano: (nome: string) => `Encerrar o plano ${nome}? Seus treinos registrados continuam salvos.`,
     trocarPlano: (nome: string) => `Trocar para o plano ${nome}? O plano atual será substituído e a semana 1 começa agora.`,
     encerrarTreino: 'Encerrar o treino agora? Os rounds já completos podem ser registrados.',
+    sairDoTimer: 'Sair do Timer? A contagem em andamento será perdida.',
+    reiniciarTimer: 'Reiniciar o timer? O que já passou será perdido.',
     importarBackup: 'Importar substitui os dados atuais deste aparelho pelos do backup. Continuar?',
   },
   erro: {

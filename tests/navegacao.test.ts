@@ -7,6 +7,7 @@ describe('abaAtiva', () => {
   it.each([
     ['/hoje', '/hoje'],
     ['/plano', '/plano'],
+    ['/timer', '/timer'],
     ['/progresso', '/progresso'],
     ['/perfil', '/perfil'],
   ])('%s acende a própria aba', (caminho, aba) => {
@@ -22,6 +23,10 @@ describe('abaAtiva', () => {
     expect(abaAtiva('/perfil/editar')).toBe('/perfil')
   })
 
+  it('o cronômetro do plano (/treino) não acende a aba Timer: é outra tela, em tela cheia', () => {
+    expect(abaAtiva('/treino')).toBeNull()
+  })
+
   it.each(['/', '/tecnicas', '/saude', '/assinatura', '/treino', '/login'])('%s não acende nenhuma aba', caminho => {
     expect(abaAtiva(caminho)).toBeNull()
   })
@@ -32,5 +37,6 @@ describe('abaAtiva', () => {
     expect(abaAtiva('/quizzes')).toBeNull()
     expect(abaAtiva('/atletas-x/ali')).toBeNull()
     expect(abaAtiva('/hojeee')).toBeNull()
+    expect(abaAtiva('/timers')).toBeNull()
   })
 })

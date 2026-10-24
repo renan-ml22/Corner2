@@ -74,13 +74,13 @@ test.describe('painel: registrar treino', () => {
     expect(await lerRaw(pagina, 'historico')).toBeNull()
   })
 
-  test('os contadores respeitam os limites (rounds de 1 a 15)', async ({ pagina }) => {
+  test('os contadores respeitam os limites (rounds de 1 a 20)', async ({ pagina }) => {
     await abrirRegistro(pagina)
     await pagina.getByRole('dialog').getByRole('button', { name: /Técnica/ }).click()
     const detalhes = pagina.getByRole('dialog', { name: 'Técnica' })
     for (let i = 0; i < 5; i++) await detalhes.getByRole('button', { name: 'Diminuir Rounds' }).click()
     await expect(detalhes.getByRole('button', { name: 'Diminuir Rounds' })).toBeDisabled()
-    for (let i = 0; i < 14; i++) await detalhes.getByRole('button', { name: 'Aumentar Rounds' }).click()
+    for (let i = 0; i < 19; i++) await detalhes.getByRole('button', { name: 'Aumentar Rounds' }).click()
     await expect(detalhes.getByRole('button', { name: 'Aumentar Rounds' })).toBeDisabled()
   })
 
