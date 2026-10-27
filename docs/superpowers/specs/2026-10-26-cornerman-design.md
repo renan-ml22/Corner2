@@ -16,7 +16,7 @@ Dar ao **treinador de boxe** um lugar no Corner: cadastrar os próprios alunos, 
 
 ## Não-metas
 
-- Chat, agenda, cobrança do aluno pelo treinador, turmas, notificação push, e-mail de convite (ver Decisões).
+- Chat, agenda, cobrança do aluno pelo treinador, turmas, notificação push, e-mails que não sejam o convite.
 - O treinador **registrar treinos** de aluno que não tem conta.
 - Limites de planos ativos ("1 plano ativo" no gratuito) e "análise avançada de performance": não existem hoje, não serão inventados nem anunciados.
 - Mais de um treinador ativo por aluno.
@@ -56,7 +56,11 @@ Dar ao **treinador de boxe** um lugar no Corner: cadastrar os próprios alunos, 
 4. **O que o treinador vê de aluno com conta** (e só isso): nome, foto, nível, estilo, resultado do quiz e atleta compatível; do histórico, **dos últimos 30 dias**, data, tipo, rounds, minutos por round, esforço (RPE) e duração; plano ativo. **Nunca** lesões, peso, check-ins nem `sparring_head`. A rota monta a resposta campo a campo (lista de permitidos), não repassa a linha do banco.
 5. **Quiz passa a ser guardado** (as 5 respostas, ex.: `01203`) no perfil do aluno, para o painel mostrar estilo e atleta compatível sem refazer o quiz. Segue o padrão de entidades já existente (local primeiro, sincroniza com a conta).
 6. **Foto:** o navegador recorta ao centro e reduz a 200×200 (JPEG, qualidade 0,8, ~10 KB); o servidor só aceita `data:image/jpeg;base64,…` até 60 KB. Coluna `profiles.avatar_url`. Na ficha manual, a foto fica em `coach_alunos`.
-7. **Convite por link primeiro.** O treinador gera um convite (token aleatório, guardado só como hash, vale 14 dias, uso único) e copia ou compartilha o link (`navigator.share` / WhatsApp). O aluno abre `/convite/<token>`, entra ou cria a conta e aceita. **E-mail automático fica para depois** (ver pergunta aberta): o convite do Supabase Auth não combina com a sessão própria do app, e qualquer envio de e-mail em produção exige domínio próprio, que o projeto ainda não tem. A aba "Convidar" lista os convites pendentes e permite cancelar.
+7. **Convite por link e por e-mail (decidido pelo Renan: os dois).** O treinador gera um convite (token aleatório, guardado só como hash, vale 14 dias, uso único). O **link** é sempre o convite de verdade: ele copia ou compartilha (`navigator.share` / WhatsApp). O **e-mail** é um segundo jeito de entregar o mesmo link: botão "Enviar por e-mail" na ficha, para o e-mail cadastrado nela. O aluno abre `/convite/<token>`, entra ou cria a conta e aceita. A aba "Convidar" lista os convites pendentes (com "enviado por e-mail em…"), permite reenviar e cancelar.
+   - **Como o e-mail sai:** pelo servidor, chamando a API de um provedor de e-mail (proposta: Resend) com `fetch`, sem biblioteca nova. Não uso o convite do Supabase Auth: ele cria a conta do aluno por conta própria e não combina com a sessão própria do app.
+   - **Depende de uma coisa fora do código:** o provedor só entrega para qualquer pessoa depois de **verificar um domínio** (registros DNS). Sem isso, só chega ao dono da conta do provedor. Enquanto as variáveis `EMAIL_API_KEY` e `EMAIL_REMETENTE` não existirem, o botão de e-mail fica desligado com a explicação "envio por e-mail ainda não configurado" e o link funciona normalmente. Assim o código entra na etapa 3 sem esperar o domínio, e o e-mail liga quando o domínio estiver pronto.
+   - **Proteção:** no máximo 20 e-mails de convite por treinador por dia, 1 reenvio a cada 10 minutos por convite, só para o e-mail da própria ficha (o treinador não digita destinatário solto: o app não vira disparador de spam). O e-mail leva só o nome do treinador, o botão e o link, sem notas, telefone nem dados de outros alunos.
+   - **Privacidade:** o e-mail do aluno passa a ir para o provedor; entra na política de privacidade do pacote LGPD.
 8. **Sugestão de plano** (`coach_suggestions`): só para aluno com conta vinculada. Aluno aceita → o plano vira o ativo (pedindo confirmação se já tiver outro). Se o plano exigir um nível de assinatura que o aluno não tem, ele vê o convite ao plano e a sugestão continua pendente. Recusar encerra a sugestão. Mensagem opcional do treinador. Para ficha manual, a "sugestão" é só um registro no histórico da ficha.
 9. **Se o treinador deixa de assinar:** o painel mostra a tela de upgrade; fichas e vínculos ficam guardados; o acesso aos dados do aluno para na hora (checagem no servidor).
 10. **Um treinador ativo por aluno.** Convite de aluno que já tem treinador pede que ele se desvincule antes.
@@ -76,7 +80,7 @@ Dar ao **treinador de boxe** um lugar no Corner: cadastrar os próprios alunos, 
 
 1. **Plano e foto.** Nível `cornerman` no catálogo (preço, `lookup_key`, recursos, textos), `npm run stripe:sincronizar` (modo teste), tela de assinatura com o plano novo; foto de perfil (recorte no navegador, coluna, perfil).
 2. **Fichas e painel.** Tabela `coach_alunos`, rotas `/api/cornerman/alunos`, página "Meus Alunos" (lista, contador "3 de 20", status), cadastro manual, perfil da ficha (visão geral e notas editáveis), tela de upgrade para quem não tem o plano.
-3. **Convites e vínculo.** Tabela `coach_invites`, `/convite/<token>`, aceite e desvinculação (seção "Meu treinador" no perfil do aluno), guarda do quiz, dados do aluno no painel (aba Treinos com gráfico semanal e filtro por tipo; atleta compatível).
+3. **Convites e vínculo.** Tabela `coach_invites`, `/convite/<token>`, envio do link por e-mail (desligado até as variáveis existirem), aceite e desvinculação (seção "Meu treinador" no perfil do aluno), guarda do quiz, dados do aluno no painel (aba Treinos com gráfico semanal e filtro por tipo; atleta compatível).
 4. **Sugestões e barra.** Tabela `coach_suggestions`, aba "Plano sugerido", banner na tela Hoje do aluno (ver plano, aceitar, recusar), selo "Sugerido pelo seu treinador [Nome]" no plano, aba "Alunos" com selo na barra.
 
 Cada etapa: testes primeiro (unidade com banco de mentira, navegador com a API simulada, axe), `npm run supabase:fumaca` ampliado, SQL idempotente em arquivo novo (`supabase/cornerman-etapa-N.sql`) mais `supabase/schema.sql` atualizado, doc em `docs/`.
@@ -91,11 +95,11 @@ Cada etapa: testes primeiro (unidade com banco de mentira, navegador com a API s
 
 ## Variáveis de ambiente
 
-Nenhuma nova nas 4 etapas (usa as do Supabase, do Stripe e `SESSION_SECRET`, que já existem). Há um passo manual no Stripe de teste (`stripe:sincronizar`) e, em produção, o mesmo no Stripe real quando o pagamento sair do modo de teste. O e-mail de convite, quando vier, trará variáveis novas (provedor de e-mail e domínio).
+Duas novas, **opcionais**, a partir da etapa 3: `EMAIL_API_KEY` (chave do provedor) e `EMAIL_REMETENTE` (ex.: `Corner <convites@seu-dominio>`). Sem elas o app funciona, só sem o botão de e-mail. As demais são as que já existem (Supabase, Stripe, `SESSION_SECRET`). Há um passo manual no Stripe de teste (`stripe:sincronizar`) e, em produção, o mesmo no Stripe real quando o pagamento sair do modo de teste.
 
 ## Perguntas em aberto (só o Renan responde)
 
-1. **E-mail de convite:** ok começar só com link (copiar/WhatsApp) e deixar o e-mail para quando houver domínio próprio?
+Nenhuma bloqueia a construção. Para o e-mail ligar (não precisa estar pronto antes da etapa 3): qual domínio será usado como remetente (ex.: um subdomínio de `maisfocoformaturas.com.br`, se você tiver acesso ao DNS) e criar a conta no provedor. A chave vai pelo método da área de transferência, nunca no chat.
 
 ## O que fica para quem constrói
 
