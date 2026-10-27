@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { COOKIE_DO_CONVITE } from '@/lib/cornerman/convite'
+import { decidirRota } from '@/lib/cornerman/proxy-regras'
 import { decrypt, SESSION_COOKIE } from '@/lib/session'
 
-// /onboarding (só a tela de cadastro, o primeiro passo) é pública; quem já está logado vai direto para /hoje.
-// Os passos seguintes (/onboarding/nivel, /frequencia e /plano) exigem login e usam a sessão aberta no cadastro.
-const PUBLIC_ROUTES = ['/login', '/onboarding']
-
+// Quem decide para onde cada pedido vai é `decidirRota` (lib/cornerman/proxy-regras.ts, com testes):
+// - /login e /onboarding (só a tela de cadastro, o primeiro passo) são públicos; quem já está logado vai para /hoje.
+//   Os passos seguintes do onboarding (/onboarding/nivel, /frequencia e /plano) exigem login e usam a sessão aberta no cadastro.
+// - /convite/<token> é público para todos (o aluno precisa vê-lo antes e depois de entrar).
+// - Quem entra com um convite guardado (cookie) volta para ele em vez de ficar em /hoje.
 export default async function proxy(req: NextRequest) {
-  const path = req.nextUrl.pathname
-  const isPublic = PUBLIC_ROUTES.includes(path)
   const session = await decrypt(req.cookies.get(SESSION_COOKIE)?.value)
-
-  if (!isPublic && !session?.userId) {
-    return NextResponse.redirect(new URL('/login', req.nextUrl))
-  }
-  if (isPublic && session?.userId) {
-    return NextResponse.redirect(new URL('/hoje', req.nextUrl))
-  }
+  const decisao = decidirRota({
+    caminho: req.nextUrl.pathname,
+    logado: !!session?.userId,
+    cookieDoConvite: req.cookies.get(COOKIE_DO_CONVITE)?.value,
+  })
+  if (decisao.tipo === 'redirecionar') return NextResponse.redirect(new URL(decisao.para, req.nextUrl))
   return NextResponse.next()
 }
 
