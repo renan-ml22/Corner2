@@ -1,0 +1,60 @@
+.secao {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.4rem;
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.titulo {
+  font-size: 1rem;
+}
+
+.texto {
+  margin: 0;
+  color: var(--color-neutral-300);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.campo {
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+}
+
+.acoes {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.acoes :global(.btn-ghost) {
+  width: 100%;
+  text-decoration: none;
+}
+
+.acoes :global(.btn-ghost):disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nota {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.aviso {
+  margin: 0;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.erro {
+  margin: 0;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}

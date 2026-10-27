@@ -14,4 +14,11 @@ export const ehTokenDeConvite = (v: unknown): v is string => typeof v === 'strin
 
 export const expiraEm = (agora: Date): string => new Date(agora.getTime() + VALIDADE_DO_CONVITE_DIAS * DIA_MS).toISOString()
 
-export const linkDoConvite = (origem: string, token: string): string => `${origem}/convite/${token}`
+/** "28/10": o dia e o mês de uma data ISO no fuso do aparelho, para dizer quando o convite expira. */
+export function diaMes(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+export const linkDoConvite =(origem: string, token: string): string => `${origem}/convite/${token}`

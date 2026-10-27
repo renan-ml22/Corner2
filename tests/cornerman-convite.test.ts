@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import {
-  COOKIE_DO_CONVITE, VALIDADE_DO_CONVITE_DIAS, VALIDADE_DO_COOKIE_SEGUNDOS, ehTokenDeConvite, expiraEm, linkDoConvite,
+  COOKIE_DO_CONVITE, VALIDADE_DO_CONVITE_DIAS, VALIDADE_DO_COOKIE_SEGUNDOS, diaMes, ehTokenDeConvite, expiraEm, linkDoConvite,
 } from '@/lib/cornerman/convite'
 import { hashDoToken, novoToken } from '@/lib/cornerman/convite-token'
 
@@ -53,6 +53,17 @@ describe('expiraEm e linkDoConvite', () => {
 
   it('o link é o endereço do site, /convite/ e o token', () => {
     expect(linkDoConvite('https://corner2.vercel.app', TOKEN)).toBe(`https://corner2.vercel.app/convite/${TOKEN}`)
+  })
+})
+
+describe('diaMes', () => {
+  it('dia e mês com dois dígitos', () => {
+    expect(diaMes('2026-10-28T12:00:00.000Z')).toBe('28/10')
+    expect(diaMes('2026-01-05T12:00:00.000Z')).toBe('05/01')
+  })
+  it('data inválida: texto vazio, sem lançar erro', () => {
+    expect(diaMes('não é data')).toBe('')
+    expect(diaMes('')).toBe('')
   })
 })
 

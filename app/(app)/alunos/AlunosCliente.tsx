@@ -105,7 +105,7 @@ function Cartao({ aluno, encerrada = false }: { aluno: FichaDeAluno; encerrada?:
           <strong>{aluno.nome}</strong>
           {detalhe && <small>{detalhe}</small>}
         </span>
-        <span className={estilos.selo}>{encerrada ? 'Encerrada' : aluno.comConta ? 'Com conta' : 'Ficha manual'}</span>
+        <span className={estilos.selo}>{encerrada ? 'Encerrada' : aluno.comConta ? 'Com conta' : aluno.status === 'convidado' ? 'Convidado' : 'Ficha manual'}</span>
         <i className={`ph-bold ph-caret-right ${estilos.seta}`} aria-hidden="true" />
       </Link>
     </li>

@@ -720,3 +720,252 @@ test.describe('formulários: o que foi digitado e não salvo não se perde sem a
     expect(await protegeContraSaida(pagina)).toBe(false)
   })
 })
+
+// ── Convite na ficha (etapa 3a) ──────────────────────────────
+
+test.describe('convite na ficha', () => {
+  test.beforeEach(async ({ pagina }) => {
+    await simularEstado(pagina, ativa('cornerman'))
+  })
+
+  const secao = (pagina: Page) => pagina.getByRole('region', { name: 'Convite' })
+  const campoDoLink = (pagina: Page) => pagina.getByRole('textbox', { name: 'Link do convite' })
+  const gerar = (pagina: Page) => pagina.getByRole('button', { name: 'Gerar link de convite' })
+
+  test('ficha manual: "Gerar link de convite" faz UM pedido, mostra o link, o aviso e o e-mail desligado; a ficha vira "Convidado"', async ({ pagina }) => {
+    const b = ficha('Beto')
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await expect(secao(pagina).getByText('Convidar para o Corner')).toBeVisible()
+    await gerar(pagina).click()
+
+    await expect(campoDoLink(pagina)).toHaveValue(/^http:\/\/localhost:3100\/convite\/[A-Za-z0-9_-]{43}$/)
+    await expect(campoDoLink(pagina)).toHaveValue(api.links[0])
+    await expect(campoDoLink(pagina)).toHaveAttribute('readonly', '')
+    await expect(pagina.getByText('Quem abrir este link primeiro e aceitar fica vinculado ao aluno. Mande só para ele.')).toBeVisible()
+    const email = pagina.getByRole('button', { name: 'Enviar por e-mail' })
+    await expect(email).toBeDisabled()
+    await expect(email).toHaveAccessibleDescription('Envio por e-mail ainda não está disponível.')
+    await expect(pagina.getByText('Convidado', { exact: true })).toBeVisible() // o selo do topo
+    expect(api.escritas().map(p => [p.metodo, p.caminho])).toEqual([['POST', `/api/cornerman/alunos/${b.id}/convite`]])
+  })
+
+  test('duplo clique em "Gerar link de convite": um pedido só', async ({ pagina }) => {
+    const b = ficha('Beto')
+    const api = await simularAlunos(pagina, [b], { atrasoMs: 500 })
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).dblclick()
+    await expect(campoDoLink(pagina)).toBeVisible()
+    expect(api.escritas()).toHaveLength(1)
+  })
+
+  test('"Gerar novo link" faz um segundo pedido e mostra o link NOVO (o antigo morre no servidor)', async ({ pagina }) => {
+    const b = ficha('Beto')
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    await expect(campoDoLink(pagina)).toHaveValue(api.links[0])
+    await pagina.getByRole('button', { name: 'Gerar novo link' }).click()
+    await expect(campoDoLink(pagina)).toHaveValue(api.links[1])
+    expect(api.links[0]).not.toBe(api.links[1])
+    expect(api.escritas()).toHaveLength(2)
+  })
+
+  test('"Copiar link" copia o link exato e avisa', async ({ pagina, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://localhost:3100' })
+    const b = ficha('Beto')
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    await pagina.getByRole('button', { name: 'Copiar link' }).click()
+    await expect(pagina.getByText('Link copiado')).toBeVisible()
+    expect(await pagina.evaluate(() => navigator.clipboard.readText())).toBe(api.links[0])
+  })
+
+  test('"Copiar link" sem permissão da área de transferência: avisa como fazer à mão e deixa o link selecionado', async ({ pagina }) => {
+    const b = ficha('Beto')
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    await expect(campoDoLink(pagina)).toBeVisible()
+    await pagina.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('negado')) })
+    await pagina.getByRole('button', { name: 'Copiar link' }).click()
+    await expect(pagina.getByText('Não foi possível copiar. Selecione e copie o link.')).toBeVisible()
+    const selecionado = await campoDoLink(pagina).evaluate((el: HTMLInputElement) => el.value.slice(el.selectionStart ?? 0, el.selectionEnd ?? 0))
+    expect(selecionado).toBe(await campoDoLink(pagina).inputValue())
+  })
+
+  test('"Compartilhar" sem o compartilhamento do aparelho: link do WhatsApp com o texto e o endereço codificados', async ({ pagina }) => {
+    await pagina.addInitScript(() => Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }))
+    const b = ficha('Beto')
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    const compartilhar = pagina.getByRole('link', { name: 'Compartilhar' })
+    await expect(compartilhar).toBeVisible()
+    const href = (await compartilhar.getAttribute('href')) ?? ''
+    expect(href.startsWith('https://wa.me/?text=')).toBe(true)
+    expect(decodeURIComponent(href.slice('https://wa.me/?text='.length))).toBe(`Convite do seu treinador no Corner: ${api.links[0]}`)
+    await expect(compartilhar).toHaveAttribute('rel', /noopener/)
+  })
+
+  test('"Compartilhar" com o compartilhamento do aparelho: chama navigator.share com o link', async ({ pagina }) => {
+    await pagina.addInitScript(() => {
+      ;(window as unknown as { __compartilhado: unknown[] }).__compartilhado = []
+      Object.defineProperty(navigator, 'share', { value: (d: unknown) => { (window as unknown as { __compartilhado: unknown[] }).__compartilhado.push(d); return Promise.resolve() }, configurable: true })
+    })
+    const b = ficha('Beto')
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    await pagina.getByRole('button', { name: 'Compartilhar' }).click()
+    const dados = await pagina.evaluate(() => (window as unknown as { __compartilhado: { url: string; text: string }[] }).__compartilhado)
+    expect(dados).toHaveLength(1)
+    expect(dados[0].url).toBe(api.links[0])
+    expect(dados[0].text).toContain('Convite do seu treinador no Corner')
+  })
+
+  test('recarregar a ficha convidada: "Convite pendente" com a validade, SEM o link, com "Gerar novo link" e "Cancelar convite"', async ({ pagina }) => {
+    const b = ficha('Beto')
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    await expect(campoDoLink(pagina)).toBeVisible()
+    await pagina.reload()
+    await expect(pagina.getByText('Convite pendente · expira em 28/10')).toBeVisible()
+    await expect(campoDoLink(pagina)).toHaveCount(0)
+    await expect(pagina.getByRole('button', { name: 'Gerar novo link' })).toBeVisible()
+    await expect(pagina.getByRole('button', { name: 'Cancelar convite' })).toBeVisible()
+  })
+
+  test('cancelar o convite: DELETE, aviso e a ficha volta a "Ficha manual"', async ({ pagina }) => {
+    const b = ficha('Pendente', { status: 'convidado' })
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await pagina.getByRole('button', { name: 'Cancelar convite' }).click()
+    await expect(pagina.getByText('Convite cancelado')).toBeVisible()
+    expect(api.escritas().map(p => [p.metodo, p.caminho])).toEqual([['DELETE', `/api/cornerman/alunos/${b.id}/convite`]])
+    await expect(pagina.getByText('Ficha manual · sem dados de treino')).toBeVisible()
+    await expect(gerar(pagina)).toBeVisible()
+  })
+
+  test('ficha convidada não mostra "Encerrar ficha" nem "Reabrir ficha"; mostra "Editar dados" e "Apagar ficha"', async ({ pagina }) => {
+    const b = ficha('Pendente', { status: 'convidado' })
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await expect(pagina.getByRole('button', { name: 'Editar dados' })).toBeVisible()
+    await expect(pagina.getByRole('button', { name: 'Apagar ficha' })).toBeVisible()
+    await expect(pagina.getByRole('button', { name: 'Encerrar ficha' })).toHaveCount(0)
+    await expect(pagina.getByRole('button', { name: 'Reabrir ficha' })).toHaveCount(0)
+  })
+
+  test('ficha com conta: "Vinculado a uma conta do Corner.", selo "Com conta", sem botões de convite', async ({ pagina }) => {
+    const b = ficha('Com conta', { comConta: true })
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await expect(pagina.getByText('Vinculado a uma conta do Corner.')).toBeVisible()
+    await expect(pagina.getByText('Com conta no Corner')).toBeVisible()
+    await expect(gerar(pagina)).toHaveCount(0)
+    await expect(pagina.getByRole('button', { name: 'Gerar novo link' })).toHaveCount(0)
+    await expect(pagina.getByText('Ficha manual · sem dados de treino')).toHaveCount(0)
+  })
+
+  test('encerrar uma ficha COM conta pergunta com o aviso do vínculo, desfaz o vínculo e reabrir não o restaura', async ({ pagina }) => {
+    const b = ficha('Com conta', { comConta: true })
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    const perguntas: string[] = []
+    pagina.removeAllListeners('dialog')
+    pagina.on('dialog', d => { perguntas.push(d.message()); void d.accept() })
+    await pagina.getByRole('button', { name: 'Encerrar ficha' }).click()
+    await expect(pagina.getByText('Encerrada', { exact: true })).toBeVisible()
+    expect(perguntas).toEqual(['Encerrar a ficha de Com conta? O vínculo com a conta dele acaba e você perde o acesso aos dados de treino dele. Para vincular de novo, será preciso um convite novo.'])
+    expect(api.escritas()[0].corpo).toEqual({ status: 'encerrado' })
+    expect(api.fichas[0].comConta).toBe(false)
+
+    await pagina.getByRole('button', { name: 'Reabrir ficha' }).click()
+    await expect(pagina.getByText('Ficha manual · sem dados de treino')).toBeVisible()
+    await expect(pagina.getByText('Com conta no Corner')).toHaveCount(0)
+  })
+
+  test('ficha encerrada sem conta: gerar o convite reabre a vaga e a ficha vira "Convidado"', async ({ pagina }) => {
+    const b = ficha('Antiga', { status: 'encerrado' })
+    const api = await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).click()
+    await expect(campoDoLink(pagina)).toBeVisible()
+    await expect(pagina.getByText('Convidado', { exact: true })).toBeVisible()
+    expect(api.fichas[0].status).toBe('convidado')
+  })
+
+  test('lista: selos "Convidado", "Com conta", "Ficha manual" e "Encerrada" nos cartões certos', async ({ pagina }) => {
+    await simularAlunos(pagina, [
+      ficha('A manual'), ficha('B convidada', { status: 'convidado' }), ficha('C com conta', { comConta: true }), ficha('D parada', { status: 'encerrado' }),
+    ])
+    await pagina.goto('/alunos')
+    const cartoes = pagina.getByRole('list', { name: 'Alunos' }).getByRole('listitem')
+    await expect(cartoes).toHaveCount(3)
+    await expect(cartoes.nth(0)).toContainText('Ficha manual')
+    await expect(cartoes.nth(1)).toContainText('Convidado')
+    await expect(cartoes.nth(2)).toContainText('Com conta')
+    await pagina.getByRole('button', { name: /Encerrados \(1\)/ }).click()
+    await expect(pagina.getByRole('list', { name: 'Fichas encerradas' }).getByRole('listitem').first()).toContainText('Encerrada')
+  })
+
+  test('acessibilidade (axe): ficha com convite pendente, com o link gerado e com conta', async ({ pagina }) => {
+    const pendente = ficha('Pendente', { status: 'convidado' })
+    const manual = ficha('Manual')
+    const comConta = ficha('Com conta', { comConta: true })
+    await simularAlunos(pagina, [pendente, manual, comConta])
+    await pagina.goto(`/alunos/${pendente.id}`)
+    await expect(pagina.getByText(/Convite pendente/)).toBeVisible()
+    expect(await auditar(pagina), 'pendente').toEqual([])
+    await pagina.goto(`/alunos/${manual.id}`)
+    await gerar(pagina).click()
+    await expect(campoDoLink(pagina)).toBeVisible()
+    expect(await auditar(pagina), 'com o link').toEqual([])
+    await pagina.goto(`/alunos/${comConta.id}`)
+    await expect(pagina.getByText('Vinculado a uma conta do Corner.')).toBeVisible()
+    expect(await auditar(pagina), 'com conta').toEqual([])
+  })
+
+  test('teclado: os botões do convite recebem foco, na ordem', async ({ pagina }) => {
+    const b = ficha('Beto')
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await gerar(pagina).focus()
+    await pagina.keyboard.press('Enter')
+    await expect(campoDoLink(pagina)).toBeVisible()
+    await pagina.getByRole('button', { name: 'Copiar link' }).focus()
+    await expect(pagina.getByRole('button', { name: 'Copiar link' })).toBeFocused()
+  })
+})
+
+test.describe('convite na ficha: respostas de erro de propósito', () => {
+  test.use({ toleraRespostaDeErro: true })
+  test.beforeEach(async ({ pagina }) => {
+    await simularEstado(pagina, ativa('cornerman'))
+  })
+
+  test('ficha encerrada com 20 ativas: o servidor recusa (limite) e a mensagem aparece; a ficha continua encerrada', async ({ pagina }) => {
+    const antiga = ficha('Antiga', { status: 'encerrado' })
+    await simularAlunos(pagina, [...fichas(20), antiga])
+    await pagina.goto(`/alunos/${antiga.id}`)
+    await pagina.getByRole('button', { name: 'Gerar link de convite' }).click()
+    await expect(alerta(pagina)).toContainText('Você já tem 20 alunos.')
+    await expect(pagina.getByRole('textbox', { name: 'Link do convite' })).toHaveCount(0)
+    await expect(pagina.getByText('Encerrada', { exact: true })).toBeVisible()
+  })
+
+  test('sem conexão ao gerar: mensagem de rede, nenhum link e o botão continua disponível', async ({ pagina }) => {
+    const b = ficha('Beto')
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await expect(pagina.getByRole('button', { name: 'Gerar link de convite' })).toBeVisible() // a ficha carregou antes de a rede "cair"
+    await simularAlunos(pagina, [b], { falhaDeRede: true }) // a rota registrada por último vale primeiro
+    await pagina.getByRole('button', { name: 'Gerar link de convite' }).click()
+    await expect(alerta(pagina)).toHaveText('Sem conexão. Verifique a internet e tente de novo.')
+    await expect(pagina.getByRole('textbox', { name: 'Link do convite' })).toHaveCount(0)
+    await expect(pagina.getByRole('button', { name: 'Gerar link de convite' })).toBeEnabled()
+  })
+})

@@ -13,6 +13,7 @@ import {
 import { LIMITES_DA_FICHA, NOME_DO_NIVEL_DE_ALUNO, hrefDeTelefone, type DadosDaFicha, type FichaDeAluno } from '@/lib/cornerman/ficha'
 import { aoTeclarNoGrupo } from '@/lib/teclado'
 import { TEXTOS } from '@/lib/textos'
+import ConviteDaFicha from './ConviteDaFicha'
 import estilos from './ficha.module.css'
 
 export default function FichaCliente({ id }: { id: string }) {
@@ -28,7 +29,7 @@ export default function FichaCliente({ id }: { id: string }) {
   )
 }
 
-type Carga = { fase: 'carregando' } | { fase: 'naoEncontrada'; mensagem: string } | { fase: 'erro'; mensagem: string } | { fase: 'pronta'; ficha: FichaDeAluno }
+type Carga = { fase: 'carregando' } | { fase: 'naoEncontrada'; mensagem: string } | { fase: 'erro'; mensagem: string } | { fase: 'pronta'; ficha: FichaDeAluno; convite: { expiraEm: string } | null }
 type Aba = 'geral' | 'notas'
 
 function Ficha({ id }: { id: string }) {
@@ -39,7 +40,7 @@ function Ficha({ id }: { id: string }) {
     let ativo = true
     void lerAlunoNoServidor(id).then(r => {
       if (!ativo) return
-      if (r.ok) setCarga({ fase: 'pronta', ficha: r.valor.aluno })
+      if (r.ok) setCarga({ fase: 'pronta', ficha: r.valor.aluno, convite: r.valor.convite })
       else setCarga(r.status === 404 ? { fase: 'naoEncontrada', mensagem: r.erro } : { fase: 'erro', mensagem: r.erro })
     })
     return () => { ativo = false }
@@ -65,10 +66,21 @@ function Ficha({ id }: { id: string }) {
     )
   }
 
-  return <FichaAberta ficha={carga.ficha} aoMudar={ficha => setCarga({ fase: 'pronta', ficha })} />
+  // Depois de gerar ou cancelar um convite, busca a ficha e o convite de novo, sem trocar a tela por um esqueleto.
+  const recarregar = async () => {
+    const r = await lerAlunoNoServidor(id)
+    if (r.ok) setCarga({ fase: 'pronta', ficha: r.valor.aluno, convite: r.valor.convite })
+  }
+
+  return <FichaAberta ficha={carga.ficha} convite={carga.convite} aoMudar={ficha => setCarga({ fase: 'pronta', ficha, convite: carga.convite })} aoRecarregar={recarregar} />
 }
 
-function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: FichaDeAluno) => void }) {
+function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
+  ficha: FichaDeAluno
+  convite: { expiraEm: string } | null
+  aoMudar: (f: FichaDeAluno) => void
+  aoRecarregar: () => Promise<void>
+}) {
   const router = useRouter()
   const avisar = useToast()
   const [aba, setAba] = useState<Aba>('geral')
@@ -79,6 +91,7 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
   const [dadosAlterados, setDadosAlterados] = useState(false) // o formulário de "Editar dados" tem algo não salvo
 
   const encerrada = ficha.status === 'encerrado'
+  const convidada = ficha.status === 'convidado'
   const notasAlteradas = notas !== ficha.notas
 
   // Notas escritas e ainda não salvas se perderiam ao recarregar ou fechar a página.
@@ -135,7 +148,7 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
   }
 
   const encerrar = () => {
-    if (!window.confirm(TEXTOS.confirmar.encerrarFicha(ficha.nome))) return
+    if (!window.confirm(ficha.comConta ? TEXTOS.confirmar.encerrarFichaComConta(ficha.nome) : TEXTOS.confirmar.encerrarFicha(ficha.nome))) return
     void mudar(atualizarAlunoNoServidor(ficha.id, { status: 'encerrado' }), TEXTOS.aviso.alunoEncerrado)
   }
 
@@ -163,7 +176,7 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
         <FotoDePerfil nome={ficha.nome} foto={ficha.foto} tamanhoRem={4.4} alt={ficha.nome} />
         <div>
           <h1 className="page-title">{ficha.nome}</h1>
-          <p className={estilos.selo}>{encerrada ? 'Encerrada' : ficha.comConta ? 'Com conta no Corner' : 'Ficha manual · sem dados de treino'}</p>
+          <p className={estilos.selo}>{encerrada ? 'Encerrada' : ficha.comConta ? 'Com conta no Corner' : convidada ? 'Convidado' : 'Ficha manual · sem dados de treino'}</p>
         </div>
       </div>
 
@@ -196,11 +209,13 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
             <div className="section-heading"><h2>Notas</h2></div>
             <p className={`surface-card ${estilos.notasTexto} ${ficha.notas ? '' : estilos.vazio}`}>{ficha.notas || 'Sem notas ainda.'}</p>
 
+            <ConviteDaFicha ficha={ficha} convite={convite} aoMudar={aoRecarregar} />
+
             <div className={estilos.acoes}>
               <button type="button" className="btn-ghost" onClick={() => { setErro(null); setEditando(true) }} disabled={ocupado}>
                 <i className="ph-bold ph-pencil-simple" aria-hidden="true" /> Editar dados
               </button>
-              {encerrada
+              {convidada ? null : encerrada
                 ? <button type="button" className="btn-ghost" onClick={reabrir} disabled={ocupado}><i className="ph-bold ph-arrow-counter-clockwise" aria-hidden="true" /> Reabrir ficha</button>
                 : <button type="button" className="btn-ghost" onClick={encerrar} disabled={ocupado}><i className="ph-bold ph-archive" aria-hidden="true" /> Encerrar ficha</button>}
               <button type="button" className={`btn-ghost ${estilos.perigo}`} onClick={() => void apagar()} disabled={ocupado}>
