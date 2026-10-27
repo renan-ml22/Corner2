@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  apagarAlunoNoServidor, atualizarAlunoNoServidor, cancelarConviteNoServidor, criarAlunoNoServidor, gerarConviteNoServidor,
-  lerAlunoNoServidor, listarAlunosNoServidor,
+  aceitarConviteNoServidor, apagarAlunoNoServidor, atualizarAlunoNoServidor, cancelarConviteNoServidor, consultarConviteNoServidor,
+  criarAlunoNoServidor, desvincularNoServidor, esquecerConviteNoServidor, gerarConviteNoServidor, guardarConviteNoServidor,
+  lerAlunoNoServidor, listarAlunosNoServidor, meuTreinadorNoServidor,
 } from '@/lib/cornerman/cliente'
 
 // As chamadas que as telas do treinador fazem à API: o que enviam e como tratam cada tipo de resposta.
@@ -88,6 +89,79 @@ describe('convite (etapa 3a)', () => {
     expect(await lerAlunoNoServidor(ID)).toEqual({ ok: true, valor: { aluno: fichaDeExemplo, convite: null } })
     responder(200, { aluno: fichaDeExemplo, convite: { expiraEm: 42 } })
     expect(await lerAlunoNoServidor(ID)).toEqual({ ok: true, valor: { aluno: fichaDeExemplo, convite: null } })
+  })
+})
+
+describe('convite do aluno e "Meu treinador" (etapa 3a)', () => {
+  const T = 'A'.repeat(43)
+
+  it('consultar: GET público em /api/convite/<token>; devolve valido, treinador e logado', async () => {
+    const f = responder(200, { valido: true, treinador: 'Marcos', logado: false })
+    expect(await consultarConviteNoServidor(T)).toEqual({ ok: true, valor: { valido: true, treinador: 'Marcos', logado: false } })
+    expect((f.mock.calls[0] as unknown[])[0]).toBe(`/api/convite/${T}`)
+    responder(200, { valido: false, logado: true })
+    expect(await consultarConviteNoServidor(T)).toEqual({ ok: true, valor: { valido: false, logado: true } })
+  })
+
+  it('consultar: o token vai codificado no caminho; resposta fora do formato vira "resposta_invalida"', async () => {
+    const f = responder(200, { valido: false, logado: false })
+    await consultarConviteNoServidor('a/b c?d')
+    expect((f.mock.calls[0] as unknown[])[0]).toBe('/api/convite/a%2Fb%20c%3Fd')
+    for (const ruim of [{ valido: 'sim', logado: true }, { valido: true, logado: 1, treinador: 'x' }, { valido: true, logado: true }, null, []]) {
+      responder(200, ruim)
+      expect(await consultarConviteNoServidor(T), JSON.stringify(ruim)).toMatchObject({ ok: false, codigo: 'resposta_invalida' })
+    }
+  })
+
+  it('guardar: POST em /guardar; esquecer: DELETE em /guardar', async () => {
+    const f = responder(200, { ok: true })
+    expect((await guardarConviteNoServidor(T)).ok).toBe(true)
+    expect((await esquecerConviteNoServidor(T)).ok).toBe(true)
+    expect(f.mock.calls.map(c => [(c as unknown[])[0], ((c as unknown[])[1] as RequestInit).method])).toEqual([
+      [`/api/convite/${T}/guardar`, 'POST'], [`/api/convite/${T}/guardar`, 'DELETE'],
+    ])
+  })
+
+  it('guardar: convite que não vale chega como erro com texto e código', async () => {
+    responder(404, { erro: 'Convite inválido ou expirado.', codigo: 'convite_invalido' })
+    expect(await guardarConviteNoServidor(T)).toEqual({ ok: false, status: 404, codigo: 'convite_invalido', erro: 'Convite inválido ou expirado.' })
+  })
+
+  it('aceitar: POST em /aceitar, sem corpo; devolve o primeiro nome do treinador', async () => {
+    const f = responder(200, { ok: true, treinador: 'Marcos' })
+    expect(await aceitarConviteNoServidor(T)).toEqual({ ok: true, valor: { treinador: 'Marcos' } })
+    const [url, opcoes] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe(`/api/convite/${T}/aceitar`)
+    expect(opcoes).toMatchObject({ method: 'POST', credentials: 'same-origin' })
+    expect(opcoes).not.toHaveProperty('body')
+  })
+
+  it('aceitar: os erros do servidor (já tem treinador, convite inválido) chegam com texto e código; sem treinador na resposta vira "resposta_invalida"', async () => {
+    responder(409, { erro: 'Você já tem um treinador.', codigo: 'ja_tem_treinador' })
+    expect(await aceitarConviteNoServidor(T)).toMatchObject({ ok: false, status: 409, codigo: 'ja_tem_treinador' })
+    responder(200, { ok: true })
+    expect(await aceitarConviteNoServidor(T)).toMatchObject({ ok: false, codigo: 'resposta_invalida' })
+  })
+
+  it('meu treinador: GET devolve o nome ou null; DELETE desvincula', async () => {
+    const f = responder(200, { treinador: { nome: 'Marcos' } })
+    expect(await meuTreinadorNoServidor()).toEqual({ ok: true, valor: { treinador: { nome: 'Marcos' } } })
+    responder(200, { treinador: null })
+    expect(await meuTreinadorNoServidor()).toEqual({ ok: true, valor: { treinador: null } })
+    responder(200, { treinador: { nome: 42 } })
+    expect(await meuTreinadorNoServidor()).toMatchObject({ ok: false, codigo: 'resposta_invalida' })
+    const g = responder(200, { ok: true })
+    expect((await desvincularNoServidor()).ok).toBe(true)
+    const [url, opcoes] = g.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/meu-treinador')
+    expect(opcoes.method).toBe('DELETE')
+    expect((f.mock.calls[0] as unknown[])[0]).toBe('/api/meu-treinador')
+  })
+
+  it('sem conexão: status 0 e a mensagem de rede, sem lançar erro', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
+    expect(await aceitarConviteNoServidor(T)).toMatchObject({ ok: false, status: 0, codigo: 'sem_conexao' })
+    expect(await meuTreinadorNoServidor()).toMatchObject({ ok: false, status: 0, codigo: 'sem_conexao' })
   })
 })
 

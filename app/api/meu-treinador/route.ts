@@ -1,4 +1,5 @@
-import { responder } from '@/lib/assinatura/rota'
+import { prepararRota, responder } from '@/lib/assinatura/rota'
+import { getSupabase } from '@/lib/supabase'
 import { prepararRotaDoAluno } from '@/lib/cornerman/aluno-rota'
 import { criarConvitesBancoSupabase } from '@/lib/cornerman/convite-banco'
 import { desvincularDoTreinador, meuTreinador } from '@/lib/cornerman/convite-servico'
@@ -12,6 +13,12 @@ import { respostaDeErroDoCornerman } from '@/lib/cornerman/http'
  *   aos dados dele. Pode ser repetido. `{ ok: true }`.
  */
 export async function GET(request: Request) {
+  // Sem o banco configurado (ambiente sem Supabase) não há treinador: 200 com `null`. Não é um erro, e por isso não usa 5xx:
+  // o navegador registraria um erro no console em toda abertura do Perfil (mesmo cuidado de /api/dados).
+  const sessao = await prepararRota(request, { mutavel: false })
+  if (!sessao.ok) return sessao.resposta
+  if (!getSupabase()) return responder({ treinador: null })
+
   const preparo = await prepararRotaDoAluno(request, { mutavel: false })
   if (!preparo.ok) return preparo.resposta
 

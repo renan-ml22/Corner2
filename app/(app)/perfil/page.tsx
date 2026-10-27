@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/dal";
 import CabecalhoDoPerfil from "@/components/CabecalhoDoPerfil";
+import MeuTreinador from "@/components/MeuTreinador";
 import PreferenciasCard from "@/components/PreferenciasCard";
 import SairButton from "@/components/SairButton";
 
@@ -19,6 +20,7 @@ export default async function PerfilPage() {
       </header>
 
       <CabecalhoDoPerfil nome={user.name} email={user.email} />
+      <MeuTreinador />
 
       <div className="section-heading"><h2>Preferências</h2></div>
       <PreferenciasCard />

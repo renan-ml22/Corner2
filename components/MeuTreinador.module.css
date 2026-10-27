@@ -1,0 +1,47 @@
+.cartao {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding: 1.1rem;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.topo > i {
+  color: var(--blue);
+  font-size: 1.6rem;
+}
+
+.topo h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.nome {
+  margin: 0.1rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.texto {
+  margin: 0;
+  color: var(--color-neutral-300);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.erro {
+  margin: 0;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.85rem;
+}
+
+.cartao :global(.btn-ghost) {
+  width: 100%;
+}

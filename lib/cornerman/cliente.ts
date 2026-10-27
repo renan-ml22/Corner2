@@ -75,6 +75,53 @@ export async function gerarConviteNoServidor(id: string): Promise<RespostaDaApi<
   return isObj(j) && typeof j.link === 'string' && typeof j.expiraEm === 'string' ? { ok: true, valor: { link: j.link, expiraEm: j.expiraEm } } : respostaInvalida()
 }
 
+// ── O aluno: a página do convite e "Meu treinador" ───────────
+
+const doConvite = (token: string) => `/api/convite/${encodeURIComponent(token)}`
+
+export interface ConsultaDoConvite { valido: boolean; treinador?: string; logado: boolean }
+
+/** O que a página pública do convite precisa saber (vale sem login). */
+export async function consultarConviteNoServidor(token: string): Promise<RespostaDaApi<ConsultaDoConvite>> {
+  const r = await chamar('GET', doConvite(token))
+  if (!r.ok) return r
+  const j = r.json
+  if (!isObj(j) || typeof j.valido !== 'boolean' || typeof j.logado !== 'boolean') return respostaInvalida()
+  if (j.valido && typeof j.treinador !== 'string') return respostaInvalida()
+  return { ok: true, valor: { valido: j.valido, logado: j.logado, ...(j.valido ? { treinador: j.treinador as string } : {}) } }
+}
+
+/** Guarda o convite num cookie (só se ele vale) para o aluno voltar a ele depois de entrar ou criar a conta. */
+export async function guardarConviteNoServidor(token: string): Promise<RespostaDaApi<true>> {
+  const r = await chamar('POST', `${doConvite(token)}/guardar`)
+  return r.ok ? { ok: true, valor: true } : r
+}
+
+/** Apaga o cookie do convite ("agora não", ou convite que não vale mais). */
+export async function esquecerConviteNoServidor(token: string): Promise<RespostaDaApi<true>> {
+  const r = await chamar('DELETE', `${doConvite(token)}/guardar`)
+  return r.ok ? { ok: true, valor: true } : r
+}
+
+export async function aceitarConviteNoServidor(token: string): Promise<RespostaDaApi<{ treinador: string }>> {
+  const r = await chamar('POST', `${doConvite(token)}/aceitar`)
+  if (!r.ok) return r
+  return isObj(r.json) && typeof r.json.treinador === 'string' ? { ok: true, valor: { treinador: r.json.treinador } } : respostaInvalida()
+}
+
+export async function meuTreinadorNoServidor(): Promise<RespostaDaApi<{ treinador: { nome: string } | null }>> {
+  const r = await chamar('GET', '/api/meu-treinador')
+  if (!r.ok) return r
+  const t = isObj(r.json) ? r.json.treinador : undefined
+  if (t === null) return { ok: true, valor: { treinador: null } }
+  return isObj(t) && typeof t.nome === 'string' ? { ok: true, valor: { treinador: { nome: t.nome } } } : respostaInvalida()
+}
+
+export async function desvincularNoServidor(): Promise<RespostaDaApi<true>> {
+  const r = await chamar('DELETE', '/api/meu-treinador')
+  return r.ok ? { ok: true, valor: true } : r
+}
+
 export async function cancelarConviteNoServidor(id: string): Promise<RespostaDaApi<true>> {
   const r = await chamar('DELETE', `${doAluno(id)}/convite`)
   return r.ok ? { ok: true, valor: true } : r

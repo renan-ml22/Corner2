@@ -85,6 +85,7 @@ test.describe('POST /api/convite/<token>/aceitar', () => {
       const r = await pagina.request.post(`/api/convite/${t}/aceitar`, { headers: mesmoSite })
       expect(r.status(), t).toBe(404)
       expect((await r.json()).codigo).toBe('convite_invalido')
+      expect(r.headers()['set-cookie'], t).toMatch(/corner_convite=;/) // o cookie do convite que não vale é apagado
     }
   })
 
@@ -106,11 +107,11 @@ test.describe('/api/meu-treinador', () => {
     expect((await pagina.request.delete('/api/meu-treinador')).status()).toBe(403)
   })
 
-  test('logado, sem o banco configurado: GET e DELETE respondem 503', async ({ pagina }) => {
+  test('logado, sem o banco configurado: GET responde 200 "sem treinador" (não é erro: o Perfil o consulta sempre); DELETE responde 503', async ({ pagina }) => {
     const get = await pagina.request.get('/api/meu-treinador')
-    expect(get.status()).toBe(503)
+    expect(get.status()).toBe(200)
     expect(get.headers()['cache-control']).toBe('no-store')
-    expect((await get.json()).codigo).toBe('nao_configurado')
+    expect(await get.json()).toEqual({ treinador: null })
     expect((await pagina.request.delete('/api/meu-treinador', { headers: mesmoSite })).status()).toBe(503)
   })
 })
