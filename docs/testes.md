@@ -53,6 +53,13 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - **Métricas (PostHog):** `tests/analytics.test.ts`, `tests/analytics-uso.test.ts`, `e2e/analytics.spec.ts` e `npm run posthog:verificar` (chave de mentira e rede interceptada). Detalhes em [`plano-posthog.md`](plano-posthog.md).
 - **Onboarding e contas:** `tests/onboarding.test.ts`, `tests/contas.test.ts`, `tests/cadastro.test.ts`, `e2e/onboarding.spec.ts`; e `npm run supabase:fumaca` também cria uma conta de verdade, confere e apaga. Detalhes em [`plano-onboarding.md`](plano-onboarding.md).
 
+## Plano Cornerman e área do treinador
+
+- Unidade: `tests/cornerman-*.test.ts` (ficha, serviço, banco, acesso por plano, http, cliente), `tests/assinatura-estado-servidor.test.ts`, `tests/foto.test.ts` e os testes do catálogo (`tests/assinatura-*.test.ts`).
+- Navegador: `e2e/api-cornerman.spec.ts` (a API real, sem banco), `e2e/alunos.spec.ts` (telas com a API simulada em `e2e/alunos-simulados.ts`) e `e2e/foto-perfil.spec.ts`. `e2e/imagem-de-teste.ts` monta um PNG de verdade para os testes de foto.
+- `npm run supabase:fumaca` também confere as fichas no banco real (isolamento, limite de 20, corrida na vaga 20), **depois** de rodar `supabase/cornerman-etapa-2.sql`; antes disso ele imprime "PULOU" para esse bloco.
+- Detalhes em [`plano-cornerman.md`](plano-cornerman.md).
+
 ## Exercícios, quiz e atletas
 
 - `tests/exercicios.test.ts`, `tests/atletas.test.ts`, `tests/quiz.test.ts`, `tests/planos-atletas.test.ts` e `tests/navegacao.test.ts`. O de quiz percorre as **576 combinações** de resposta e exige que nenhum atleta fique de fora (nem domine) o resultado.
