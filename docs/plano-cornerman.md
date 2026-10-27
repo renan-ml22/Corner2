@@ -60,7 +60,37 @@ Colar `supabase/cornerman-etapa-2.sql` no **SQL Editor do Supabase** e rodar (é
 - Unidade: validação da ficha, serviço (com banco de mentira que imita o gatilho), banco (cliente do Supabase de mentira: todo pedido filtra pelo treinador), trava de plano (por nível e situação da assinatura, cookie de outro usuário ou adulterado, Stripe fora do ar), tradução de erros sem vazar dados, chamadas do navegador, aba acesa.
 - Navegador (Chrome real): a API real sem banco (401, 403, 404, 503, 400, 413, nada repete o que foi enviado) e as telas com a API simulada em memória (lista, limite, cadastro com foto, duplo clique, sem conexão, ficha, notas, HTML nas notas, editar só o que mudou, encerrar, reabrir, apagar, cancelar as perguntas, teclado, axe, 360 px).
 
+## Etapa 3a: convites e vínculo (código pronto; falta rodar o SQL no Supabase)
+
+### O fluxo
+
+1. **Treinador:** na ficha de um aluno, "Gerar link de convite". O link (`/convite/<token>`) aparece **uma única vez**, com "Copiar link" e "Compartilhar" (o compartilhamento do celular, ou o WhatsApp). A ficha passa a "Convidado" e continua contando nos 20. Gerar de novo mata o link anterior; "Cancelar convite" devolve a ficha a "Ficha manual". O botão "Enviar por e-mail" aparece **desligado** ("Envio por e-mail ainda não está disponível"): decisão do Renan, sem código de envio nem variável de ambiente nesta etapa.
+2. **Aluno sem conta:** abre o link e vê quem o convidou (só o **primeiro nome** do treinador), o que o treinador poderá ver (nome, foto, nível, estilo, quiz, plano ativo e treinos dos últimos 30 dias) e o que **nunca** verá (lesões, peso, check-ins, pancadas na cabeça). Toca em "Entrar" ou "Criar conta": o convite vai num cookie (`corner_convite`, HttpOnly, 1 hora, só para convite válido) e, ao terminar o login ou o cadastro (e o onboarding, que é o mesmo de sempre), o `proxy.ts` leva o aluno de volta ao convite quando ele abre `/hoje`.
+3. **Aluno com conta:** "Aceitar convite" liga a conta dele à ficha ("Com conta"). Quem recebe o link e aceita primeiro fica vinculado: o e-mail da conta não precisa bater com o da ficha. A tela do treinador avisa isso.
+4. **Desvincular:** o aluno faz em **Perfil → Meu treinador**; o treinador, encerrando a ficha. A ficha vira "Encerrada", perde a conta (o treinador mantém a ficha e as notas e perde todo acesso à conta), e **reabrir a ficha não restaura o vínculo**: só um convite novo. Ficha em "convidado" não aceita mudança de status pelo PATCH (cancela-se o convite antes).
+
+### Regras e segurança
+
+- **Token:** 32 bytes aleatórios (43 caracteres base64url); no banco vai só o **hash SHA-256**; vale 14 dias; uso único; nunca aparece em log nem em erro. Convite inexistente, expirado, usado, cancelado e token malformado respondem **igual** ("Convite inválido ou expirado.").
+- **Aceite atômico** (função SQL `aceitar_convite`): dois aceites ao mesmo tempo de um convite, só um vence. **Um treinador ativo por aluno** é garantido por um índice único parcial no banco; quem já tem treinador recebe "Você já tem um treinador. Desvincule-se dele no Perfil antes de aceitar outro convite." O treinador não aceita o próprio convite.
+- **Cookie e proxy:** só o caminho `/hoje` é desviado, só com sessão e cookie bem formado (43 caracteres base64url: nenhum redirecionamento para fora do site). `/convite/<token>` é público para quem entrou e para quem não entrou. O cookie é apagado ao aceitar, ao falhar o aceite, em "Agora não" e quando a página vê que o convite não vale mais (para não prender o aluno num ciclo).
+- **Rotas:** treinador `POST/DELETE /api/cornerman/alunos/<id>/convite` (e `GET /alunos/<id>` agora traz também o convite pendente, só com a validade); público `GET /api/convite/<token>`, `POST/DELETE /api/convite/<token>/guardar`, `POST /api/convite/<token>/aceitar` (exige sessão, qualquer plano); aluno `GET/DELETE /api/meu-treinador`. `GET /api/meu-treinador` sem Supabase responde 200 `{ treinador: null }` (o Perfil o consulta em toda abertura; um 5xx viraria erro de console).
+- **Validação mais estrita da ficha (pendência da revisão da etapa 2):** e-mail sem `? & # %` (não esconde Cc/Bcc num `mailto:`), sem NUL, controles nem substitutos soltos (o Postgres os recusava com 502; agora dá 400), e nome com pelo menos um caractere visível.
+
+### Rulings (o desenho não dizia)
+
+- **Decisão 19 do desenho não se aplica:** o quiz **não guarda nada** no aparelho (o resultado só existe em `/quiz?r=…`), então não há o que subir. Quem já fez o quiz aparece como "sem quiz" até refazê-lo. A guarda do quiz (entidade) entra na etapa 3b.
+- **"Limite de tentativas" do token:** não há contador por IP (a Vercel é sem estado e o projeto não tem Redis). O token de 256 bits torna a adivinhação inviável e o convite expira em 14 dias.
+
+### Passo do Renan
+
+Colar `supabase/cornerman-etapa-3a.sql` no SQL Editor do Supabase, **depois** do `cornerman-etapa-2.sql` (é idempotente). Depois, `npm run supabase:fumaca` confere de verdade o aceite simultâneo, o índice de um treinador por aluno, o desvínculo e que o token nunca está no banco (hoje esses blocos imprimem "PULOU").
+
+### O que fica para a 3b
+
+Guarda do quiz, status verde/amarelo/vermelho (dias desde o último treino), a aba "Treinos" na ficha do aluno com conta (gráfico semanal e filtro por tipo), o atleta compatível e os dados do aluno no painel, sempre campo a campo (nunca lesões, peso, check-ins nem pancadas na cabeça).
+
 ## Etapas seguintes
 
-3. Convites (link; e-mail fica desligado até haver domínio) e vínculo do aluno; status verde, amarelo e vermelho.
+3b. Dados do aluno no painel: quiz guardado, status por cor, aba Treinos, atleta compatível.
 4. Sugestões de plano e a aba "Alunos" na barra.

@@ -58,6 +58,7 @@ Avisos rápidos, confirmações e mensagens de validação ficam em `lib/textos.
 - Unidade: `tests/cornerman-*.test.ts` (ficha, serviço, banco, acesso por plano, http, cliente), `tests/assinatura-estado-servidor.test.ts`, `tests/foto.test.ts` e os testes do catálogo (`tests/assinatura-*.test.ts`).
 - Navegador: `e2e/api-cornerman.spec.ts` (a API real, sem banco), `e2e/alunos.spec.ts` (telas com a API simulada em `e2e/alunos-simulados.ts`) e `e2e/foto-perfil.spec.ts`. `e2e/imagem-de-teste.ts` monta um PNG de verdade para os testes de foto.
 - `npm run supabase:fumaca` também confere as fichas no banco real (isolamento, limite de 20, corrida na vaga 20), **depois** de rodar `supabase/cornerman-etapa-2.sql`; antes disso ele imprime "PULOU" para esse bloco.
+- Convites e vínculo: `tests/cornerman-convite*.test.ts` (token, serviço com banco de mentira que imita as funções SQL, cliente do Supabase de mentira), `tests/cornerman-proxy.test.ts` (para onde o proxy manda cada pedido), `e2e/api-convite.spec.ts` (a API pública real, sem banco, e o cookie), `e2e/convite.spec.ts` (a página do aluno e "Meu treinador", com a API simulada em `e2e/convite-simulado.ts`) e a seção de convite em `e2e/alunos.spec.ts`. `npm run supabase:fumaca` ganha o bloco dos convites (depois de rodar `supabase/cornerman-etapa-3a.sql`).
 - Detalhes em [`plano-cornerman.md`](plano-cornerman.md).
 
 ## Exercícios, quiz e atletas
