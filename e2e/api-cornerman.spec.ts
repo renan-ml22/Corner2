@@ -17,6 +17,7 @@ test.describe('sem estar logado', () => {
     expect((await request.get(`/api/cornerman/alunos/${UUID}`)).status()).toBe(401)
     expect((await request.patch(`/api/cornerman/alunos/${UUID}`, { headers: mesmoSite, data: { notas: 'x' } })).status()).toBe(401)
     expect((await request.delete(`/api/cornerman/alunos/${UUID}`, { headers: mesmoSite })).status()).toBe(401)
+    expect((await request.get(`/api/cornerman/alunos/${UUID}/dados`)).status()).toBe(401)
   })
 
   test('a resposta é JSON, em português, sem cache', async ({ request }) => {
@@ -44,6 +45,7 @@ test.describe('logado', () => {
     for (const id of ['abc', '1', 'x.y', encodeURIComponent("x'; drop table coach_alunos;--")]) {
       for (const r of [
         await pagina.request.get(`/api/cornerman/alunos/${id}`),
+        await pagina.request.get(`/api/cornerman/alunos/${id}/dados`),
         await pagina.request.patch(`/api/cornerman/alunos/${id}`, { headers: mesmoSite, data: { notas: 'x' } }),
         await pagina.request.delete(`/api/cornerman/alunos/${id}`, { headers: mesmoSite }),
       ]) {
@@ -58,6 +60,7 @@ test.describe('logado', () => {
       await pagina.request.get('/api/cornerman/alunos'),
       await pagina.request.post('/api/cornerman/alunos', { headers: mesmoSite, data: { nome: 'Nome Identificável' } }),
       await pagina.request.get(`/api/cornerman/alunos/${UUID}`),
+      await pagina.request.get(`/api/cornerman/alunos/${UUID}/dados`),
       await pagina.request.patch(`/api/cornerman/alunos/${UUID}`, { headers: mesmoSite, data: { notas: 'nota secreta' } }),
       await pagina.request.delete(`/api/cornerman/alunos/${UUID}`, { headers: mesmoSite }),
     ]

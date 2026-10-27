@@ -279,7 +279,27 @@ grant execute on function public.cancelar_convite(text, uuid) to service_role;
 grant execute on function public.aceitar_convite(text, text) to service_role;
 grant execute on function public.desvincular_aluno(text) to service_role;
 
+-- ── Cornerman, etapa 3b: status de treino dos alunos com conta (também em cornerman-etapa-3b.sql) ──
+create or replace function public.ultimo_treino_por_aluno(p_coach text)
+returns table (ficha_id uuid, ultimo timestamptz)
+language sql
+stable
+set search_path = public
+as $$
+  select a.id, max(w.date)
+    from public.coach_alunos a
+    join public.workouts w on w.user_id = a.aluno_user_id
+   where a.coach_id = p_coach
+     and a.status = 'ativo'
+     and a.aluno_user_id is not null
+   group by a.id;
+$$;
+
+revoke all on function public.ultimo_treino_por_aluno(text) from public, anon, authenticated;
+grant execute on function public.ultimo_treino_por_aluno(text) to service_role;
+
 -- Para desfazer tudo (apaga os dados!):
+--   drop function if exists public.ultimo_treino_por_aluno(text);
 --   drop function if exists public.substituir_treinos(text, jsonb);
 --   drop trigger if exists coach_alunos_limite on public.coach_alunos;
 --   drop function if exists public.coach_alunos_limite();

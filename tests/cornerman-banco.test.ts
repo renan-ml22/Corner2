@@ -9,7 +9,13 @@ interface Chamada { tabela: string; operacao: string; dados?: Record<string, unk
 /** Cliente do Supabase de mentira: registra cada pedido e devolve o resultado programado. */
 class ClienteFalso {
   chamadas: Chamada[] = []
+  rpcs: { nome: string; args: Record<string, unknown> }[] = []
   resultado: { data?: unknown; error?: { message: string } | null } = { data: [], error: null }
+
+  rpc(nome: string, args: Record<string, unknown>) {
+    this.rpcs.push({ nome, args })
+    return Promise.resolve({ data: null, error: null, ...this.resultado })
+  }
 
   from(tabela: string) {
     const chamada: Chamada = { tabela, operacao: '', filtros: [] }
@@ -90,6 +96,29 @@ describe('toda operação filtra pelo treinador', () => {
     expect(falso.chamadas[0]).toMatchObject({ operacao: 'delete', filtros: [['coach_id', COACH], ['id', ID]] })
     falso.resultado = { data: [] }
     expect(await banco.apagar(COACH, ID)).toBe(false)
+  })
+})
+
+describe('ultimosTreinos (função SQL ultimo_treino_por_aluno)', () => {
+  it('chama a função só com o treinador e devolve ficha → instante do último treino', async () => {
+    const { falso, banco } = montar()
+    falso.resultado = { data: [{ ficha_id: ID, ultimo: '2026-10-26T20:00:00+00:00' }] }
+    expect(await banco.ultimosTreinos(COACH)).toEqual({ [ID]: '2026-10-26T20:00:00.000Z' })
+    expect(falso.rpcs).toEqual([{ nome: 'ultimo_treino_por_aluno', args: { p_coach: COACH } }])
+  })
+
+  it('linhas fora do formato são ignoradas; sem dados, objeto vazio', async () => {
+    const { falso, banco } = montar()
+    falso.resultado = { data: [{ ficha_id: ID, ultimo: 'lixo' }, { ficha_id: 7, ultimo: '2026-10-26T20:00:00Z' }, null] }
+    expect(await banco.ultimosTreinos(COACH)).toEqual({})
+    falso.resultado = { data: null }
+    expect(await banco.ultimosTreinos(COACH)).toEqual({})
+  })
+
+  it('erro do banco: "Supabase (ler últimos treinos)" com o texto do Postgres', async () => {
+    const { falso, banco } = montar()
+    falso.resultado = { data: null, error: { message: 'function does not exist' } }
+    await expect(banco.ultimosTreinos(COACH)).rejects.toThrow('Supabase (ler últimos treinos): function does not exist')
   })
 })
 

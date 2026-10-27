@@ -10,6 +10,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { iguais } from '../lib/dados/fusao'
 import { ErroConta, criarConta, entrarNoSupabase, type AuthLike } from '../lib/contas'
+import { dadosDoAluno } from '../lib/cornerman/aluno-dados'
+import { criarDadosDoAlunoBancoSupabase } from '../lib/cornerman/aluno-dados-banco'
 import { criarAlunosBancoSupabase } from '../lib/cornerman/banco'
 import { criarConvitesBancoSupabase } from '../lib/cornerman/convite-banco'
 import {
@@ -365,11 +367,75 @@ async function blocoDosConvites() {
   }
 }
 
+/** Status de treino e dados do aluno (supabase/cornerman-etapa-3b.sql): a função do último treino, o isolamento e o que NÃO sai. */
+async function blocoDosDadosDoAluno() {
+  const sondagem = await db.rpc('ultimo_treino_por_aluno', { p_coach: 'u_fumaca_sondagem' })
+  if (sondagem.error) {
+    console.log('PULOU   dados do aluno: a função ultimo_treino_por_aluno não existe (rode supabase/cornerman-etapa-3b.sql no SQL Editor do Supabase)')
+    return
+  }
+  const fichas = criarAlunosBancoSupabase(db)
+  const bancoDoAluno = criarDadosDoAlunoBancoSupabase(db)
+  const erroDe = (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e)
+
+  const nelson = { id: `u_fumaca_${agora}_nelson`, nome: 'Nelson Treinador' }
+  const vera = { id: `u_fumaca_${agora}_vera`, nome: 'Vera Treinadora' }
+  const aluno = { id: `u_fumaca_${agora}_aluna`, nome: 'Aluna da fumaça' }
+  idsExtras.push(nelson.id, vera.id, aluno.id)
+  const treino = (id: string, dias: number, extra: object = {}) => ({
+    id, data: new Date(Date.now() - dias * 86_400_000).toISOString(), tipo: 'tec' as const, rounds: 5, minPorRound: 3, rpe: 6, duracaoSegundos: 900, ...extra,
+  })
+  await salvarEntidades(banco, aluno, {
+    historico: [
+      treino('t1', 1, { tipo: 'spa', nota: 'NOTA-SECRETA', sparring: { intensidade: 'forte', cabeca: 'fortes', parceiro: 'PARCEIRO-SECRETO' } }),
+      treino('t2', 4), treino('t3', 45),
+    ],
+    quiz: '00020',
+    foto: FOTO_DE_TESTE,
+    lesoes: [{ id: 'l1', regiao: 'ombros', intensidade: 3, inicio: '2026-10-01', nota: 'LESAO-SECRETA' }],
+    pesos: [{ id: 'p1', data: '2026-10-13', kg: 123.4 }],
+    plano: { planoId: 'fundamentos', inicio: new Date().toISOString().slice(0, 10) },
+    config: { experiencia: '1a3' },
+  })
+
+  const vinculada = await criarAluno(fichas, nelson.id, { nome: 'Aluna' })
+  const manual = await criarAluno(fichas, nelson.id, { nome: 'Manual' })
+  await db.from('coach_alunos').update({ aluno_user_id: aluno.id }).eq('id', vinculada.id) // o vínculo de verdade é testado no bloco dos convites
+
+  // 1. O último treino de quem tem conta; ficha manual e outro treinador ficam de fora.
+  const ultimos = await fichas.ultimosTreinos(nelson.id)
+  confere('o último treino é o mais recente (1 dia atrás), e só a ficha com conta aparece', Object.keys(ultimos).length === 1 && Math.abs(Date.now() - Date.parse(ultimos[vinculada.id]) - 86_400_000) < 120_000, JSON.stringify(ultimos))
+  confere('outro treinador não recebe o treino do aluno do Nelson', Object.keys(await fichas.ultimosTreinos(vera.id)).length === 0)
+  const lista = await listarAlunos(fichas, nelson.id)
+  confere('a lista mostra verde para a aluna (1 dia) e cinza para a ficha manual', lista.alunos.find(a => a.id === vinculada.id)?.treino.cor === 'verde' && lista.alunos.find(a => a.id === manual.id)?.treino.cor === 'cinza')
+
+  // 2. Os dados do aluno: o que entra e o que não sai.
+  const dados = await dadosDoAluno(fichas, bancoDoAluno, nelson.id, vinculada.id, new Date())
+  confere('só os treinos dos últimos 30 dias (o de 45 dias fica de fora), do mais novo ao mais velho', dados.treinos.length === 2 && dados.treinos[0].tipo === 'spa' && dados.treinos[1].tipo === 'tec', JSON.stringify(dados.treinos))
+  confere('nível, foto, estilo do quiz e plano vêm da conta da aluna', dados.nivel === 'intermediario' && dados.foto === FOTO_DE_TESTE && dados.estilo?.atletaId === 'ali' && dados.plano?.semana === 1)
+  const json = JSON.stringify(dados)
+  confere('nada de nota, parceiro, pancadas na cabeça, lesão nem peso na resposta', !/SECRET|123\.4|fortes|cabeca|ombros/.test(json))
+
+  // 3. Quem não pode ver.
+  confere('outro treinador recebe "não encontrado" (igual a id que não existe)', (await erroDe(dadosDoAluno(fichas, bancoDoAluno, vera.id, vinculada.id, new Date())) as ErroCornerman | null)?.codigo === 'nao_encontrado')
+  confere('ficha manual: 409 sem_vinculo', (await erroDe(dadosDoAluno(fichas, bancoDoAluno, nelson.id, manual.id, new Date())) as ErroCornerman | null)?.codigo === 'sem_vinculo')
+  await atualizarAluno(fichas, nelson.id, vinculada.id, { status: 'encerrado' })
+  confere('depois de encerrar a ficha, o treinador perde o acesso (409) e o status some', (await erroDe(dadosDoAluno(fichas, bancoDoAluno, nelson.id, vinculada.id, new Date())) as ErroCornerman | null)?.codigo === 'sem_vinculo' && Object.keys(await fichas.ultimosTreinos(nelson.id)).length === 0)
+
+  // 4. A chave pública não executa a função.
+  const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  if (chavePublica) {
+    const anon = createClient(url!, chavePublica, { auth: { persistSession: false, autoRefreshToken: false } })
+    confere('a chave pública não executa ultimo_treino_por_aluno', !!(await anon.rpc('ultimo_treino_por_aluno', { p_coach: nelson.id })).error)
+  }
+}
+
 async function executar() {
   try {
     await principal()
     await blocoDosAlunos()
     await blocoDosConvites()
+    await blocoDosDadosDoAluno()
   } finally {
     await limpar()
     const sobrou = await contarLinhas()

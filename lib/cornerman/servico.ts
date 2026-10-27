@@ -8,10 +8,11 @@ import {
   type FichaDeAluno, type StatusDaFicha,
 } from './ficha'
 import type { Nivel } from '@/lib/onboarding'
+import { SEM_DADOS, statusDeTreino, type StatusDeTreino } from './status-treino'
 
 export type CodigoCornerman =
   | 'limite_de_alunos' | 'nao_encontrado' | 'dado_invalido'
-  | 'convite_invalido' | 'proprio_convite' | 'ja_tem_treinador' | 'convite_pendente' | 'nao_convidavel'
+  | 'convite_invalido' | 'proprio_convite' | 'ja_tem_treinador' | 'convite_pendente' | 'nao_convidavel' | 'sem_vinculo'
 
 /** Erro com texto seguro para mostrar à pessoa e o status HTTP a devolver. */
 export class ErroCornerman extends Error {
@@ -59,10 +60,34 @@ async function comLimite<T>(operacao: Promise<T>): Promise<T> {
   }
 }
 
-export async function listarAlunos(banco: AlunosBancoLike, coachId: string): Promise<{ alunos: FichaDeAluno[]; ativos: number; limite: number }> {
+/** Uma ficha na lista: a ficha mais o status de treino (só quem tem conta vinculada tem; os demais são cinza). */
+export type AlunoNaLista = FichaDeAluno & { treino: StatusDeTreino }
+
+/** De onde veio uma falha do banco: só o "Supabase (onde)" do começo da mensagem, porque o resto pode trazer dados de alguém. */
+export const ondeFalhou = (e: unknown): string | null => (e instanceof Error ? /^Supabase \([^)]*\)/.exec(e.message)?.[0] ?? null : null)
+
+/**
+ * Os últimos treinos dos alunos com conta. Se o banco falhar (ou a função SQL da etapa 3b ainda não existir), a lista
+ * continua útil: ninguém ganha cor, e o registro leva só onde falhou.
+ */
+async function ultimosTreinosOuNada(banco: AlunosBancoLike, coachId: string): Promise<Record<string, string>> {
+  try {
+    return await banco.ultimosTreinos(coachId)
+  } catch (e) {
+    const onde = ondeFalhou(e)
+    console.error(`[cornerman] não foi possível ler os últimos treinos${onde ? `: ${onde}` : ''}`)
+    return {}
+  }
+}
+
+export async function listarAlunos(banco: AlunosBancoLike, coachId: string, agora: Date = new Date()): Promise<{ alunos: AlunoNaLista[]; ativos: number; limite: number }> {
   const fichas = (await banco.listar(coachId)).map(paraFicha)
-  const ativas = fichas.filter(f => f.status !== 'encerrado').sort(porNome)
-  const encerradas = fichas.filter(f => f.status === 'encerrado').sort(porNome)
+  const comStatus = (f: FichaDeAluno) => f.status === 'ativo' && f.comConta
+  const ultimos = fichas.some(comStatus) ? await ultimosTreinosOuNada(banco, coachId) : {}
+  const naLista = (f: FichaDeAluno): AlunoNaLista => ({ ...f, treino: comStatus(f) ? statusDeTreino(ultimos[f.id] ?? null, agora) : SEM_DADOS })
+
+  const ativas = fichas.filter(f => f.status !== 'encerrado').sort(porNome).map(naLista)
+  const encerradas = fichas.filter(f => f.status === 'encerrado').sort(porNome).map(naLista)
   return { alunos: [...ativas, ...encerradas], ativos: contarAtivas(fichas), limite: LIMITE_DE_ALUNOS }
 }
 

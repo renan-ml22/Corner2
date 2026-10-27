@@ -1,5 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { isObj } from '@/lib/dados/contrato'
 import type { DadosDaFicha } from './ficha'
 
 /** Linha da tabela `coach_alunos` (veja supabase/cornerman-etapa-2.sql). Nunca sai do servidor como está. */
@@ -32,6 +33,8 @@ export interface AlunosBancoLike {
   atualizar(coachId: string, id: string, campos: Record<string, unknown>): Promise<LinhaDeAluno | null>
   /** `true` se apagou uma ficha deste treinador. */
   apagar(coachId: string, id: string): Promise<boolean>
+  /** Id da ficha → instante (ISO) do último treino do aluno vinculado. Só fichas ativas com conta; quem nunca treinou fica de fora. */
+  ultimosTreinos(coachId: string): Promise<Record<string, string>>
 }
 
 const COLUNAS = 'id,coach_id,nome,email,telefone,nivel,estilo,notas,foto,aluno_user_id,status,created_at,updated_at'
@@ -80,6 +83,18 @@ export function criarAlunosBancoSupabase(db: SupabaseClient): AlunosBancoLike {
       const { data, error } = await tabela().delete().eq('coach_id', coachId).eq('id', id).select('id')
       conferir(error, 'apagar aluno')
       return (data ?? []).length > 0
+    },
+
+    async ultimosTreinos(coachId) {
+      const { data, error } = await db.rpc('ultimo_treino_por_aluno', { p_coach: coachId })
+      conferir(error, 'ler últimos treinos')
+      const saida: Record<string, string> = {}
+      for (const l of Array.isArray(data) ? data : []) {
+        if (!isObj(l) || typeof l.ficha_id !== 'string' || typeof l.ultimo !== 'string') continue
+        const instante = Date.parse(l.ultimo)
+        if (Number.isFinite(instante)) saida[l.ficha_id] = new Date(instante).toISOString()
+      }
+      return saida
     },
   }
 }

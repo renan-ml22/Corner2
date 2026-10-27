@@ -56,6 +56,15 @@ class BancoDeAlunosFalso implements AlunosBancoLike {
     this.escritas++
     return this.linhas.delete(id)
   }
+  /** Último treino por ficha (programado pelo teste); só devolve fichas deste treinador. */
+  ultimos: Record<string, string> = {}
+  falhaDosUltimos: Error | null = null
+  consultasDeUltimos = 0
+  async ultimosTreinos(coachId: string) {
+    this.consultasDeUltimos++
+    if (this.falhaDosUltimos) throw this.falhaDosUltimos
+    return Object.fromEntries(Object.entries(this.ultimos).filter(([id]) => this.linhas.get(id)?.coach_id === coachId))
+  }
 }
 
 const ANA = 'u_ana'
@@ -149,6 +158,80 @@ describe('listarAlunos', () => {
     Object.assign(banco.linhas.get(f.id)!, { status: 'lixo', nivel: 'campeao' })
     const [a] = (await listarAlunos(banco, ANA)).alunos
     expect(a).toMatchObject({ status: 'ativo', nivel: null })
+  })
+})
+
+describe('listarAlunos: status de treino (decisão 12)', () => {
+  const AGORA = new Date('2026-10-27T15:00:00.000Z')
+  const comConta = (banco: BancoDeAlunosFalso, id: string, extra: Partial<LinhaDeAluno> = {}) => Object.assign(banco.linhas.get(id)!, { aluno_user_id: 'u_aluno_' + id.slice(0, 4), ...extra })
+
+  it('aluno com conta: a cor vem dos dias desde o último treino; os demais são cinza, sem consultar treino de ninguém', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const verde = await criarAluno(banco, ANA, { nome: 'Verde' })
+    const amarelo = await criarAluno(banco, ANA, { nome: 'Amarelo' })
+    const vermelho = await criarAluno(banco, ANA, { nome: 'Vermelho' })
+    const semTreino = await criarAluno(banco, ANA, { nome: 'Sem treino' })
+    const manual = await criarAluno(banco, ANA, { nome: 'Manual' })
+    for (const f of [verde, amarelo, vermelho, semTreino]) comConta(banco, f.id)
+    banco.ultimos = { [verde.id]: '2026-10-26T20:00:00Z', [amarelo.id]: '2026-10-22T20:00:00Z', [vermelho.id]: '2026-10-01T20:00:00Z', [manual.id]: '2026-10-26T20:00:00Z' }
+
+    const r = await listarAlunos(banco, ANA, AGORA)
+    const por = Object.fromEntries(r.alunos.map(a => [a.nome, a.treino]))
+    expect(por).toEqual({
+      Verde: { cor: 'verde', dias: 1 },
+      Amarelo: { cor: 'amarelo', dias: 5 },
+      Vermelho: { cor: 'vermelho', dias: 26 },
+      'Sem treino': { cor: 'cinza', dias: null },
+      Manual: { cor: 'cinza', dias: null }, // ficha manual nunca tem status, mesmo que o banco devolvesse um treino por engano
+    })
+  })
+
+  it('ficha convidada ou encerrada, mesmo com vínculo antigo, é cinza', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const a = await criarAluno(banco, ANA, { nome: 'Convidado' })
+    const b = await criarAluno(banco, ANA, { nome: 'Encerrado' })
+    comConta(banco, a.id, { status: 'convidado' })
+    comConta(banco, b.id, { status: 'encerrado' })
+    banco.ultimos = { [a.id]: '2026-10-26T20:00:00Z', [b.id]: '2026-10-26T20:00:00Z' }
+    const r = await listarAlunos(banco, ANA, AGORA)
+    expect(r.alunos.map(x => x.treino.cor)).toEqual(['cinza', 'cinza'])
+  })
+
+  it('sem nenhum aluno com conta, nem pergunta ao banco pelos treinos', async () => {
+    const banco = new BancoDeAlunosFalso()
+    await criarAluno(banco, ANA, { nome: 'Manual' })
+    await listarAlunos(banco, ANA, AGORA)
+    expect(banco.consultasDeUltimos).toBe(0)
+  })
+
+  it('o banco dos treinos falhar (ex.: SQL da etapa 3b ainda não rodou) não derruba a lista: todos cinza, e o registro não leva dado de ninguém', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await criarAluno(banco, ANA, { nome: 'Beto Identificável' })
+    comConta(banco, f.id)
+    banco.falhaDosUltimos = new Error('Supabase (ler últimos treinos): function public.ultimo_treino_por_aluno does not exist')
+    const registro = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const r = await listarAlunos(banco, ANA, AGORA)
+      expect(r.alunos).toHaveLength(1)
+      expect(r.alunos[0].treino).toEqual({ cor: 'cinza', dias: null })
+      expect(registro).toHaveBeenCalledTimes(1)
+      expect(JSON.stringify(registro.mock.calls)).not.toContain('Identificável')
+      expect(JSON.stringify(registro.mock.calls)).toContain('Supabase (ler últimos treinos)')
+    } finally {
+      registro.mockRestore()
+    }
+  })
+
+  it('o treino de uma ficha de outro treinador nunca aparece', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const da_bia = await criarAluno(banco, BIA, { nome: 'Da Bia' })
+    const da_ana = await criarAluno(banco, ANA, { nome: 'Da Ana' })
+    comConta(banco, da_bia.id)
+    comConta(banco, da_ana.id)
+    banco.ultimos = { [da_bia.id]: '2026-10-26T20:00:00Z' }
+    const r = await listarAlunos(banco, ANA, AGORA)
+    expect(r.alunos.map(a => a.nome)).toEqual(['Da Ana'])
+    expect(r.alunos[0].treino.cor).toBe('cinza')
   })
 })
 
