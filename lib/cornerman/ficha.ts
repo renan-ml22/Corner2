@@ -10,6 +10,8 @@ export const LIMITE_DE_ALUNOS = 20
 
 export const LIMITES_DA_FICHA = { nome: 80, email: 120, telefone: 30, estilo: 40, notas: 2000 } as const
 
+export const NOME_DO_NIVEL_DE_ALUNO: Record<Nivel, string> = { iniciante: 'Iniciante', intermediario: 'Intermediário', avancado: 'Avançado' }
+
 export type StatusDaFicha = 'ativo' | 'convidado' | 'encerrado'
 
 export interface DadosDaFicha {
@@ -40,7 +42,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export const ehIdDeFicha = (v: unknown): v is string => typeof v === 'string' && UUID.test(v)
 
-export const contarAtivas = (fichas: readonly { status: StatusDaFicha }[]): number => fichas.filter(f => f.status !== 'encerrado').length
+/** Link `tel:` do telefone da ficha: só os dígitos (e um + no começo, se houver). `null` quando não há dígito nenhum. */
+export function hrefDeTelefone(telefone: string): string | null {
+  const limpo = telefone.trim()
+  const digitos = limpo.replace(/\D/g, '')
+  return digitos === '' ? null : `tel:${limpo.startsWith('+') ? '+' : ''}${digitos}`
+}
+
+export const contarAtivas =(fichas: readonly { status: StatusDaFicha }[]): number => fichas.filter(f => f.status !== 'encerrado').length
 
 const CAMPOS = ['nome', 'email', 'telefone', 'nivel', 'estilo', 'notas', 'foto'] as const
 type Campo = (typeof CAMPOS)[number]

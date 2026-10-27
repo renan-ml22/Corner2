@@ -18,6 +18,15 @@ describe('abaAtiva', () => {
     expect(abaAtiva(caminho)).toBe('/plano')
   })
 
+  it.each(['/alunos', '/alunos/novo', '/alunos/3f2b8c1e-9a4d-4e7b-8c21-5d6e7f8a9b0c'])('%s (área do treinador) acende a aba Perfil', caminho => {
+    expect(abaAtiva(caminho)).toBe('/perfil')
+  })
+
+  it('/alunos-x e /alunosx não acendem nada', () => {
+    expect(abaAtiva('/alunos-x')).toBeNull()
+    expect(abaAtiva('/alunosx')).toBeNull()
+  })
+
   it('subtelas de uma aba continuam nela', () => {
     expect(abaAtiva('/plano/qualquer-coisa')).toBe('/plano')
     expect(abaAtiva('/perfil/editar')).toBe('/perfil')

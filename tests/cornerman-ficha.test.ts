@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  LIMITES_DA_FICHA, LIMITE_DE_ALUNOS, contarAtivas, ehIdDeFicha, validarAtualizacao, validarNovaFicha,
+  LIMITES_DA_FICHA, LIMITE_DE_ALUNOS, NOME_DO_NIVEL_DE_ALUNO, contarAtivas, hrefDeTelefone, ehIdDeFicha, validarAtualizacao, validarNovaFicha,
 } from '@/lib/cornerman/ficha'
 
 // Ficha de aluno do treinador: o que vale, o que é recusado e o que vira nulo. Tudo puro, sem rede.
@@ -18,6 +18,28 @@ const recusa = (corpo: unknown) => {
   expect(r.ok, JSON.stringify(corpo)?.slice(0, 80)).toBe(false)
   return r.ok ? '' : r.erro
 }
+
+describe('hrefDeTelefone: o link tel: sem enfeites', () => {
+  it.each([
+    ['(11) 91234-5678', 'tel:11912345678'],
+    ['+55 (11) 91234-5678', 'tel:+5511912345678'],
+    ['11.91234.5678', 'tel:11912345678'],
+    ['  11 91234 5678  ', 'tel:11912345678'],
+  ])('%s vira %s', (telefone, href) => {
+    expect(hrefDeTelefone(telefone)).toBe(href)
+  })
+  it('só um + no começo; sem dígitos não há link', () => {
+    expect(hrefDeTelefone('1+1')).toBe('tel:11')
+    expect(hrefDeTelefone('()-')).toBeNull()
+    expect(hrefDeTelefone('')).toBeNull()
+  })
+})
+
+describe('NOME_DO_NIVEL_DE_ALUNO', () => {
+  it('um nome em português para cada nível', () => {
+    expect(NOME_DO_NIVEL_DE_ALUNO).toEqual({ iniciante: 'Iniciante', intermediario: 'Intermediário', avancado: 'Avançado' })
+  })
+})
 
 describe('limites', () => {
   it('20 alunos; nome 80, e-mail 120, telefone 30, estilo 40, notas 2000', () => {

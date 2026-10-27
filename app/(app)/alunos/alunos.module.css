@@ -1,0 +1,129 @@
+.topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.contador {
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* O `.btn-primary` global ocupa a largura toda e tem margem de cima: aqui ele é um botão do cabeçalho. */
+.novo:global(.btn-primary) {
+  flex: none;
+  width: auto;
+  margin-top: 0;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.novo:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.limite {
+  margin-top: 0.7rem;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.82rem;
+}
+
+.lista {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cartao:global(.surface-card) {
+  padding: 0;
+}
+
+.cartaoLink {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cartaoLink:hover {
+  background: var(--surface-raised);
+}
+
+.cartaoLink:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.textos {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.textos strong {
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+}
+
+.textos small {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.selo {
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 8px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.seta {
+  flex: none;
+  color: var(--muted);
+}
+
+.encerrados {
+  margin-top: 1.4rem;
+}
+
+.alternar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-neutral-300);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.alternar:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.encerrada {
+  opacity: 0.75;
+}
+
+.aviso {
+  margin-top: 1rem;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.9rem;
+}
+
+.aviso :global(.btn-ghost) {
+  margin-top: 0.6rem;
+}

@@ -5,6 +5,8 @@ const ABAS = ['/hoje', '/plano', '/timer', '/progresso', '/perfil'] as const
 /** Telas que não são uma aba, mas moram dentro de uma: exercícios, quiz e atletas ficam na aba Plano. */
 const TELAS_DA_ABA: Record<string, readonly string[]> = {
   '/plano': ['/exercicios', '/quiz', '/atletas'],
+  // A área do treinador (plano Cornerman) é aberta pelo Perfil. A aba "Alunos" própria vem numa etapa seguinte.
+  '/perfil': ['/alunos'],
 }
 
 /** `/atletas/ali` pertence a `/atletas`; `/atletas-x` não. */

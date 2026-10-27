@@ -125,6 +125,13 @@ export default function PreferenciasCard() {
           <span><strong>Assinatura</strong><small>{assinatura.fase === "indisponivel" || !assinatura.pronto ? "Planos e pagamento" : resumoDoEstado(assinatura.estado).titulo}</small></span>
           <i className="ph-bold ph-caret-right" aria-hidden="true" />
         </Link>
+        {assinatura.pronto && assinatura.podeUsar("gestaoDeAlunos") && (
+          <Link href="/alunos" className="surface-card cta-card">
+            <i className="ph-fill ph-users-three" aria-hidden="true" />
+            <span><strong>Meus alunos</strong><small>Fichas, notas e acompanhamento de quem você treina</small></span>
+            <i className="ph-bold ph-caret-right" aria-hidden="true" />
+          </Link>
+        )}
         <Link href="/saude" className="surface-card cta-card">
           <i className="ph-fill ph-heartbeat" aria-hidden="true" />
           <span><strong>Saúde e corpo</strong><small>Peso, lesões e pancadas na cabeça</small></span>

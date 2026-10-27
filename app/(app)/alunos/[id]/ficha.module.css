@@ -1,0 +1,137 @@
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cabecalho h1 {
+  overflow-wrap: anywhere;
+}
+
+.selo {
+  display: inline-block;
+  margin-top: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 10px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.abas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  margin-top: 1.5rem;
+  padding: 4px;
+  border-radius: 0.95rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.abas button {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.abas button:global(.ativa) { background: var(--surface-raised); color: var(--foreground); }
+
+.abas button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.painel {
+  margin-top: 1rem;
+}
+
+.dados {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 1.1rem;
+}
+
+.dados div {
+  display: grid;
+  gap: 2px;
+}
+
+.dados dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.dados dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+}
+
+.dados a {
+  color: var(--blue);
+}
+
+.notasTexto {
+  margin: 0;
+  padding: 1.1rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.vazio {
+  color: var(--muted);
+}
+
+.acoes {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.acoes :global(.btn-ghost),
+.acoes :global(.btn-primary) {
+  width: 100%;
+  margin-top: 0;
+}
+
+.perigo:global(.btn-ghost) {
+  border-color: oklch(0.55 0.15 25);
+  color: oklch(0.82 0.1 25);
+}
+
+.erro {
+  margin-top: 0.8rem;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.rotulo {
+  display: block;
+  margin: 0 0 0.4rem;
+  color: var(--color-neutral-300);
+  font-size: 0.82rem;
+}
+
+.contador {
+  display: block;
+  margin-top: 0.3rem;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.naoEncontrada {
+  margin-top: 1.5rem;
+}
+
+.naoEncontrada p {
+  margin-bottom: 0.8rem;
+}

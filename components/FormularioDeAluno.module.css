@@ -1,0 +1,60 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+}
+
+.fotoLinha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.fotoAcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* O campo de arquivo fica escondido dentro do rótulo: o anel de foco aparece no rótulo inteiro. */
+.escolher:has(input:focus-visible) {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Quatro opções de nível não cabem lado a lado em 360 px: duas por linha. */
+.formulario :global(.seg) {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.rotulo {
+  display: block;
+  margin: 0.9rem 0 0.4rem;
+  color: var(--color-neutral-300);
+  font-size: 0.82rem;
+}
+
+.contador {
+  align-self: flex-end;
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.erro {
+  margin-top: 0.8rem;
+  color: oklch(0.82 0.1 25);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.botoes {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.botoes :global(.btn-primary) {
+  width: 100%;
+}
