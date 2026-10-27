@@ -86,11 +86,32 @@ Colar `supabase/cornerman-etapa-2.sql` no **SQL Editor do Supabase** e rodar (é
 
 Colar `supabase/cornerman-etapa-3a.sql` no SQL Editor do Supabase, **depois** do `cornerman-etapa-2.sql` (é idempotente). Depois, `npm run supabase:fumaca` confere de verdade o aceite simultâneo, o índice de um treinador por aluno, o desvínculo e que o token nunca está no banco (hoje esses blocos imprimem "PULOU").
 
-### O que fica para a 3b
+## Etapa 3b: dados do aluno no painel (código pronto; falta rodar o SQL no Supabase)
 
-Guarda do quiz, status verde/amarelo/vermelho (dias desde o último treino), a aba "Treinos" na ficha do aluno com conta (gráfico semanal e filtro por tipo), o atleta compatível e os dados do aluno no painel, sempre campo a campo (nunca lesões, peso, check-ins nem pancadas na cabeça).
+### O que o treinador vê
+
+- **Na lista "Meus Alunos":** cada aluno com conta ganha um status, sempre com **cor e texto** (a cor sozinha nunca diz o estado): verde "Treinou hoje/ontem/há 2 dias", amarelo "Treinou há 3 a 6 dias", vermelho "Treinou há 7 dias ou mais", cinza "Sem treinos registrados". Conta dias de calendário no fuso de São Paulo. Ficha manual, convidada ou encerrada não tem status.
+- **Na ficha, aba "Treinos"** (só para ficha ativa com conta): nível, foto da conta, **atleta compatível** (o primeiro do quiz do aluno, com a porcentagem), plano ativo e semana, depois os **últimos 30 dias**: treinos, minutos (rounds × minutos por round) e esforço médio, **gráfico de treinos por semana** (5 semanas, segunda a domingo, feito em CSS) e a lista dos treinos. Um filtro por tipo (Todos, Técnica, Condicionamento, Sparring) vale para o resumo, o gráfico e a lista.
+- **Nunca**: lesões, peso, check-ins, pancadas na cabeça do sparring, parceiro de sparring, anotações do aluno, respostas cruas do quiz.
+
+### Como funciona por baixo
+
+- **Quiz guardado:** nova entidade `quiz` (texto `00020`, um dígito por pergunta, ou vazio), local primeiro e sincronizada com a conta em `user_data`, fora do backup. Só grava quem **termina** o quiz; abrir o resultado de outra pessoa pelo endereço não troca as suas respostas. Quem já tinha feito o quiz aparece como "ainda não fez" até refazer (o quiz antigo não guardava nada no aparelho).
+- **Rota** `GET /api/cornerman/alunos/[id]/dados`: confere origem, sessão, plano (Cornerman ou Profissional) e vínculo **no servidor**. O id da conta do aluno sai da ficha do treinador, nunca do pedido. Ficha de outro treinador, inexistente ou malformada: 404 igual às demais; ficha sem conta ativa: 409 `sem_vinculo`, mesmo que guarde um vínculo antigo.
+- **Banco estreito** (`lib/cornerman/aluno-dados-banco.ts`): só seleciona `date,type,rounds,round_min,rpe,duration_seconds` dos treinos (a partir de 30 dias atrás), `plan_id,started_at`, `level` e as entidades `quiz` e `foto`. O serviço valida tudo e monta a resposta campo a campo.
+- **Status:** função SQL `ultimo_treino_por_aluno(p_coach)` (só para a chave de serviço) devolve a data do último treino de cada aluno ativo com conta. Se ela ainda não existir no banco, a lista continua funcionando (todos cinza) e o servidor registra só "Supabase (ler últimos treinos)".
+
+### Rulings (o desenho não dizia)
+
+- Minutos de treino = rounds × minutos por round (a duração real depende de ter usado o cronômetro).
+- Treino com data no futuro (relógio errado) conta como "hoje" no status.
+- O "cache de plano de 5 minutos" já existe desde a etapa 2 (cookie assinado); as rotas novas só o reutilizam.
+- Decisão 19 (subir o quiz que já está no aparelho) não se aplica: o quiz antigo não guardava nada.
+
+### Passo do Renan
+
+Colar `supabase/cornerman-etapa-3b.sql` no SQL Editor do Supabase (depois dos arquivos das etapas 2 e 3a; é idempotente). Depois, `npm run supabase:fumaca` confere no banco real o último treino, o isolamento entre treinadores, os 30 dias, que nada de saúde sai e que a chave pública não executa a função (hoje o bloco imprime "PULOU").
 
 ## Etapas seguintes
 
-3b. Dados do aluno no painel: quiz guardado, status por cor, aba Treinos, atleta compatível.
 4. Sugestões de plano e a aba "Alunos" na barra.
