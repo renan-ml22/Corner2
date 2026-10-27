@@ -10,7 +10,7 @@ Estado: **código pronto e testado** (testes de unidade, de navegador e de acess
 | Quiz de estilo (5 perguntas e resultado) | `/quiz` e `/quiz?r=01203` | **Gratuito** |
 | Estilo e plano de um atleta | `/atletas/[id]` | Ver: gratuito. **Treinar como: plano Profissional** |
 
-Entrada: dois atalhos ("Exercícios" e "Quiz de estilo") na tela **Plano** (nas três versões dela: sem plano, com plano e com plano bloqueado) e em **Para evoluir**, na tela **Hoje**. As três telas novas ficam na aba **Plano** da barra de baixo (`lib/navegacao.ts`).
+Entrada: dois atalhos ("Exercícios" e "Quiz de estilo") na tela **Plano** (nas três versões dela: sem plano, com plano e com plano bloqueado) e em **Para evoluir**, na tela **Hoje**. Na **Hoje**, o quiz tem ainda um convite em destaque no topo, logo abaixo do título ("Qual é o seu estilo de lutador? … Clique aqui"), porque lá embaixo passava despercebido; por isso o atalho de baixo da Hoje mostra só os Exercícios. As três telas novas ficam na aba **Plano** da barra de baixo (`lib/navegacao.ts`).
 
 ### Exercícios
 

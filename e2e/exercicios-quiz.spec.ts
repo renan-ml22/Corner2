@@ -117,6 +117,22 @@ test.describe('quiz de estilo', () => {
     for (const o of PERGUNTAS[0].opcoes) await expect(pagina.getByRole('button', { name: o.texto })).toBeVisible()
   })
 
+  test('a tela Hoje convida para o quiz logo no começo, sem precisar rolar, e o convite leva ao quiz', async ({ pagina }) => {
+    await simularEstado(pagina, SEM_ASSINATURA_TESTE)
+    await pagina.goto('/hoje')
+    const convite = pagina.getByRole('link', { name: /^Qual é o seu estilo de lutador\?/ })
+    await expect(convite).toBeVisible()
+    await expect(convite).toContainText('Clique aqui')
+    await expect(convite).toBeInViewport()
+    // Vem antes de tudo o que é da rotina (check-in, semana, treino de hoje).
+    const aAltura = async (alvo: ReturnType<typeof pagina.locator>) => (await alvo.boundingBox())!.y
+    expect(await aAltura(convite)).toBeLessThan(await aAltura(pagina.getByRole('heading', { name: 'Como você está' })))
+    // Aparece uma vez só: o atalho de baixo ("Para evoluir") não repete o quiz.
+    await expect(pagina.getByRole('link', { name: /Quiz de estilo/ })).toHaveCount(0)
+    await convite.click()
+    await expect(pagina.getByText('Pergunta 1 de 5')).toBeVisible()
+  })
+
   test('uma pergunta por tela: cada resposta leva à seguinte, com o foco no título e o progresso andando', async ({ pagina }) => {
     await pagina.goto('/quiz')
     await pagina.getByRole('button', { name: PERGUNTAS[0].opcoes[0].texto }).click()

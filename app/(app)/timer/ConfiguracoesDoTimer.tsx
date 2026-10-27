@@ -1,11 +1,11 @@
 'use client'
 
 import { useId } from 'react'
-import Segmentos from '@/components/sheets/Segmentos'
 import SheetFrame from '@/components/sheets/SheetFrame'
 import Stepper from '@/components/sheets/Stepper'
-import { DESCANSOS_SEG, LIMITES, formatarTempo, rotuloDoDescanso, type ConfigTimer } from '@/lib/timer'
+import { LIMITES, type ConfigTimer } from '@/lib/timer'
 import estilos from './configuracoes.module.css'
+import TempoEmMinutosESegundos from './TempoEmMinutosESegundos'
 
 interface Linha {
   id: 'preparo' | 'vibracao'
@@ -25,26 +25,8 @@ export default function ConfiguracoesDoTimer({ config, alterar, aoFechar }: { co
     <SheetFrame title="Configurações do timer" onClose={aoFechar}>
       <div className={estilos.grade}>
         <Stepper label="Rounds" value={config.rounds} unit="" min={LIMITES.rounds.min} max={LIMITES.rounds.max} onChange={rounds => alterar({ rounds })} />
-        <Stepper
-          label="Tempo do round"
-          value={config.roundSeg}
-          unit=""
-          min={LIMITES.roundSeg.min}
-          max={LIMITES.roundSeg.max}
-          passo={LIMITES.roundSeg.passo}
-          formatar={formatarTempo}
-          onChange={roundSeg => alterar({ roundSeg })}
-        />
-
-        <div className={estilos.bloco}>
-          <p className={estilos.titulo}>Descanso entre rounds</p>
-          <Segmentos
-            rotulo="Descanso entre rounds"
-            valor={String(config.descansoSeg)}
-            opcoes={DESCANSOS_SEG.map(s => ({ id: String(s), label: rotuloDoDescanso(s) }))}
-            onChange={v => alterar({ descansoSeg: Number(v) })}
-          />
-        </div>
+        <TempoEmMinutosESegundos titulo="round" valor={config.roundSeg} limites={LIMITES.roundSeg} onChange={roundSeg => alterar({ roundSeg })} />
+        <TempoEmMinutosESegundos titulo="descanso" valor={config.descansoSeg} limites={LIMITES.descansoSeg} onChange={descansoSeg => alterar({ descansoSeg })} />
 
         <ul className={estilos.linhas}>
           {LINHAS.map(l => (
