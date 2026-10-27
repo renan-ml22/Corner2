@@ -84,18 +84,19 @@ export async function atualizarAluno(banco: AlunosBancoLike, coachId: string, id
   const v = validarAtualizacao(corpo)
   if (!v.ok) throw new ErroCornerman('dado_invalido', v.erro, 400)
   const campos: Record<string, unknown> = { ...v.valor }
-
-  if (v.valor.status !== undefined) {
-    const atual = await banco.obter(coachId, id)
-    if (!atual) throw naoEncontrado()
-    // Ficha com convite pendente: o convite se cancela pela rota própria, e só então o status pode mudar.
-    if (atual.status === 'convidado') throw new ErroCornerman('convite_pendente', 'Cancele o convite antes de mudar o status da ficha.', 409)
-    // Encerrar uma ficha com conta desfaz o vínculo; reabrir depois não o restaura (decisão 17).
-    if (v.valor.status === 'encerrado' && atual.aluno_user_id !== null) campos.aluno_user_id = null
-  }
+  // Encerrar uma ficha desfaz o vínculo com a conta, SEMPRE e na própria gravação (nunca depende de uma leitura anterior,
+  // que outra aba poderia deixar velha): reabrir depois não restaura nada (decisão 17).
+  if (v.valor.status === 'encerrado') campos.aluno_user_id = null
 
   const linha = await comLimite(banco.atualizar(coachId, id, campos))
-  if (!linha) throw naoEncontrado()
+  if (!linha) {
+    // Sem linha: ou a ficha não é deste treinador, ou o status não pôde mudar porque a ficha está com convite pendente
+    // (o próprio banco recusa). O convite se cancela pela rota própria, e só então o status pode mudar.
+    if (v.valor.status !== undefined && (await banco.obter(coachId, id))?.status === 'convidado') {
+      throw new ErroCornerman('convite_pendente', 'Cancele o convite antes de mudar o status da ficha.', 409)
+    }
+    throw naoEncontrado()
+  }
   return paraFicha(linha)
 }
 

@@ -25,7 +25,10 @@ export interface AlunosBancoLike {
   obter(coachId: string, id: string): Promise<LinhaDeAluno | null>
   /** Lança `Error('limite_de_alunos')` quando o gatilho do banco recusa a 21ª ficha. */
   inserir(coachId: string, dados: DadosDaFicha): Promise<LinhaDeAluno>
-  /** `null` quando não há ficha com esse id deste treinador. Lança `Error('limite_de_alunos')` ao reabrir com 20 ativas. */
+  /**
+   * `null` quando não há ficha com esse id deste treinador, ou quando se tenta mudar o `status` de uma ficha "convidado".
+   * Lança `Error('limite_de_alunos')` ao reabrir com 20 ativas.
+   */
   atualizar(coachId: string, id: string, campos: Record<string, unknown>): Promise<LinhaDeAluno | null>
   /** `true` se apagou uma ficha deste treinador. */
   apagar(coachId: string, id: string): Promise<boolean>
@@ -64,10 +67,11 @@ export function criarAlunosBancoSupabase(db: SupabaseClient): AlunosBancoLike {
     },
 
     async atualizar(coachId, id, campos) {
-      const { data, error } = await tabela()
-        .update({ ...campos, updated_at: new Date().toISOString() })
-        .eq('coach_id', coachId).eq('id', id)
-        .select(COLUNAS).maybeSingle()
+      let consulta = tabela().update({ ...campos, updated_at: new Date().toISOString() }).eq('coach_id', coachId).eq('id', id)
+      // Mudar o status de uma ficha com convite pendente não casa com nenhuma linha: o convite se cancela pela rota própria.
+      // A condição vai no próprio UPDATE (e não numa leitura anterior), então vale mesmo se outra aba gerar o convite no meio.
+      if (campos.status !== undefined) consulta = consulta.neq('status', 'convidado')
+      const { data, error } = await consulta.select(COLUNAS).maybeSingle()
       conferir(error, 'atualizar aluno')
       return (data ?? null) as unknown as LinhaDeAluno | null
     },

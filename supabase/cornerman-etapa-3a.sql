@@ -85,7 +85,15 @@ set search_path = public
 as $$
 declare
   v_convite public.coach_invites%rowtype;
+  v_aluno uuid;
 begin
+  -- Ordem dos bloqueios: primeiro a ficha, depois o convite (a mesma de criar_convite e cancelar_convite). Sem isso, um
+  -- aceite ao mesmo tempo de "gerar novo link" ou "cancelar" poderia travar um no outro (deadlock).
+  select aluno_id into v_aluno from public.coach_invites where token_hash = p_hash;
+  if not found then
+    raise exception 'convite_invalido';
+  end if;
+  perform 1 from public.coach_alunos where id = v_aluno for update;
   select * into v_convite from public.coach_invites where token_hash = p_hash for update;
   if not found or v_convite.used_at is not null or v_convite.expires_at <= now() then
     raise exception 'convite_invalido';
@@ -96,7 +104,7 @@ begin
 
   begin
     update public.coach_alunos set aluno_user_id = p_user, status = 'ativo', updated_at = now()
-      where id = v_convite.aluno_id and coach_id = v_convite.coach_id and aluno_user_id is null;
+      where id = v_convite.aluno_id and coach_id = v_convite.coach_id and aluno_user_id is null and status = 'convidado';
     if not found then
       raise exception 'convite_invalido';
     end if;

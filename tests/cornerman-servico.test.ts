@@ -42,6 +42,7 @@ class BancoDeAlunosFalso implements AlunosBancoLike {
     this.checar()
     const atual = this.linhas.get(id)
     if (!atual || atual.coach_id !== coachId) return null
+    if (campos.status !== undefined && atual.status === 'convidado') return null // como o banco real: mudar o status de uma ficha convidada não casa com nenhuma linha
     if (campos.status && campos.status !== 'encerrado' && this.ativas(coachId, id) >= LIMITE_DE_ALUNOS) throw new Error('limite_de_alunos')
     const nova = { ...atual, ...campos, updated_at: this.tick() } as LinhaDeAluno
     this.escritas++
@@ -285,14 +286,34 @@ describe('status com convite e vínculo (etapa 3a)', () => {
     expect(banco.linhas.get(f.id)!.aluno_user_id).toBeNull()
   })
 
-  it('encerrar uma ficha sem conta continua como antes (não manda aluno_user_id)', async () => {
+  it('encerrar SEMPRE manda aluno_user_id nulo junto (sem depender de uma leitura anterior); outros campos não o mandam', async () => {
     const banco = new BancoDeAlunosFalso()
     const f = await criarAluno(banco, ANA, { nome: 'Beto' })
     const camposEnviados: Record<string, unknown>[] = []
     const original = banco.atualizar.bind(banco)
     banco.atualizar = async (c, id, campos) => { camposEnviados.push(campos); return original(c, id, campos) }
     await atualizarAluno(banco, ANA, f.id, { status: 'encerrado' })
-    expect(camposEnviados).toEqual([{ status: 'encerrado' }])
+    await atualizarAluno(banco, ANA, f.id, { notas: 'x' })
+    expect(camposEnviados).toEqual([{ status: 'encerrado', aluno_user_id: null }, { notas: 'x' }])
+  })
+
+  it('corrida: a ficha virou "convidado" DEPOIS de o serviço olhar — o banco recusa a troca de status e o serviço responde "convite_pendente"', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await criarAluno(banco, ANA, { nome: 'Beto' })
+    // O estado real muda entre o pedido do treinador e a gravação (outra aba gerou o convite): nenhuma leitura prévia pode proteger isso.
+    Object.assign(banco.linhas.get(f.id)!, { status: 'convidado' })
+    const e = await erroDe(atualizarAluno(banco, ANA, f.id, { status: 'encerrado' }))
+    expect(e).toMatchObject({ codigo: 'convite_pendente', status: 409 })
+    expect(banco.linhas.get(f.id)!.status).toBe('convidado')
+  })
+
+  it('corrida: a ficha foi vinculada DEPOIS da leitura — encerrar ainda limpa o vínculo (nunca fica encerrada com conta)', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await criarAluno(banco, ANA, { nome: 'Beto' })
+    const original = banco.obter.bind(banco)
+    banco.obter = async (c, id) => { const l = await original(c, id); Object.assign(banco.linhas.get(f.id)!, { aluno_user_id: 'u_aluno' }); return l } // vincula logo depois de qualquer leitura
+    await atualizarAluno(banco, ANA, f.id, { status: 'encerrado' })
+    expect(banco.linhas.get(f.id)).toMatchObject({ status: 'encerrado', aluno_user_id: null })
   })
 
   it('o bloqueio vale só para quem é dono: ficha de outro treinador continua dando "não encontrado"', async () => {

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
-import { E2E_PORTA } from './constantes'
+import { E2E_EMAIL, E2E_PORTA, E2E_SENHA } from './constantes'
 import { TOKEN_DO_CONVITE as TOKEN, simularConvite } from './convite-simulado'
 import { expect, test } from './fixtures'
 
@@ -237,5 +237,40 @@ test.describe('Meu treinador: erros de propósito', () => {
     await pagina.getByRole('button', { name: 'Desvincular' }).click()
     await expect(alerta(pagina)).toHaveText('Sem conexão. Verifique a internet e tente de novo.')
     await expect(pagina.getByRole('region', { name: 'Meu treinador' })).toBeVisible()
+  })
+})
+
+test.describe('convite: o login de verdade leva de volta ao convite', () => {
+  // A Server Action do login redireciona direto para /convite/<token> quando há o cookie do convite. Redirecionar para /hoje e
+  // deixar o proxy desviar faria a tela do convite aparecer sob o endereço /hoje (a Server Action busca o destino por dentro).
+  test('com o cookie do convite, entrar pelo formulário termina em /convite/<token> e fica lá', async ({ browser }) => {
+    const contexto = await browser.newContext({ baseURL: SITE, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo', serviceWorkers: 'block' })
+    await contexto.route(url => url.hostname !== 'localhost', rota => rota.fulfill({ status: 200, body: '', contentType: 'text/css', headers: { 'access-control-allow-origin': '*' } }))
+    await contexto.addCookies([{ name: 'corner_convite', value: TOKEN, url: SITE }])
+    const pagina = await contexto.newPage()
+    await pagina.goto('/login')
+    await pagina.fill('input[name=email]', E2E_EMAIL)
+    await pagina.fill('input[name=password]', E2E_SENHA)
+    await pagina.click('button[type=submit]')
+    await expect(pagina).toHaveURL(`/convite/${TOKEN}`)
+    await expect(pagina.getByRole('heading', { name: 'Convite inválido ou expirado.', level: 1 })).toBeVisible() // a página do convite (a API real, sem banco, diz que não vale)
+    await pagina.waitForTimeout(1200)
+    expect(new URL(pagina.url()).pathname).toBe(`/convite/${TOKEN}`) // o endereço não "volta" para /hoje
+    await contexto.close()
+  })
+
+  test('sem o cookie, ou com cookie malformado, entrar leva a /hoje como sempre', async ({ browser }) => {
+    for (const cookie of [null, 'https://mau.com', '../x']) {
+      const contexto = await browser.newContext({ baseURL: SITE, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo', serviceWorkers: 'block' })
+      await contexto.route(url => url.hostname !== 'localhost', rota => rota.fulfill({ status: 200, body: '', contentType: 'text/css', headers: { 'access-control-allow-origin': '*' } }))
+      if (cookie) await contexto.addCookies([{ name: 'corner_convite', value: cookie, url: SITE }])
+      const pagina = await contexto.newPage()
+      await pagina.goto('/login')
+      await pagina.fill('input[name=email]', E2E_EMAIL)
+      await pagina.fill('input[name=password]', E2E_SENHA)
+      await pagina.click('button[type=submit]')
+      await expect(pagina, String(cookie)).toHaveURL('/hoje')
+      await contexto.close()
+    }
   })
 })

@@ -21,6 +21,7 @@ class ClienteFalso {
       update: (dados: Record<string, unknown>) => { chamada.operacao = 'update'; chamada.dados = dados; return c },
       delete: () => { chamada.operacao = 'delete'; return c },
       eq: (coluna: string, valor: unknown) => { chamada.filtros.push([coluna, valor]); return c },
+      neq: (coluna: string, valor: unknown) => { chamada.filtros.push([`${coluna}!=`, valor]); return c },
       single: () => resultado(),
       maybeSingle: () => resultado(),
       then: (ok: (v: unknown) => unknown, falha: (e: unknown) => unknown) => resultado().then(ok, falha),
@@ -71,6 +72,15 @@ describe('toda operação filtra pelo treinador', () => {
     expect(typeof falso.chamadas[0].dados!.updated_at).toBe('string')
     falso.resultado = { data: null }
     expect(await banco.atualizar(COACH, ID, { notas: 'x' })).toBeNull()
+  })
+
+  it('atualizar o STATUS não casa com ficha "convidada" (a troca é recusada pelo próprio banco, sem leitura prévia); outros campos casam', async () => {
+    const { falso, banco } = montar()
+    falso.resultado = { data: { ...linha, status: 'encerrado' } }
+    await banco.atualizar(COACH, ID, { status: 'encerrado', aluno_user_id: null })
+    expect(falso.chamadas[0].filtros).toEqual([['coach_id', COACH], ['id', ID], ['status!=', 'convidado']])
+    await banco.atualizar(COACH, ID, { notas: 'x' })
+    expect(falso.chamadas[1].filtros).toEqual([['coach_id', COACH], ['id', ID]])
   })
 
   it('apagar: pelo treinador E pelo id; true só se uma linha foi apagada', async () => {

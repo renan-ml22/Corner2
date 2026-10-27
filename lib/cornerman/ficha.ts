@@ -68,8 +68,20 @@ const ERRO = {
 // com a quebra de linha e a tabulação permitidas só nas notas.
 const CONTROLE_EM_LINHA = /[\u0000-\u001f\u007f]/
 const CONTROLE_EM_NOTAS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/
-const SUBSTITUTO_SOLTO = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/
-const textoSujo = (s: string, multilinha: boolean) => (multilinha ? CONTROLE_EM_NOTAS : CONTROLE_EM_LINHA).test(s) || SUBSTITUTO_SOLTO.test(s)
+/** Substituto UTF-16 sem o par (alto sem baixo, ou baixo sem alto). Um laço, e não regex com lookbehind: o Safari antes do 16.4 não lê lookbehind e quebraria a página inteira. */
+function temSubstitutoSolto(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c >= 0xd800 && c <= 0xdbff) {
+      const proximo = s.charCodeAt(i + 1)
+      if (proximo >= 0xdc00 && proximo <= 0xdfff) { i++; continue }
+      return true
+    }
+    if (c >= 0xdc00 && c <= 0xdfff) return true
+  }
+  return false
+}
+const textoSujo = (s: string, multilinha: boolean) => (multilinha ? CONTROLE_EM_NOTAS : CONTROLE_EM_LINHA).test(s) || temSubstitutoSolto(s)
 /** Sobra algo que se enxerga? Espaços (inclusive o inseparável e o ideográfico) e caracteres de formatação (largura zero, joiner) não contam. */
 const temCaractereVisivel = (s: string) => s.replace(/[\s\p{Z}\p{Cf}]/gu, '') !== ''
 

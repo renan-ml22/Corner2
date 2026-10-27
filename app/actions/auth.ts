@@ -1,6 +1,8 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { COOKIE_DO_CONVITE, ehTokenDeConvite } from '@/lib/cornerman/convite'
 import { ErroConta } from '@/lib/contas'
 import { emailValido } from '@/lib/onboarding'
 import { createSession, deleteSession } from '@/lib/session'
@@ -27,7 +29,10 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   if (!user) return fail('E-mail ou senha incorretos.')
 
   await createSession(user.id, { email: user.email, name: user.name })
-  redirect('/hoje')
+  // Quem chegou por um convite do treinador volta direto para ele. (Redirecionar para /hoje e deixar o proxy desviar não
+  // serve aqui: numa Server Action o Next busca o destino por dentro, e a tela do convite apareceria sob o endereço /hoje.)
+  const convite = (await cookies()).get(COOKIE_DO_CONVITE)?.value
+  redirect(ehTokenDeConvite(convite) ? `/convite/${convite}` : '/hoje')
 }
 
 export async function logout() {
