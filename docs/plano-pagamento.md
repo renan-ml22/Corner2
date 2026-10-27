@@ -19,7 +19,10 @@ Estado: **versão de teste concluída.** P0 a P4 prontas e verificadas contra o 
 |---|---|---|
 | Iniciante | R$ 39,90 | R$ 399,00 |
 | Amador | R$ 52,90 | R$ 529,00 |
+| Cornerman | R$ 63,90 | R$ 639,00 |
 | Profissional | R$ 69,90 | R$ 699,00 |
+
+**Cornerman (para quem treina outros boxeadores):** fica entre o Amador e o Profissional e inclui tudo do Iniciante e do Amador. O Profissional inclui o Cornerman. A gestão de alunos em si chega nas etapas seguintes (veja `docs/plano-cornerman.md`).
 
 **Anual decidido:** 10× o mensal (2 meses grátis). No código é um número só (`ANUAL_EM_MESES`). Atenção: no Stripe o valor de um preço não se edita; mudar o anual depois cria um preço novo e arquiva o antigo (o script faz isso sozinho).
 
@@ -48,27 +51,28 @@ O estado da assinatura fica num cookie assinado de curta duração (5 min), para
 
 Fica toda em **uma tabela** (`lib/assinatura/catalogo.ts`): mudar um recurso de plano é mudar uma linha (e rodar `npm run stripe:sincronizar` para atualizar a descrição dos produtos no Stripe). O **plano gratuito** foi decisão sua; o que ele inclui foi definido assim:
 
-| Recurso | Gratuito | Iniciante | Amador | Profissional |
-|---|:-:|:-:|:-:|:-:|
-| Registrar treino, histórico e progresso | ✓ | ✓ | ✓ | ✓ |
-| Cronômetro de rounds e Timer livre (rounds, tempos e sons configuráveis) | ✓ | ✓ | ✓ | ✓ |
-| **Registrar pancadas na cabeça e lesões, com os alertas de segurança** | ✓ | ✓ | ✓ | ✓ |
-| Exportar os próprios dados | ✓ | ✓ | ✓ | ✓ |
-| Biblioteca de exercícios: 20 exercícios com dicas e erros comuns | ✓ | ✓ | ✓ | ✓ |
-| Quiz de estilo: descubra com qual atleta você mais se parece | ✓ | ✓ | ✓ | ✓ |
-| Biblioteca técnica | | ✓ | ✓ | ✓ |
-| Plano de treino Fundamentos | | ✓ | ✓ | ✓ |
-| Planos Base Aeróbica e Técnica Avançada | | | ✓ | ✓ |
-| Check-in diário e ajuste do treino do dia | | | ✓ | ✓ |
-| Carga de treino e alerta de sobrecarga | | | ✓ | ✓ |
-| Peso, categoria e gráfico de peso | | | ✓ | ✓ |
-| Reagendar sessões | | | ✓ | ✓ |
-| Plano Pré-competição | | | | ✓ |
-| Intensidade e parceiro no sparring, e resumo de pancadas dos últimos 30 dias | | | | ✓ |
-| Alerta de perda rápida de peso | | | | ✓ |
-| Importar backup | | | | ✓ |
-| Lembrete diário | | | | ✓ |
-| Treinos no estilo de 10 atletas (Muhammad Ali, Mike Tyson e outros) | | | | ✓ |
+| Recurso | Gratuito | Iniciante | Amador | Cornerman | Profissional |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Registrar treino, histórico e progresso | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Cronômetro de rounds e Timer livre (rounds, tempos e sons configuráveis) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Registrar pancadas na cabeça e lesões, com os alertas de segurança** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Exportar os próprios dados | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Biblioteca de exercícios: 20 exercícios com dicas e erros comuns | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Quiz de estilo: descubra com qual atleta você mais se parece | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Biblioteca técnica | | ✓ | ✓ | ✓ | ✓ |
+| Plano de treino Fundamentos | | ✓ | ✓ | ✓ | ✓ |
+| Planos Base Aeróbica e Técnica Avançada | | | ✓ | ✓ | ✓ |
+| Check-in diário e ajuste do treino do dia | | | ✓ | ✓ | ✓ |
+| Carga de treino e alerta de sobrecarga | | | ✓ | ✓ | ✓ |
+| Peso, categoria e gráfico de peso | | | ✓ | ✓ | ✓ |
+| Reagendar sessões | | | ✓ | ✓ | ✓ |
+| Gestão de alunos: painel com até 20 alunos, fichas, notas e plano sugerido | | | | ✓ | ✓ |
+| Plano Pré-competição | | | | | ✓ |
+| Intensidade e parceiro no sparring, e resumo de pancadas dos últimos 30 dias | | | | | ✓ |
+| Alerta de perda rápida de peso | | | | | ✓ |
+| Importar backup | | | | | ✓ |
+| Lembrete diário | | | | | ✓ |
+| Treinos no estilo de 10 atletas (Muhammad Ali, Mike Tyson e outros) | | | | | ✓ |
 
 **Os alertas de segurança ficam em todos os planos, inclusive no gratuito, e o registro que os alimenta também.** Aviso de pancada forte na cabeça e de lesão ativa protege a saúde de quem treina, e esconder isso atrás de pagamento é arriscado para as pessoas e para a marca. Um teste de navegador garante isso para o gratuito, o Iniciante e a assinatura cancelada. Os alertas de **carga** são do plano Amador.
 

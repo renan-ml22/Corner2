@@ -9,7 +9,7 @@ test.describe('tela de assinatura: sem o pagamento ligado (sem chave do Stripe)'
     await pagina.goto('/assinatura')
     await expect(pagina.getByText('Pagamento ainda não disponível')).toBeVisible()
     await expect(pagina.getByText(/todos os recursos do Corner estão liberados/)).toBeVisible()
-    for (const nome of ['Iniciante', 'Amador', 'Profissional']) {
+    for (const nome of ['Iniciante', 'Amador', 'Cornerman', 'Profissional']) {
       await expect(plano(pagina, nome).getByRole('button')).toBeDisabled()
     }
   })
@@ -26,12 +26,13 @@ test.describe('tela de assinatura: quem não assina (plano gratuito)', () => {
     await simularEstado(pagina, SEM_ASSINATURA_TESTE)
   })
 
-  test('mostra o plano gratuito, os 3 planos e os preços mensais corretos', async ({ pagina }) => {
+  test('mostra o plano gratuito, os 4 planos e os preços mensais corretos', async ({ pagina }) => {
     await pagina.goto('/assinatura')
     await expect(pagina.getByRole('heading', { name: 'Assinatura', level: 1 })).toBeVisible()
     await expect(pagina.getByRole('region', { name: 'Sua assinatura' })).toContainText('Plano gratuito')
     await expect(plano(pagina, 'Iniciante')).toContainText('R$ 39,90')
     await expect(plano(pagina, 'Amador')).toContainText('R$ 52,90')
+    await expect(plano(pagina, 'Cornerman')).toContainText('R$ 63,90')
     await expect(plano(pagina, 'Profissional')).toContainText('R$ 69,90')
     await expect(pagina.getByRole('region', { name: 'Plano gratuito' })).toContainText('Cronômetro de rounds')
     await expect(plano(pagina, 'Iniciante').getByRole('button')).toHaveText('Começar 7 dias grátis')
@@ -42,6 +43,8 @@ test.describe('tela de assinatura: quem não assina (plano gratuito)', () => {
     await pagina.getByRole('radio', { name: 'Anual' }).click()
     await expect(plano(pagina, 'Iniciante')).toContainText('R$ 399,00')
     await expect(plano(pagina, 'Amador')).toContainText('R$ 529,00')
+    await expect(plano(pagina, 'Cornerman')).toContainText('R$ 639,00')
+    await expect(plano(pagina, 'Cornerman')).toContainText('equivale a R$ 53,25 por mês')
     await expect(plano(pagina, 'Profissional')).toContainText('R$ 699,00')
     await expect(plano(pagina, 'Iniciante')).toContainText('equivale a R$ 33,25 por mês')
     await expect(plano(pagina, 'Amador')).toContainText('17% de economia')
@@ -55,7 +58,9 @@ test.describe('tela de assinatura: quem não assina (plano gratuito)', () => {
     await expect(plano(pagina, 'Iniciante')).toContainText('Biblioteca técnica')
     await expect(plano(pagina, 'Amador')).toContainText('Tudo do Iniciante')
     await expect(plano(pagina, 'Amador')).toContainText('Check-in diário')
-    await expect(plano(pagina, 'Profissional')).toContainText('Tudo do Amador')
+    await expect(plano(pagina, 'Cornerman')).toContainText('Tudo do Amador')
+    await expect(plano(pagina, 'Cornerman')).toContainText('Gestão de alunos')
+    await expect(plano(pagina, 'Profissional')).toContainText('Tudo do Cornerman')
     await expect(plano(pagina, 'Profissional')).toContainText('Pré-competição')
   })
 
