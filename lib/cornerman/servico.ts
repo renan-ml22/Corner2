@@ -22,8 +22,8 @@ export class ErroCornerman extends Error {
 }
 
 // Ficha de outro treinador, id que não existe e id malformado respondem exatamente igual.
-const naoEncontrado = () => new ErroCornerman('nao_encontrado', 'Aluno não encontrado.', 404)
-const limiteAtingido = () => new ErroCornerman('limite_de_alunos', `Você já tem ${LIMITE_DE_ALUNOS} alunos. Encerre ou apague uma ficha para cadastrar outro.`, 409)
+export const naoEncontrado = () => new ErroCornerman('nao_encontrado', 'Aluno não encontrado.', 404)
+export const limiteAtingido = () => new ErroCornerman('limite_de_alunos', `Você já tem ${LIMITE_DE_ALUNOS} alunos. Encerre ou apague uma ficha para cadastrar outro.`, 409)
 
 const NIVEIS: readonly string[] = ['iniciante', 'intermediario', 'avancado']
 const STATUS: readonly string[] = ['ativo', 'convidado', 'encerrado']

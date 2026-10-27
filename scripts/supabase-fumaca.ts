@@ -11,6 +11,10 @@ import { createClient } from '@supabase/supabase-js'
 import { iguais } from '../lib/dados/fusao'
 import { ErroConta, criarConta, entrarNoSupabase, type AuthLike } from '../lib/contas'
 import { criarAlunosBancoSupabase } from '../lib/cornerman/banco'
+import { criarConvitesBancoSupabase } from '../lib/cornerman/convite-banco'
+import {
+  aceitarConvite, cancelarConviteDaFicha, consultarConvite, criarConviteDaFicha, desvincularDoTreinador, meuTreinador,
+} from '../lib/cornerman/convite-servico'
 import { ErroCornerman, apagarAluno, atualizarAluno, criarAluno, lerAluno, listarAlunos } from '../lib/cornerman/servico'
 import { criarBancoSupabase } from '../lib/dados/servidor/banco-supabase'
 import { ErroDados, carregarDados, salvarEntidades } from '../lib/dados/servidor/servico'
@@ -72,10 +76,12 @@ const entrar = (email: string, senha: string) => entrarNoSupabase(criarClientePa
 
 /** Contas criadas no Supabase Auth durante o teste: são apagadas (usuário e dados) no fim. */
 const contasCriadas: string[] = []
+/** Treinadores e alunos de mentira dos blocos das fichas e dos convites: também são apagados no fim. */
+const idsExtras: string[] = []
 
 async function limpar() {
   for (const id of contasCriadas) await db.auth.admin.deleteUser(id)
-  for (const id of [ana.id, bia.id, ...contasCriadas]) {
+  for (const id of [ana.id, bia.id, ...contasCriadas, ...idsExtras]) {
     await db.from('workouts').delete().eq('user_id', id)
     await db.from('active_plans').delete().eq('user_id', id)
     await db.from('profiles').delete().eq('id', id)
@@ -90,8 +96,8 @@ async function contarLinhas(): Promise<number> {
     const { data } = await db.auth.admin.getUserById(id)
     if (data?.user) total++ // o usuário ainda existe no Auth
   }
-  for (const id of [ana.id, bia.id, ...contasCriadas]) {
-    for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id'], ['coach_alunos', 'coach_id']] as const) {
+  for (const id of [ana.id, bia.id, ...contasCriadas, ...idsExtras]) {
+    for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id'], ['coach_alunos', 'coach_id'], ['coach_invites', 'coach_id']] as const) {
       const { count } = await db.from(tabela).select('*', { count: 'exact', head: true }).eq(coluna, id)
       total += count ?? 0
     }
@@ -263,10 +269,107 @@ async function blocoDosAlunos() {
   }
 }
 
+/** Convites e vínculo (supabase/cornerman-etapa-3a.sql): token de uso único, aceite atômico, um treinador por aluno, desvínculo. */
+async function blocoDosConvites() {
+  const sondagem = await db.from('coach_invites').select('id').limit(1)
+  if (sondagem.error) {
+    console.log('PULOU   convites: a tabela coach_invites não existe (rode supabase/cornerman-etapa-3a.sql no SQL Editor do Supabase)')
+    return
+  }
+  const alunos = criarAlunosBancoSupabase(db)
+  const convites = criarConvitesBancoSupabase(db)
+  const origem = 'https://corner2.vercel.app'
+  const erroDe = (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e)
+  const codigoDe = (e: unknown) => (e instanceof ErroCornerman ? e.codigo : String(e))
+  const tokenDoLink = (link: string) => link.split('/convite/')[1]
+
+  // Dois treinadores e três alunos de mentira (apagados no fim). O nome do treinador vem do perfil.
+  const marcos = { id: `u_fumaca_${agora}_marcos`, nome: 'Marcos Silva' }
+  const lia = { id: `u_fumaca_${agora}_lia`, nome: 'Lia Souza' }
+  const [aluno1, aluno2] = [`u_fumaca_${agora}_aluno1`, `u_fumaca_${agora}_aluno2`]
+  idsExtras.push(marcos.id, lia.id, aluno1, aluno2)
+  await salvarEntidades(banco, marcos, { config: { metaSemanal: 3 } })
+  await salvarEntidades(banco, lia, { config: { metaSemanal: 3 } })
+  const fichaDoMarcos = await criarAluno(alunos, marcos.id, { nome: 'Beto' })
+  const outraDoMarcos = await criarAluno(alunos, marcos.id, { nome: 'Cléo' })
+  const fichaDaLia = await criarAluno(alunos, lia.id, { nome: 'Dani' })
+
+  // 1. Gerar, consultar, e o token nunca no banco.
+  const { link, expiraEm } = await criarConviteDaFicha(convites, marcos.id, fichaDoMarcos.id, origem)
+  const token = tokenDoLink(link)
+  confere('o convite vale 14 dias e a consulta mostra só o primeiro nome do treinador', (await consultarConvite(convites, token)).valido === true && Math.abs(Date.parse(expiraEm) - Date.now() - 14 * 86_400_000) < 60_000 && JSON.stringify(await consultarConvite(convites, token)) === JSON.stringify({ valido: true, treinador: 'Marcos' }))
+  const linhas = await db.from('coach_invites').select('*').eq('coach_id', marcos.id)
+  confere('o token NUNCA está no banco: só o hash', !JSON.stringify(linhas.data).includes(token) && /^[0-9a-f]{64}$/.test(String(linhas.data?.[0]?.token_hash)))
+  confere('a ficha convidada passa a "convidado"', (await lerAluno(alunos, marcos.id, fichaDoMarcos.id)).status === 'convidado')
+
+  // 2. Gerar de novo mata o link antigo.
+  const novo = tokenDoLink((await criarConviteDaFicha(convites, marcos.id, fichaDoMarcos.id, origem)).link)
+  confere('gerar de novo faz o link antigo parar de valer', (await consultarConvite(convites, token)).valido === false && (await consultarConvite(convites, novo)).valido === true)
+
+  // 3. Inexistente, malformado e expirado respondem igual.
+  const respostaInvalida = JSON.stringify({ valido: false })
+  await db.from('coach_invites').update({ expires_at: new Date(Date.now() - 1000).toISOString() }).eq('aluno_id', outraDoMarcos.id)
+  const expirado = tokenDoLink((await criarConviteDaFicha(convites, marcos.id, outraDoMarcos.id, origem)).link)
+  await db.from('coach_invites').update({ expires_at: new Date(Date.now() - 1000).toISOString() }).eq('aluno_id', outraDoMarcos.id)
+  confere('inexistente, malformado e expirado respondem igual', [await consultarConvite(convites, 'A'.repeat(43)), await consultarConvite(convites, 'abc'), await consultarConvite(convites, expirado)].every(r => JSON.stringify(r) === respostaInvalida))
+  confere('aceitar convite expirado: convite_invalido', codigoDe(await erroDe(aceitarConvite(convites, expirado, aluno1))) === 'convite_invalido')
+  await cancelarConviteDaFicha(convites, marcos.id, outraDoMarcos.id)
+
+  // 4. Dois aceites ao mesmo tempo: só um vence.
+  const corrida = await Promise.allSettled([aceitarConvite(convites, novo, aluno1), aceitarConvite(convites, novo, aluno2)])
+  const venceu = corrida.findIndex(r => r.status === 'fulfilled')
+  const perdeu = corrida.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined
+  confere('dois aceites ao mesmo tempo: só um vence, o outro recebe convite_invalido', corrida.filter(r => r.status === 'fulfilled').length === 1 && codigoDe(perdeu?.reason) === 'convite_invalido', JSON.stringify(corrida.map(r => r.status)))
+  const alunoQueVenceu = venceu === 0 ? aluno1 : aluno2
+  const alunoQuePerdeu = venceu === 0 ? aluno2 : aluno1
+  const aposAceite = await lerAluno(alunos, marcos.id, fichaDoMarcos.id)
+  confere('a ficha vira "ativo" e passa a ter conta', aposAceite.status === 'ativo' && aposAceite.comConta === true)
+  confere('uso único: o mesmo token não vale de novo', codigoDe(await erroDe(aceitarConvite(convites, novo, alunoQuePerdeu))) === 'convite_invalido')
+  confere('"Meu treinador" devolve o primeiro nome', JSON.stringify(await meuTreinador(convites, alunoQueVenceu)) === JSON.stringify({ nome: 'Marcos' }))
+
+  // 5. Um treinador ativo por aluno (índice único no banco) e treinador não aceita o próprio convite.
+  const doLia = tokenDoLink((await criarConviteDaFicha(convites, lia.id, fichaDaLia.id, origem)).link)
+  confere('quem já tem treinador não aceita outro convite (ja_tem_treinador) e o convite continua válido', codigoDe(await erroDe(aceitarConvite(convites, doLia, alunoQueVenceu))) === 'ja_tem_treinador' && (await consultarConvite(convites, doLia)).valido === true)
+  confere('o treinador não aceita o próprio convite (proprio_convite)', codigoDe(await erroDe(aceitarConvite(convites, doLia, lia.id))) === 'proprio_convite' && (await consultarConvite(convites, doLia)).valido === true)
+  confere('ficha de outro treinador: gerar convite dá "não encontrado" igual a id que não existe', codigoDe(await erroDe(criarConviteDaFicha(convites, marcos.id, fichaDaLia.id, origem))) === 'nao_encontrado')
+  confere('ficha que já tem conta não recebe convite (nao_convidavel)', codigoDe(await erroDe(criarConviteDaFicha(convites, marcos.id, fichaDoMarcos.id, origem))) === 'nao_convidavel')
+
+  // 6. Desvincular encerra a ficha, limpa a conta, e um convite novo vincula de novo.
+  await desvincularDoTreinador(convites, alunoQueVenceu)
+  const aposDesvinculo = await lerAluno(alunos, marcos.id, fichaDoMarcos.id)
+  confere('desvincular: a ficha vira "encerrado" e perde a conta', aposDesvinculo.status === 'encerrado' && aposDesvinculo.comConta === false && (await meuTreinador(convites, alunoQueVenceu)) === null)
+  confere('depois de desvincular, o aluno aceita o convite de outro treinador', JSON.stringify(await aceitarConvite(convites, doLia, alunoQueVenceu)) === JSON.stringify({ treinador: 'Lia' }))
+  await desvincularDoTreinador(convites, alunoQueVenceu)
+  const reconvite = tokenDoLink((await criarConviteDaFicha(convites, marcos.id, fichaDoMarcos.id, origem)).link)
+  await aceitarConvite(convites, reconvite, alunoQueVenceu)
+  confere('um convite novo reaproveita a mesma ficha e vincula de novo', (await lerAluno(alunos, marcos.id, fichaDoMarcos.id)).comConta === true)
+
+  // 7. Cancelar volta a ficha a "ativo"; apagar a ficha mata o convite.
+  const cancelavel = await criarAluno(alunos, marcos.id, { nome: 'Edu' })
+  const cancelado = tokenDoLink((await criarConviteDaFicha(convites, marcos.id, cancelavel.id, origem)).link)
+  await cancelarConviteDaFicha(convites, marcos.id, cancelavel.id)
+  confere('cancelar: o link morre e a ficha volta a "ativo"', (await consultarConvite(convites, cancelado)).valido === false && (await lerAluno(alunos, marcos.id, cancelavel.id)).status === 'ativo')
+  const apagavel = await criarAluno(alunos, marcos.id, { nome: 'Fabi' })
+  const daApagada = tokenDoLink((await criarConviteDaFicha(convites, marcos.id, apagavel.id, origem)).link)
+  await apagarAluno(alunos, marcos.id, apagavel.id)
+  confere('apagar a ficha mata o convite', (await consultarConvite(convites, daApagada)).valido === false)
+
+  // 8. A chave pública não lê convites.
+  const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  if (chavePublica) {
+    const anon = createClient(url!, chavePublica, { auth: { persistSession: false, autoRefreshToken: false } })
+    const { data, error } = await anon.from('coach_invites').select('*').limit(5)
+    confere('a chave pública não lê coach_invites', !!error || (data ?? []).length === 0, `${(data ?? []).length} linhas visíveis`)
+    const rpc = await anon.rpc('aceitar_convite', { p_hash: 'a'.repeat(64), p_user: 'u_intruso' })
+    confere('a chave pública não executa aceitar_convite', !!rpc.error)
+  }
+}
+
 async function executar() {
   try {
     await principal()
     await blocoDosAlunos()
+    await blocoDosConvites()
   } finally {
     await limpar()
     const sobrou = await contarLinhas()
