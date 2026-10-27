@@ -19,15 +19,15 @@ const preco = (chave: string, parcial: Partial<PrecoExistente> = {}): PrecoExist
 const tudoCerto = () => ({ produtos: NIVEIS.map(n => produto(n)), precos: precosDesejados().map(p => preco(p.chave)) })
 
 describe('o que deve existir no Stripe', () => {
-  it('3 produtos, um por nível, com nome "Corner <Nível>"', () => {
+  it('4 produtos, um por nível, com nome "Corner <Nível>"', () => {
     const ps = produtosDesejados()
     expect(ps.map(p => p.nivel)).toEqual([...NIVEIS])
-    expect(ps.map(p => p.nome)).toEqual(['Corner Iniciante', 'Corner Amador', 'Corner Profissional'])
+    expect(ps.map(p => p.nome)).toEqual(['Corner Iniciante', 'Corner Amador', 'Corner Cornerman', 'Corner Profissional'])
   })
 
-  it('6 preços, em BRL, com os valores do catálogo', () => {
+  it('8 preços, em BRL, com os valores do catálogo', () => {
     const ps = precosDesejados()
-    expect(ps).toHaveLength(6)
+    expect(ps).toHaveLength(8)
     for (const n of NIVEIS) {
       for (const periodo of PERIODOS) {
         const p = ps.find(x => x.chave === lookupKey(n, periodo))!
@@ -36,6 +36,8 @@ describe('o que deve existir no Stripe', () => {
       }
     }
     expect(ps.find(p => p.chave === 'iniciante_mensal')!.centavos).toBe(3990)
+    expect(ps.find(p => p.chave === 'cornerman_mensal')!.centavos).toBe(6390)
+    expect(ps.find(p => p.chave === 'cornerman_anual')!.centavos).toBe(63900)
     expect(ps.find(p => p.chave === 'profissional_anual')!.centavos).toBe(69900)
   })
 
@@ -45,16 +47,19 @@ describe('o que deve existir no Stripe', () => {
     expect(descricaoDoNivel('iniciante')).not.toContain('Cronômetro')
     expect(descricaoDoNivel('amador')).toContain('Tudo do Iniciante')
     expect(descricaoDoNivel('amador')).toContain('Check-in diário')
-    expect(descricaoDoNivel('profissional')).toContain('Tudo do Amador')
+    expect(descricaoDoNivel('cornerman')).toContain('Tudo do Amador')
+    expect(descricaoDoNivel('cornerman')).toContain('Gestão de alunos')
+    expect(descricaoDoNivel('profissional')).toContain('Tudo do Cornerman')
+    expect(descricaoDoNivel('profissional')).not.toContain('Tudo do Amador')
     expect(descricaoDoNivel('profissional')).toContain('Pré-competição')
   })
 })
 
 describe('planejar: o que falta criar', () => {
-  it('conta vazia: cria tudo (3 produtos e 6 preços), sem transferir chaves', () => {
+  it('conta vazia: cria tudo (4 produtos e 8 preços), sem transferir chaves', () => {
     const p = planejar([], [])
-    expect(p.produtos.criar).toHaveLength(3)
-    expect(p.precos.criar).toHaveLength(6)
+    expect(p.produtos.criar).toHaveLength(4)
+    expect(p.precos.criar).toHaveLength(8)
     expect(p.precos.criar.every(x => x.transferir === false)).toBe(true)
     expect(p.precos.arquivar).toEqual([])
     expect(p.semMudancas).toBe(false)
@@ -170,7 +175,7 @@ describe('exigirChaveDeTeste (o script nunca toca em conta real)', () => {
 })
 
 describe('configuracaoDoPortal', () => {
-  const produtos = { iniciante: 'prod_i', amador: 'prod_a', profissional: 'prod_p' } as const
+  const produtos = { iniciante: 'prod_i', amador: 'prod_a', cornerman: 'prod_c', profissional: 'prod_p' } as const
   const precos = Object.fromEntries(precosDesejados().map(p => [p.chave, `price_${p.chave}`]))
   const cfg = configuracaoDoPortal(produtos, precos)
 
@@ -180,11 +185,11 @@ describe('configuracaoDoPortal', () => {
     expect(cfg.features.invoice_history.enabled).toBe(true)
   })
 
-  it('pode trocar de plano entre os 3 produtos, com os 2 preços de cada um', () => {
+  it('pode trocar de plano entre os 4 produtos, com os 2 preços de cada um', () => {
     const troca = cfg.features.subscription_update
     expect(troca.enabled).toBe(true)
     expect(troca.default_allowed_updates).toContain('price')
-    expect(troca.products).toHaveLength(3)
+    expect(troca.products).toHaveLength(4)
     for (const p of troca.products) expect(p.prices).toHaveLength(2)
     expect(troca.products.find(p => p.product === 'prod_a')!.prices.sort()).toEqual(['price_amador_anual', 'price_amador_mensal'])
   })

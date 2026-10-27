@@ -2,7 +2,7 @@
 // É a ÚNICA fonte desses dados: o Stripe, as telas e as regras de acesso leem daqui.
 // Para mudar um preço ou mover um recurso de plano, mude só este arquivo (e rode os testes).
 
-export const NIVEIS = ['iniciante', 'amador', 'profissional'] as const
+export const NIVEIS = ['iniciante', 'amador', 'cornerman', 'profissional'] as const
 export type NivelAssinatura = (typeof NIVEIS)[number]
 
 export const PERIODOS = ['mensal', 'anual'] as const
@@ -11,6 +11,7 @@ export type Periodo = (typeof PERIODOS)[number]
 export const NOME_DO_NIVEL: Record<NivelAssinatura, string> = {
   iniciante: 'Iniciante',
   amador: 'Amador',
+  cornerman: 'Cornerman',
   profissional: 'Profissional',
 }
 
@@ -18,6 +19,7 @@ export const NOME_DO_NIVEL: Record<NivelAssinatura, string> = {
 export const PRECO_MENSAL_CENTAVOS: Record<NivelAssinatura, number> = {
   iniciante: 3990,
   amador: 5290,
+  cornerman: 6390,
   profissional: 6990,
 }
 
@@ -93,6 +95,9 @@ export const RECURSOS = {
   carga: { nome: 'Carga de treino e alerta de sobrecarga', nivelMinimo: 'amador' },
   saude: { nome: 'Peso, categoria e gráfico de peso', nivelMinimo: 'amador' },
   reagendar: { nome: 'Reagendar sessões', nivelMinimo: 'amador' },
+
+  // Cornerman: para quem treina outros boxeadores. Inclui tudo do Iniciante e do Amador; o Profissional inclui o Cornerman.
+  gestaoDeAlunos: { nome: 'Gestão de alunos: painel com até 20 alunos, fichas, notas e plano sugerido', nivelMinimo: 'cornerman' },
 
   planoPreCompeticao: { nome: 'Plano Pré-competição', nivelMinimo: 'profissional' },
   sparringDetalhado: { nome: 'Intensidade e parceiro no sparring, e resumo de pancadas dos últimos 30 dias', nivelMinimo: 'profissional' },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NIVEIS, NIVEL_GRATUITO, RECURSOS, ordemDeAcesso, recurso, type RecursoId } from '@/lib/assinatura/catalogo'
 import {
-  DIAS_DE_TOLERANCIA, SEM_ASSINATURA, planoDeTreinoLiberado, podeUsar, temAcesso, type EstadoAssinatura,
+  DIAS_DE_TOLERANCIA, SEM_ASSINATURA, isEstadoAssinatura, planoDeTreinoLiberado, podeUsar, temAcesso, type EstadoAssinatura,
 } from '@/lib/assinatura/regras'
 
 const AGORA = new Date('2026-10-20T12:00:00.000Z')
@@ -83,6 +83,24 @@ describe('podeUsar', () => {
     expect(podeUsar('planoPreCompeticao', e, AGORA)).toBe(false)
     expect(podeUsar('registroTreino', e, AGORA)).toBe(true)
     expect(podeUsar('biblioteca', e, AGORA)).toBe(true)
+  })
+
+  it('Cornerman libera tudo do Iniciante e do Amador e a gestão de alunos, e nada do Profissional', () => {
+    const e = estado({ nivel: 'cornerman' })
+    for (const id of ['checkin', 'carga', 'saude', 'reagendar', 'biblioteca', 'planoFundamentos', 'gestaoDeAlunos'] as RecursoId[]) expect(podeUsar(id, e, AGORA), id).toBe(true)
+    for (const id of ['planoPreCompeticao', 'treinosDeAtletas', 'lembrete', 'importarDados', 'sparringDetalhado', 'perdaRapidaPeso'] as RecursoId[]) expect(podeUsar(id, e, AGORA), id).toBe(false)
+  })
+
+  it('Iniciante e Amador não têm a gestão de alunos; o Profissional tem', () => {
+    expect(podeUsar('gestaoDeAlunos', estado({ nivel: 'iniciante' }), AGORA)).toBe(false)
+    expect(podeUsar('gestaoDeAlunos', estado({ nivel: 'amador' }), AGORA)).toBe(false)
+    expect(podeUsar('gestaoDeAlunos', estado({ nivel: 'profissional' }), AGORA)).toBe(true)
+    expect(podeUsar('gestaoDeAlunos', SEM_ASSINATURA, AGORA)).toBe(false)
+  })
+
+  it('o estado guardado aceita o nível cornerman e continua aceitando os antigos', () => {
+    for (const nivel of ['iniciante', 'amador', 'cornerman', 'profissional'] as const) expect(isEstadoAssinatura(estado({ nivel })), nivel).toBe(true)
+    expect(isEstadoAssinatura({ ...estado({}), nivel: 'ouro' })).toBe(false)
   })
 
   it('Profissional vê tudo', () => {

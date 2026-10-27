@@ -14,6 +14,10 @@ describe('recursosNovosDoNivel (o que cada plano acrescenta)', () => {
     expect(recursosNovosDoNivel('iniciante')).toEqual([recurso('biblioteca').nome, recurso('planoFundamentos').nome])
   })
 
+  it('Cornerman acrescenta a gestão de alunos', () => {
+    expect(recursosNovosDoNivel('cornerman')).toEqual([recurso('gestaoDeAlunos').nome])
+  })
+
   it('cada recurso aparece em exatamente um plano pago ou no gratuito (nunca em dois)', () => {
     const vistos = NIVEIS.flatMap(n => recursosNovosDoNivel(n))
     expect(new Set(vistos).size).toBe(vistos.length)
@@ -34,6 +38,7 @@ describe('preço do plano anual', () => {
 
   it('o equivalente mensal do anual é o preço anual dividido por 12, arredondado para centavos', () => {
     expect(mensalEquivalenteEmCentavos('iniciante')).toBe(Math.round((3990 * 10) / 12)) // 3325
+    expect(mensalEquivalenteEmCentavos('cornerman')).toBe(Math.round((6390 * 10) / 12)) // 5325
     expect(mensalEquivalenteEmCentavos('profissional')).toBe(Math.round((6990 * 10) / 12)) // 5825
     for (const n of NIVEIS) expect(mensalEquivalenteEmCentavos(n)).toBeLessThan(PRECO_MENSAL_CENTAVOS[n])
   })

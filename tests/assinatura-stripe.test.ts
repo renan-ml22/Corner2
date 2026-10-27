@@ -48,7 +48,7 @@ describe('estadoDeAssinaturas: um status do Stripe vira um estado nosso', () => 
   })
 
   it.each([
-    ['iniciante_anual', 'iniciante', 'anual'], ['amador_mensal', 'amador', 'mensal'], ['profissional_anual', 'profissional', 'anual'],
+    ['iniciante_anual', 'iniciante', 'anual'], ['amador_mensal', 'amador', 'mensal'], ['cornerman_mensal', 'cornerman', 'mensal'], ['cornerman_anual', 'cornerman', 'anual'], ['profissional_anual', 'profissional', 'anual'],
   ])('a chave %s dá nível %s e período %s', (chave, nivel, periodo) => {
     expect(estadoDeAssinaturas([nova({ chave })])).toMatchObject({ nivel, periodo })
   })

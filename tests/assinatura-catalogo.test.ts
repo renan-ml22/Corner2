@@ -6,8 +6,8 @@ import {
 } from '@/lib/assinatura/catalogo'
 
 describe('preços', () => {
-  it('mensal: R$ 39,90, R$ 52,90 e R$ 69,90 (em centavos, sem números quebrados)', () => {
-    expect(PRECO_MENSAL_CENTAVOS).toEqual({ iniciante: 3990, amador: 5290, profissional: 6990 })
+  it('mensal: R$ 39,90, R$ 52,90, R$ 63,90 e R$ 69,90 (em centavos, sem números quebrados)', () => {
+    expect(PRECO_MENSAL_CENTAVOS).toEqual({ iniciante: 3990, amador: 5290, cornerman: 6390, profissional: 6990 })
     for (const centavos of Object.values(PRECO_MENSAL_CENTAVOS)) expect(Number.isInteger(centavos)).toBe(true)
   })
 
@@ -24,8 +24,14 @@ describe('preços', () => {
   it('o plano mais alto custa mais, no mensal e no anual', () => {
     for (const periodo of PERIODOS) {
       expect(precoEmCentavos('iniciante', periodo)).toBeLessThan(precoEmCentavos('amador', periodo))
-      expect(precoEmCentavos('amador', periodo)).toBeLessThan(precoEmCentavos('profissional', periodo))
+      expect(precoEmCentavos('amador', periodo)).toBeLessThan(precoEmCentavos('cornerman', periodo))
+      expect(precoEmCentavos('cornerman', periodo)).toBeLessThan(precoEmCentavos('profissional', periodo))
     }
+  })
+
+  it('o Cornerman anual custa R$ 639,00 (10 mensalidades)', () => {
+    expect(precoEmCentavos('cornerman', 'anual')).toBe(63900)
+    expect(formatarPreco(precoEmCentavos('cornerman', 'anual'))).toBe('R$ 639,00')
   })
 
   it('o teste grátis é de 7 dias', () => {
@@ -47,10 +53,12 @@ describe('formatarPreco', () => {
 })
 
 describe('lookup keys (o nome que cada preço tem no Stripe)', () => {
-  it('há uma chave diferente para cada combinação de plano e período (6 no total)', () => {
+  it('há uma chave diferente para cada combinação de plano e período (8 no total)', () => {
     const chaves = NIVEIS.flatMap(n => PERIODOS.map(p => lookupKey(n, p)))
-    expect(chaves).toHaveLength(6)
-    expect(new Set(chaves).size).toBe(6)
+    expect(chaves).toHaveLength(8)
+    expect(new Set(chaves).size).toBe(8)
+    expect(chaves).toContain('cornerman_mensal')
+    expect(chaves).toContain('cornerman_anual')
     expect(chaves).toContain('iniciante_mensal')
     expect(chaves).toContain('profissional_anual')
   })
@@ -65,10 +73,11 @@ describe('lookup keys (o nome que cada preço tem no Stripe)', () => {
 })
 
 describe('níveis', () => {
-  it('a ordem vai de iniciante a profissional', () => {
-    expect(NIVEIS).toEqual(['iniciante', 'amador', 'profissional'])
+  it('a ordem vai de iniciante a profissional, com o Cornerman entre o Amador e o Profissional', () => {
+    expect(NIVEIS).toEqual(['iniciante', 'amador', 'cornerman', 'profissional'])
     expect(ordemDoNivel('iniciante')).toBeLessThan(ordemDoNivel('amador'))
-    expect(ordemDoNivel('amador')).toBeLessThan(ordemDoNivel('profissional'))
+    expect(ordemDoNivel('amador')).toBeLessThan(ordemDoNivel('cornerman'))
+    expect(ordemDoNivel('cornerman')).toBeLessThan(ordemDoNivel('profissional'))
   })
 })
 
@@ -113,6 +122,11 @@ describe('recursos', () => {
   it('o gratuito é menor que o Iniciante: o Iniciante acrescenta biblioteca técnica e plano Fundamentos', () => {
     const novos = (Object.keys(RECURSOS) as RecursoId[]).filter(id => recurso(id).nivelMinimo === 'iniciante').sort()
     expect(novos).toEqual(['biblioteca', 'planoFundamentos'])
+  })
+
+  it('o Cornerman acrescenta exatamente a gestão de alunos', () => {
+    const novos = (Object.keys(RECURSOS) as RecursoId[]).filter(id => recurso(id).nivelMinimo === 'cornerman')
+    expect(novos).toEqual(['gestaoDeAlunos'])
   })
 
   it('o gratuito vem antes de qualquer plano pago na ordem de acesso', () => {
