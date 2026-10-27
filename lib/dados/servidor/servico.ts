@@ -13,7 +13,7 @@ import {
 export { ENTIDADES_SINCRONIZADAS, type EntidadeSincronizada }
 
 /** Entidades guardadas em `user_data`, como JSON. As demais têm tabela própria. */
-const GENERICAS = ['checklist', 'checkins', 'lesoes', 'pesos', 'ajuste', 'reag', 'foto'] as const satisfies readonly EntidadeSincronizada[]
+const GENERICAS = ['checklist', 'checkins', 'lesoes', 'pesos', 'ajuste', 'reag', 'foto', 'quiz'] as const satisfies readonly EntidadeSincronizada[]
 
 /** Maior lista aceita por entidade. O app limita check-ins (120) e peso (400); o histórico não tem limite próprio. */
 export const LIMITE_DE_ITENS = 5000

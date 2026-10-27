@@ -44,11 +44,12 @@ const TUDO = {
   checklist: { data: '2026-10-14', itens: { aquecimento: true } },
   ajuste: { data: '2026-10-14', aplicado: true },
   foto: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==',
+  quiz: '00020',
 }
 
 describe('as entidades que vão para o banco', () => {
   it('são as de dados do atleta; lembrete (do aparelho) e assinatura (cópia do Stripe) ficam de fora', () => {
-    expect([...ENTIDADES_SINCRONIZADAS].sort()).toEqual(['ajuste', 'checkins', 'checklist', 'config', 'foto', 'historico', 'lesoes', 'pesos', 'plano', 'reag'])
+    expect([...ENTIDADES_SINCRONIZADAS].sort()).toEqual(['ajuste', 'checkins', 'checklist', 'config', 'foto', 'historico', 'lesoes', 'pesos', 'plano', 'quiz', 'reag'])
   })
 })
 
@@ -89,6 +90,30 @@ describe('salvar e carregar', () => {
     const dados = await carregarDados(banco, renan.id)
     expect(dados).toHaveProperty('plano', null)
     expect(banco.planos.has(renan.id)).toBe(false)
+  })
+
+  it('quiz é gravado em user_data, volta igual, e "refazer" para vazio volta como vazio, não como ausente', async () => {
+    const banco = new BancoFalso()
+    await salvarEntidades(banco, renan, { quiz: TUDO.quiz })
+    expect(banco.dados.get(renan.id)!.get('quiz')).toBe('00020')
+    expect(await carregarDados(banco, renan.id)).toHaveProperty('quiz', '00020')
+    await salvarEntidades(banco, renan, { quiz: '' })
+    expect(await carregarDados(banco, renan.id)).toHaveProperty('quiz', '')
+  })
+
+  it('quiz corrompido no banco não aparece (vira "sem quiz")', async () => {
+    const banco = new BancoFalso()
+    await salvarEntidades(banco, renan, { quiz: TUDO.quiz })
+    banco.dados.get(renan.id)!.set('quiz', '99999')
+    expect(await carregarDados(banco, renan.id)).not.toHaveProperty('quiz')
+  })
+
+  it('quiz com resposta inválida, lista ou nulo: recusa o pedido inteiro', async () => {
+    const banco = new BancoFalso()
+    for (const quiz of ['00050', '0002', [0, 0, 0, 2, 0], null]) {
+      await expect(salvarEntidades(banco, renan, { pesos: [], quiz })).rejects.toMatchObject({ codigo: 'dado_invalido' })
+    }
+    expect(banco.escritas).toBe(0)
   })
 
   it('foto removida é gravada como texto vazio (nunca nulo) e volta como vazio, não como ausente', async () => {

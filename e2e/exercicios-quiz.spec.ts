@@ -5,7 +5,7 @@ import { CATEGORIAS, EXERCICIOS, exerciciosDaCategoria } from '../data/exercicio
 import { PERGUNTAS } from '../data/quiz'
 import { SEM_ASSINATURA_TESTE, ativa, simularEstado } from './assinatura-simulada'
 import { DADOS_DE_EXEMPLO, semear } from './dados-exemplo'
-import { expect, lerJson, test } from './fixtures'
+import { expect, lerJson, lerRaw, test } from './fixtures'
 
 // Biblioteca de exercícios (gratuita), quiz de estilo (gratuito) e treinos no estilo de um atleta (plano Profissional).
 // As rotas de pagamento são simuladas: nenhum teste fala com o Stripe.
@@ -152,6 +152,23 @@ test.describe('quiz de estilo', () => {
     await pagina.reload()
     await expect(pagina.getByRole('article')).toHaveCount(2)
     await expect(pagina.getByRole('article').first().getByRole('heading', { name: 'Muhammad Ali' })).toBeVisible()
+  })
+
+  test('terminar o quiz guarda as respostas no aparelho; refazer troca; abrir o resultado de outra pessoa não guarda nada', async ({ pagina }) => {
+    await simularEstado(pagina, SEM_ASSINATURA_TESTE)
+    await pagina.goto('/quiz?r=21110')
+    await expect(pagina.getByRole('article')).toHaveCount(2)
+    expect(await lerRaw(pagina, 'quiz')).toBeNull()
+
+    await pagina.goto('/quiz')
+    await responder(pagina, COMO_O_ALI)
+    await pagina.waitForURL(/\/quiz\?r=00020$/)
+    await expect.poll(() => lerJson(pagina, 'quiz')).toBe('00020')
+
+    await pagina.getByRole('link', { name: 'Refazer o quiz' }).click()
+    await responder(pagina, [1, 1, 1, 1, 1])
+    await pagina.waitForURL(/\/quiz\?r=11111$/)
+    await expect.poll(() => lerJson(pagina, 'quiz')).toBe('11111')
   })
 
   test('resposta inválida no endereço recomeça o quiz em vez de quebrar', async ({ pagina }) => {

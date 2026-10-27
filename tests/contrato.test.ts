@@ -23,6 +23,7 @@ import {
   isLesao,
   isPesoRegistro,
   isPlanoAtivo,
+  isQuiz,
   isReag,
   isWorkoutEntry,
   limparConfig,
@@ -631,6 +632,27 @@ describe('isLembrete (data do último lembrete disparado)', () => {
 
   it.each(['2026-02-31', 'hoje', 20261014, null])('rejeita %s', valor => {
     expect(isLembrete(valor)).toBe(false)
+  })
+})
+
+describe('isQuiz (respostas do quiz guardadas: um dígito por pergunta, ou vazio para "sem quiz")', () => {
+  it('aceita vazio e uma resposta válida por pergunta', () => {
+    expect(isQuiz('')).toBe(true)
+    expect(isQuiz('00020')).toBe(true)
+    expect(isQuiz('21110')).toBe(true)
+  })
+
+  it.each([
+    ['curto demais', '0002'],
+    ['longo demais', '000200'],
+    ['opção que não existe', '00050'],
+    ['letra no meio', '0a020'],
+    ['espaço', '00 20'],
+    ['lista', [0, 0, 0, 2, 0]],
+    ['null', null],
+    ['número', 20],
+  ])('recusa %s', (_nome, valor) => {
+    expect(isQuiz(valor)).toBe(false)
   })
 })
 

@@ -6,6 +6,7 @@
 
 import { getPlano } from '@/data/planos'
 import { isEstadoAssinatura, type EstadoAssinatura } from '@/lib/assinatura/regras'
+import { respostasValidas } from '@/lib/quiz'
 import {
   REGIOES, isRegType,
   type AjusteDoDia, type Checkin, type ChecklistDoDia, type Configuracoes, type Lesao,
@@ -129,6 +130,9 @@ export const TAMANHO_MAX_DA_FOTO = 60_000
 /** Foto de perfil: JPEG em `data:` estrito, ou vazio para "sem foto" (o banco não aceita nulo nessa coluna). */
 export const isFoto = (v: unknown): v is string =>
   v === '' || (isStr(v) && v.length <= TAMANHO_MAX_DA_FOTO && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(v))
+
+/** Respostas do quiz de estilo guardadas (um dígito por pergunta, ex.: `00020`), ou vazio para "ainda não fez o quiz". */
+export const isQuiz = (v: unknown): v is string => v === '' || (isStr(v) && /^\d+$/.test(v) && respostasValidas([...v].map(Number)))
 
 /** Data do último lembrete disparado (ou vazio). */
 export const isLembrete = (v: unknown): v is string => v === '' || isChave(v)

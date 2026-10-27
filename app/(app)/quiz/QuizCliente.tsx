@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import AtletaAvatar from '@/components/AtletaAvatar'
 import TreinarComoAtleta from '@/components/TreinarComoAtleta'
 import { PERGUNTAS } from '@/data/quiz'
+import { useQuiz } from '@/hooks/useQuiz'
 import { resultadoDoQuiz, serializarRespostas, type Compatibilidade } from '@/lib/quiz'
 import estilos from './quiz.module.css'
 
@@ -61,6 +62,7 @@ function Resultado({ respostas }: { respostas: number[] }) {
 
 export default function QuizCliente({ respostasIniciais }: { respostasIniciais: number[] | null }) {
   const router = useRouter()
+  const [, guardarQuiz] = useQuiz()
   const [respostas, setRespostas] = useState<number[]>([])
   const [passo, setPasso] = useState(0)
   const [direcao, setDirecao] = useState<Direcao>('avancar')
@@ -86,6 +88,8 @@ export default function QuizCliente({ respostasIniciais }: { respostasIniciais: 
     setRespostas(proximas)
     if (ultima) {
       setEnviando(true)
+      // Só quem acabou de responder guarda: abrir o resultado de outra pessoa pelo endereço não troca as suas respostas.
+      guardarQuiz(serializarRespostas(proximas))
       router.push(`/quiz?r=${serializarRespostas(proximas)}`)
       return
     }

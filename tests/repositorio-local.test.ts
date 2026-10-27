@@ -56,6 +56,7 @@ describe('leitura', () => {
       reag: { '1:fund-seg': 2 },
       lembrete: '2026-10-14',
       foto: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==',
+      quiz: '00020',
       assinatura: { estado: { situacao: 'ativa', nivel: 'amador', periodo: 'mensal', fimDoPeriodo: '2026-11-20T12:00:00.000Z', fimDoTeste: null, cancelaNoFim: false }, em: '2026-10-14T12:00:00.000Z' },
     }
     for (const [nome, valor] of Object.entries(legado)) {
