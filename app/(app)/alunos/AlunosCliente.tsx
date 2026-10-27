@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import FotoDePerfil from '@/components/FotoDePerfil'
+import SeloDeStatus from '@/components/SeloDeStatus'
 import { ExigePlano } from '@/components/ConviteAoPlano'
 import { listarAlunosNoServidor, type ListaDeAlunos } from '@/lib/cornerman/cliente'
-import { NOME_DO_NIVEL_DE_ALUNO, type FichaDeAluno } from '@/lib/cornerman/ficha'
+import { NOME_DO_NIVEL_DE_ALUNO } from '@/lib/cornerman/ficha'
+import type { AlunoNaLista } from '@/lib/cornerman/servico'
 import estilos from './alunos.module.css'
 
 export default function AlunosCliente() {
@@ -94,7 +96,7 @@ function ListaDeAlunos() {
   )
 }
 
-function Cartao({ aluno, encerrada = false }: { aluno: FichaDeAluno; encerrada?: boolean }) {
+function Cartao({ aluno, encerrada = false }: { aluno: AlunoNaLista; encerrada?: boolean }) {
   const detalhe = [aluno.nivel ? NOME_DO_NIVEL_DE_ALUNO[aluno.nivel] : null, aluno.estilo].filter(Boolean).join(' · ')
   return (
     <li className={`surface-card ${estilos.cartao} ${encerrada ? estilos.encerrada : ''}`}>
@@ -104,6 +106,7 @@ function Cartao({ aluno, encerrada = false }: { aluno: FichaDeAluno; encerrada?:
         <span className={estilos.textos}>
           <strong>{aluno.nome}</strong>
           {detalhe && <small>{detalhe}</small>}
+          {!encerrada && aluno.comConta && aluno.status === 'ativo' && <SeloDeStatus status={aluno.treino} />}
         </span>
         <span className={estilos.selo}>{encerrada ? 'Encerrada' : aluno.comConta ? 'Com conta' : aluno.status === 'convidado' ? 'Convidado' : 'Ficha manual'}</span>
         <i className={`ph-bold ph-caret-right ${estilos.seta}`} aria-hidden="true" />

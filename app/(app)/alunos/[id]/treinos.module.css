@@ -1,0 +1,112 @@
+.perfil {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 1.1rem;
+}
+
+.perfil div { display: grid; gap: 2px; }
+.perfil dt { color: var(--muted); font-size: 0.75rem; }
+.perfil dd { margin: 0; overflow-wrap: anywhere; font-size: 0.92rem; }
+.perfil dd small { display: block; color: var(--muted); font-size: 0.78rem; }
+
+.foto { justify-items: start; }
+
+.vazio { color: var(--muted); }
+.semTreinos { margin-top: 0.8rem; font-size: 0.88rem; }
+.erro { margin-bottom: 0.8rem; color: oklch(0.82 0.1 25); font-size: 0.85rem; line-height: 1.45; }
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.filtros :global(.chip) { cursor: pointer; }
+.filtros :global(.chip[aria-pressed='true']) { border-color: var(--blue); color: var(--foreground); }
+
+.resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.resumo :global(.surface-card) {
+  display: grid;
+  gap: 2px;
+  padding: 0.8rem 0.6rem;
+  text-align: center;
+}
+
+.resumo dt { color: var(--muted); font-size: 0.7rem; }
+.resumo dd { margin: 0; font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.grafico {
+  margin-top: 0.8rem;
+  padding: 1rem;
+}
+
+.grafico h3 { font-size: 0.85rem; font-weight: 600; }
+
+.barras {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barras li {
+  display: grid;
+  grid-template-rows: auto 6rem auto;
+  justify-items: center;
+  gap: 4px;
+}
+
+.valor { color: var(--foreground); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+
+.trilho {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.barra {
+  display: block;
+  width: 0.9rem;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--blue);
+}
+
+.zero { opacity: 0.4; }
+
+.semana { color: var(--muted); font-size: 0.68rem; white-space: nowrap; }
+.nota { margin-top: 0.6rem; color: var(--muted); font-size: 0.7rem; }
+
+.treinos {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.treinos li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+}
+
+.treinos i { flex: none; color: var(--blue); font-size: 1.2rem; }
+
+.textos { display: grid; flex: 1; min-width: 0; gap: 2px; }
+.textos strong { font-size: 0.9rem; }
+.textos small { color: var(--muted); font-size: 0.76rem; }
+.esforco { flex: none; color: var(--muted); font-size: 0.76rem; white-space: nowrap; }

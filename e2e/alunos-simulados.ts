@@ -1,9 +1,12 @@
 import type { Page, Route } from '@playwright/test'
+import type { DadosDoAluno } from '../lib/cornerman/aluno-dados'
+import type { StatusDeTreino } from '../lib/cornerman/status-treino'
 
 // A API /api/cornerman/alunos simulada em memória: os testes de navegador das telas do treinador nunca falam com o banco.
 // Imita as respostas reais (veja app/api/cornerman/alunos): limite de 20 ativas, 404 igual para id que não existe,
 // ordem (ativos primeiro, por nome), 409 ao reabrir com 20 ativas, e o convite (gerar, cancelar, status "convidado",
-// encerrar uma ficha com conta limpa o vínculo, mudar status de ficha convidada é recusado).
+// encerrar uma ficha com conta limpa o vínculo, mudar status de ficha convidada é recusado), o status de treino na lista
+// e os dados do aluno com conta (GET /alunos/<id>/dados, 409 sem vínculo).
 
 export interface FichaSimulada {
   id: string
@@ -28,6 +31,10 @@ const VALIDADE_DO_CONVITE = '2026-10-28T12:00:00.000Z' // 14 dias depois da data
 export const ficha = (nome: string, extra: Partial<FichaSimulada> = {}): FichaSimulada => ({
   id: novoId(), nome, email: null, telefone: null, nivel: null, estilo: null, notas: '', foto: '', status: 'ativo', comConta: false, criadoEm: AGORA, atualizadoEm: AGORA, ...extra,
 })
+
+export const SEM_TREINO: StatusDeTreino = { cor: 'cinza', dias: null }
+
+export const dadosVazios: DadosDoAluno = { nivel: null, foto: '', estilo: null, plano: null, treinos: [] }
 
 export const fichas = (n: number): FichaSimulada[] => Array.from({ length: n }, (_, i) => ficha(`Aluno ${String(i + 1).padStart(2, '0')}`))
 
@@ -54,7 +61,13 @@ const MSG_LIMITE = 'Você já tem 20 alunos. Encerre ou apague uma ficha para ca
 export async function simularAlunos(
   pagina: Page,
   iniciais: FichaSimulada[] = [],
-  opcoes: { atrasoMs?: number; falhaDeRede?: boolean; falhaNaListagem?: boolean } = {},
+  opcoes: {
+    atrasoMs?: number; falhaDeRede?: boolean; falhaNaListagem?: boolean; falhaNosDados?: boolean
+    /** Status de treino por id de ficha (o que não está aqui é cinza). */
+    status?: Record<string, StatusDeTreino>
+    /** Dados do aluno por id de ficha (o que não está aqui vem vazio). */
+    dados?: Record<string, DadosDoAluno>
+  } = {},
 ): Promise<AlunosSimulados> {
   const estado: AlunosSimulados = {
     fichas: iniciais.map(f => ({ ...f })),
@@ -67,7 +80,7 @@ export async function simularAlunos(
   for (const f of estado.fichas) if (f.status === 'convidado') estado.convites.set(f.id, { expiraEm: VALIDADE_DO_CONVITE })
   let geradas = 0
 
-  await pagina.route(/\/api\/cornerman\/alunos(\/[^/?]*)?(\/convite)?(\?.*)?$/, async (rota: Route) => {
+  await pagina.route(/\/api\/cornerman\/alunos(\/[^/?]*)?(\/(?:convite|dados))?(\?.*)?$/, async (rota: Route) => {
     const req = rota.request()
     const url = new URL(req.url())
     const [, , , , id = null, sub = null] = url.pathname.split('/') // '', 'api', 'cornerman', 'alunos', id, 'convite'
@@ -83,7 +96,7 @@ export async function simularAlunos(
         if (opcoes.falhaNaListagem) return erro(rota, 502, 'falha_no_banco', 'Não foi possível falar com o banco de dados agora. Tente novamente em instantes.')
         const ordenar = (a: FichaSimulada, b: FichaSimulada) => semAcento(a.nome).localeCompare(semAcento(b.nome), 'pt-BR', { sensitivity: 'base' })
         const lista = [...estado.fichas.filter(f => f.status !== 'encerrado').sort(ordenar), ...estado.fichas.filter(f => f.status === 'encerrado').sort(ordenar)]
-        return rota.fulfill({ status: 200, json: { alunos: lista, ativos: ativas(estado.fichas), limite: LIMITE } })
+        return rota.fulfill({ status: 200, json: { alunos: lista.map(f => ({ ...f, treino: opcoes.status?.[f.id] ?? SEM_TREINO })), ativos: ativas(estado.fichas), limite: LIMITE } })
       }
       if (req.method() === 'POST') {
         const dados = corpo as Partial<FichaSimulada>
@@ -101,6 +114,14 @@ export async function simularAlunos(
     // Uma ficha
     const atual = estado.fichas.find(f => f.id === id)
     if (!atual) return naoEncontrado(rota)
+
+    // Os dados do aluno com conta
+    if (sub === 'dados') {
+      if (req.method() !== 'GET') return erro(rota, 405, 'metodo', 'Método não permitido.')
+      if (!atual.comConta || atual.status !== 'ativo') return erro(rota, 409, 'sem_vinculo', 'Este aluno ainda não tem conta vinculada.')
+      if (opcoes.falhaNosDados) return erro(rota, 502, 'falha_no_banco', 'Não foi possível falar com o banco de dados agora. Tente novamente em instantes.')
+      return rota.fulfill({ status: 200, json: { dados: opcoes.dados?.[atual.id] ?? dadosVazios } })
+    }
 
     // O convite dela
     if (sub === 'convite') {

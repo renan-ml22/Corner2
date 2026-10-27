@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   aceitarConviteNoServidor, apagarAlunoNoServidor, atualizarAlunoNoServidor, cancelarConviteNoServidor, consultarConviteNoServidor,
-  criarAlunoNoServidor, desvincularNoServidor, esquecerConviteNoServidor, gerarConviteNoServidor, guardarConviteNoServidor,
+  criarAlunoNoServidor, dadosDoAlunoNoServidor, desvincularNoServidor, esquecerConviteNoServidor, gerarConviteNoServidor, guardarConviteNoServidor,
   lerAlunoNoServidor, listarAlunosNoServidor, meuTreinadorNoServidor,
 } from '@/lib/cornerman/cliente'
 
@@ -200,5 +200,53 @@ describe('o que volta', () => {
   it('sem conexão: status 0 e a mensagem de rede, sem lançar erro', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
     expect(await listarAlunosNoServidor()).toEqual({ ok: false, status: 0, codigo: 'sem_conexao', erro: 'Sem conexão. Verifique a internet e tente de novo.' })
+  })
+})
+
+describe('dados do aluno (etapa 3b)', () => {
+  const ID = fichaDeExemplo.id
+  const dados = {
+    nivel: 'avancado', foto: '',
+    estilo: { atletaId: 'ali', nome: 'Muhammad Ali', estilo: 'Out-boxer', percentual: 82 },
+    plano: { nome: 'Fundamentos', semana: 2, semanas: 4 },
+    treinos: [{ data: '2026-10-26T20:00:00.000Z', tipo: 'spa', rounds: 6, minPorRound: 2, rpe: 8, duracaoSegundos: 1500 }],
+  }
+
+  it('GET em /alunos/<id>/dados, sem corpo; devolve os dados', async () => {
+    const f = responder(200, { dados })
+    expect(await dadosDoAlunoNoServidor(ID)).toEqual({ ok: true, valor: dados })
+    const [url, opcoes] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe(`/api/cornerman/alunos/${ID}/dados`)
+    expect(opcoes).toMatchObject({ method: 'GET', credentials: 'same-origin', cache: 'no-store' })
+    expect(opcoes).not.toHaveProperty('body')
+  })
+
+  it('sem quiz, sem plano e sem treinos também é uma resposta válida', async () => {
+    responder(200, { dados: { nivel: null, foto: '', estilo: null, plano: null, treinos: [] } })
+    expect((await dadosDoAlunoNoServidor(ID)).ok).toBe(true)
+  })
+
+  it.each([
+    ['sem o campo dados', {}],
+    ['treinos que não é lista', { dados: { ...dados, treinos: 'x' } }],
+    ['treino com tipo inventado', { dados: { ...dados, treinos: [{ ...dados.treinos[0], tipo: 'xyz' }] } }],
+    ['treino com número em texto', { dados: { ...dados, treinos: [{ ...dados.treinos[0], rpe: '8' }] } }],
+    ['estilo incompleto', { dados: { ...dados, estilo: { nome: 'Ali' } } }],
+    ['foto que não é texto', { dados: { ...dados, foto: 5 } }],
+  ])('resposta fora do formato (%s): erro genérico, nunca dado quebrado', async (_nome, corpo) => {
+    responder(200, corpo)
+    expect(await dadosDoAlunoNoServidor(ID)).toEqual({ ok: false, status: 200, codigo: 'resposta_invalida', erro: 'Não foi possível continuar. Tente novamente.' })
+  })
+
+  it('409 sem vínculo e 404 voltam com o código e o texto do servidor', async () => {
+    responder(409, { erro: 'Este aluno ainda não tem conta vinculada.', codigo: 'sem_vinculo' })
+    expect(await dadosDoAlunoNoServidor(ID)).toEqual({ ok: false, status: 409, codigo: 'sem_vinculo', erro: 'Este aluno ainda não tem conta vinculada.' })
+    responder(404, { erro: 'Aluno não encontrado.', codigo: 'nao_encontrado' })
+    expect(await dadosDoAlunoNoServidor(ID)).toMatchObject({ ok: false, status: 404 })
+  })
+
+  it('sem conexão: texto próprio, sem lançar erro', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('rede') }))
+    expect(await dadosDoAlunoNoServidor(ID)).toMatchObject({ ok: false, codigo: 'sem_conexao' })
   })
 })

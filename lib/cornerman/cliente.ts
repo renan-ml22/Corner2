@@ -2,11 +2,14 @@
 // Nunca lançam erro: toda falha (rede, servidor, resposta fora do formato) volta como `{ ok: false, … }` com texto para mostrar.
 
 import { isObj } from '@/lib/dados/contrato'
+import { isRegType } from '@/lib/tipos'
+import type { DadosDoAluno } from './aluno-dados'
 import type { DadosDaFicha, FichaDeAluno } from './ficha'
+import type { AlunoNaLista } from './servico'
 
 export type RespostaDaApi<T> = { ok: true; valor: T } | { ok: false; erro: string; codigo: string; status: number }
 
-export interface ListaDeAlunos { alunos: FichaDeAluno[]; ativos: number; limite: number }
+export interface ListaDeAlunos { alunos: AlunoNaLista[]; ativos: number; limite: number }
 
 const SEM_CONEXAO = 'Sem conexão. Verifique a internet e tente de novo.'
 const ERRO_GENERICO = 'Não foi possível continuar. Tente novamente.'
@@ -51,7 +54,7 @@ export async function listarAlunosNoServidor(): Promise<RespostaDaApi<ListaDeAlu
   if (!r.ok) return r
   const j = r.json
   if (!isObj(j) || !Array.isArray(j.alunos) || typeof j.ativos !== 'number' || typeof j.limite !== 'number') return respostaInvalida()
-  return { ok: true, valor: { alunos: j.alunos as FichaDeAluno[], ativos: j.ativos, limite: j.limite } }
+  return { ok: true, valor: { alunos: j.alunos as AlunoNaLista[], ativos: j.ativos, limite: j.limite } }
 }
 
 export const criarAlunoNoServidor = (dados: Partial<DadosDaFicha>) => umaFicha(chamar('POST', base, dados))
@@ -131,4 +134,28 @@ export const atualizarAlunoNoServidor = (id: string, campos: Record<string, unkn
 export async function apagarAlunoNoServidor(id: string): Promise<RespostaDaApi<true>> {
   const r = await chamar('DELETE', doAluno(id))
   return r.ok ? { ok: true, valor: true } : r
+}
+
+// ── Dados do aluno com conta (aba "Treinos" da ficha) ────────
+
+const textoOuNulo = (v: unknown) => v === null || typeof v === 'string'
+
+/** Confere o formato inteiro antes de a tela usar: um campo fora do lugar vira erro genérico, nunca um gráfico quebrado. */
+function comoDadosDoAluno(json: unknown): DadosDoAluno | null {
+  if (!isObj(json) || !isObj(json.dados)) return null
+  const d = json.dados
+  const estiloOk = d.estilo === null || (isObj(d.estilo) && typeof d.estilo.atletaId === 'string' && typeof d.estilo.nome === 'string' && typeof d.estilo.estilo === 'string' && typeof d.estilo.percentual === 'number')
+  const planoOk = d.plano === null || (isObj(d.plano) && typeof d.plano.nome === 'string' && typeof d.plano.semana === 'number' && typeof d.plano.semanas === 'number')
+  const treinosOk = Array.isArray(d.treinos) && d.treinos.every(t => isObj(t) && typeof t.data === 'string' && isRegType(t.tipo)
+    && [t.rounds, t.minPorRound, t.rpe, t.duracaoSegundos].every(n => typeof n === 'number' && Number.isFinite(n)))
+  if (!textoOuNulo(d.nivel) || typeof d.foto !== 'string' || !estiloOk || !planoOk || !treinosOk) return null
+  return d as unknown as DadosDoAluno
+}
+
+/** O que o treinador vê do aluno (`409 sem_vinculo` se a ficha não tem conta vinculada). */
+export async function dadosDoAlunoNoServidor(id: string): Promise<RespostaDaApi<DadosDoAluno>> {
+  const r = await chamar('GET', `${doAluno(id)}/dados`)
+  if (!r.ok) return r
+  const dados = comoDadosDoAluno(r.json)
+  return dados ? { ok: true, valor: dados } : respostaInvalida()
 }

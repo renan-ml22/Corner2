@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+import type { DadosDoAluno } from '../lib/cornerman/aluno-dados'
 import { SEM_ASSINATURA_TESTE, ativa, emTeste, simularEstado } from './assinatura-simulada'
 import { ficha, fichas, simularAlunos } from './alunos-simulados'
 import { expect, test } from './fixtures'
@@ -967,5 +968,220 @@ test.describe('convite na ficha: respostas de erro de propósito', () => {
     await expect(alerta(pagina)).toHaveText('Sem conexão. Verifique a internet e tente de novo.')
     await expect(pagina.getByRole('textbox', { name: 'Link do convite' })).toHaveCount(0)
     await expect(pagina.getByRole('button', { name: 'Gerar link de convite' })).toBeEnabled()
+  })
+})
+
+// ── Etapa 3b: status de treino na lista e a aba "Treinos" da ficha (aluno com conta) ─────────────────────────────
+
+const HOJE = new Date('2026-10-28T12:00:00-03:00') // quarta-feira
+const treinoEm = (dia: string, extra: Partial<DadosDoAluno['treinos'][number]> = {}) => ({
+  data: new Date(`${dia}T09:00:00-03:00`).toISOString(), tipo: 'tec' as const, rounds: 5, minPorRound: 3, rpe: 6, duracaoSegundos: 900, ...extra,
+})
+const DADOS_DA_ALUNA: DadosDoAluno = {
+  nivel: 'avancado',
+  foto: '',
+  estilo: { atletaId: 'ali', nome: 'Muhammad Ali', estilo: 'Out-boxer', percentual: 82 },
+  plano: { nome: 'Fundamentos', semana: 2, semanas: 4 },
+  treinos: [
+    treinoEm('2026-10-27', { tipo: 'spa', rounds: 6, minPorRound: 2, rpe: 8 }),
+    treinoEm('2026-10-26'),
+    treinoEm('2026-10-18', { tipo: 'con', rpe: 4 }),
+    treinoEm('2026-10-02'),
+  ],
+}
+
+test.describe('status de treino na lista', () => {
+  test.beforeEach(async ({ pagina }) => {
+    await pagina.clock.setFixedTime(HOJE)
+    await simularEstado(pagina, ativa('cornerman'))
+  })
+
+  test('aluno com conta: cor E texto (verde, amarelo, vermelho e cinza); ficha manual não tem status', async ({ pagina }) => {
+    const verde = ficha('Ana', { comConta: true })
+    const amarelo = ficha('Bia', { comConta: true })
+    const vermelho = ficha('Caio', { comConta: true })
+    const cinza = ficha('Davi', { comConta: true })
+    const manual = ficha('Eva')
+    await simularAlunos(pagina, [verde, amarelo, vermelho, cinza, manual], {
+      status: {
+        [verde.id]: { cor: 'verde', dias: 0 }, [amarelo.id]: { cor: 'amarelo', dias: 5 },
+        [vermelho.id]: { cor: 'vermelho', dias: 12 }, [cinza.id]: { cor: 'cinza', dias: null },
+      },
+    })
+    await pagina.goto('/alunos')
+    const cartao = (nome: string) => pagina.getByRole('list', { name: 'Alunos' }).getByRole('listitem').filter({ hasText: nome })
+    await expect(cartao('Ana').locator('[data-cor="verde"]')).toHaveText('Treinou hoje')
+    await expect(cartao('Bia').locator('[data-cor="amarelo"]')).toHaveText('Treinou há 5 dias')
+    await expect(cartao('Caio').locator('[data-cor="vermelho"]')).toHaveText('Treinou há 12 dias')
+    await expect(cartao('Davi').locator('[data-cor="cinza"]')).toHaveText('Sem treinos registrados')
+    await expect(cartao('Eva').locator('[data-cor]')).toHaveCount(0)
+    await expect(cartao('Eva')).toContainText('Ficha manual')
+  })
+
+  test('ficha encerrada não mostra status', async ({ pagina }) => {
+    const e = ficha('Fábio', { status: 'encerrado' })
+    await simularAlunos(pagina, [e], { status: { [e.id]: { cor: 'verde', dias: 0 } } })
+    await pagina.goto('/alunos')
+    await pagina.getByRole('button', { name: /Encerrados/ }).click()
+    await expect(pagina.locator('[data-cor]')).toHaveCount(0)
+  })
+})
+
+test.describe('aba "Treinos" da ficha', () => {
+  test.beforeEach(async ({ pagina }) => {
+    await pagina.clock.setFixedTime(HOJE)
+    await simularEstado(pagina, ativa('cornerman'))
+  })
+
+  const painel = (pagina: Page) => pagina.getByRole('tabpanel')
+  /** O valor (dd) de um número do resumo, pelo rótulo (dt). */
+  const valor = (p: Locator, rotulo: string) => p.locator('dt', { hasText: rotulo }).locator('xpath=following-sibling::dd')
+
+  test('só ficha ativa com conta tem a aba; manual, convidada e encerrada não', async ({ pagina }) => {
+    const casos = [
+      [ficha('Com conta', { comConta: true }), true], [ficha('Manual'), false],
+      [ficha('Convidado', { status: 'convidado' }), false], [ficha('Encerrada', { status: 'encerrado' }), false],
+    ] as const
+    await simularAlunos(pagina, casos.map(([f]) => f))
+    for (const [f, tem] of casos) {
+      await pagina.goto(`/alunos/${f.id}`)
+      await expect(pagina.getByRole('heading', { name: f.nome, level: 1 })).toBeVisible()
+      await expect(abaDaFicha(pagina, 'Treinos')).toHaveCount(tem ? 1 : 0)
+    }
+  })
+
+  test('mostra resumo, estilo do quiz com o atleta compatível, plano, gráfico por semana e a lista de treinos', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    const api = await simularAlunos(pagina, [a], { dados: { [a.id]: DADOS_DA_ALUNA } })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+
+    const p = painel(pagina)
+    await expect(p.getByText('Muhammad Ali')).toBeVisible()
+    await expect(p.getByText('82% de compatibilidade')).toBeVisible()
+    await expect(p.getByText('Fundamentos')).toBeVisible()
+    await expect(p.getByText('Semana 2 de 4')).toBeVisible()
+    await expect(p.getByText('Avançado')).toBeVisible()
+
+    // Resumo dos 4 treinos: 5×3 + 6×2 + 5×3 + 5×3 = 57 minutos; esforço (8 + 6 + 4 + 6) / 4 = 6
+    await expect(valor(p, 'Treinos')).toHaveText('4')
+    await expect(valor(p, 'Minutos')).toHaveText('57')
+    await expect(valor(p, 'Esforço médio')).toHaveText('6')
+
+    // Gráfico: 5 semanas, o texto de cada barra diz a semana e a quantidade
+    const barras = p.getByRole('list', { name: 'Treinos por semana' }).getByRole('listitem')
+    await expect(barras).toHaveCount(5)
+    await expect(barras.nth(4)).toContainText('2 treinos')
+    await expect(barras.nth(3)).toContainText('0 treinos')
+    await expect(barras.nth(2)).toContainText('1 treino') // domingo 18/10 ainda é da semana de 12/10
+    await expect(barras.nth(1)).toContainText('0 treinos')
+    await expect(barras.nth(0)).toContainText('1 treino') // sexta 2/10, semana de 28/9
+
+    // Lista, do mais novo ao mais velho
+    const treinos = p.getByRole('list', { name: 'Lista de treinos' }).getByRole('listitem')
+    await expect(treinos).toHaveCount(4)
+    await expect(treinos.nth(0)).toContainText('Sparring')
+    await expect(treinos.nth(0)).toContainText('6 rounds × 2 min')
+    await expect(treinos.nth(0)).toContainText('Esforço 8/10')
+    expect(api.pedidos.some(x => x.caminho.endsWith(`/${a.id}/dados`) && x.metodo === 'GET')).toBe(true)
+    expect(api.escritas()).toEqual([])
+  })
+
+  test('filtro por tipo muda o resumo, o gráfico e a lista; "Todos" volta ao total', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    await simularAlunos(pagina, [a], { dados: { [a.id]: DADOS_DA_ALUNA } })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+    const p = painel(pagina)
+
+    await p.getByRole('button', { name: 'Sparring' }).click()
+    await expect(p.getByRole('button', { name: 'Sparring' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(valor(p, 'Treinos')).toHaveText('1')
+    await expect(valor(p, 'Esforço médio')).toHaveText('8')
+    await expect(p.getByRole('list', { name: 'Lista de treinos' }).getByRole('listitem')).toHaveCount(1)
+    await expect(p.getByRole('list', { name: 'Treinos por semana' }).getByRole('listitem').nth(4)).toContainText('1 treino')
+
+    await p.getByRole('button', { name: 'Condicionamento' }).click()
+    await expect(valor(p, 'Treinos')).toHaveText('1')
+    await p.getByRole('button', { name: 'Todos' }).click()
+    await expect(valor(p, 'Treinos')).toHaveText('4')
+  })
+
+  test('sem treino, sem quiz e sem plano: textos de estado vazio, sem "null" nem NaN', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    await simularAlunos(pagina, [a])
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+    const p = painel(pagina)
+    await expect(p.getByText('Nenhum treino nos últimos 30 dias.')).toBeVisible()
+    await expect(p.getByText('Ainda não fez o quiz de estilo.')).toBeVisible()
+    await expect(p.getByText('Sem plano ativo.')).toBeVisible()
+    await expect(valor(p, 'Esforço médio')).toHaveText('—')
+    await expect(p).not.toContainText(/null|undefined|NaN/)
+  })
+
+  test('filtro sem treino daquele tipo: aviso próprio', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    await simularAlunos(pagina, [a], { dados: { [a.id]: { ...DADOS_DA_ALUNA, treinos: [treinoEm('2026-10-27')] } } })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+    await painel(pagina).getByRole('button', { name: 'Sparring' }).click()
+    await expect(painel(pagina).getByText('Nenhum treino deste tipo nos últimos 30 dias.')).toBeVisible()
+  })
+
+  test('a foto da conta do aluno aparece na aba, com o nome como texto alternativo', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    await simularAlunos(pagina, [a], { dados: { [a.id]: { ...DADOS_DA_ALUNA, foto: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==' } } })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+    await expect(painel(pagina).getByRole('img', { name: 'Foto da conta de Aluna' })).toBeVisible()
+  })
+
+  test.describe('erro de propósito', () => {
+  test.use({ toleraRespostaDeErro: true })
+  test('erro ao carregar: aviso com "Tentar de novo"; a visão geral continua funcionando', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    await simularAlunos(pagina, [a], { falhaNosDados: true })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+    await expect(alerta(pagina)).toContainText('Não foi possível falar com o banco de dados agora.')
+    await expect(painel(pagina).getByRole('button', { name: 'Tentar de novo' })).toBeVisible()
+    await abaDaFicha(pagina, 'Visão geral').click()
+    await expect(pagina.getByRole('heading', { name: 'Aluna', level: 1 })).toBeVisible()
+  })
+  })
+
+  test('as setas do teclado percorrem as três abas', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    await simularAlunos(pagina, [a], { dados: { [a.id]: DADOS_DA_ALUNA } })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Visão geral').focus()
+    await pagina.keyboard.press('ArrowRight')
+    await expect(abaDaFicha(pagina, 'Notas')).toBeFocused()
+    await pagina.keyboard.press('ArrowRight')
+    await expect(abaDaFicha(pagina, 'Treinos')).toBeFocused()
+  })
+
+  test('360 px sem rolagem lateral e sem violações de acessibilidade (axe)', async ({ pagina }) => {
+    await pagina.setViewportSize({ width: 360, height: 760 })
+    const a = ficha('Aluna com um nome bem comprido para testar a quebra', { comConta: true })
+    await simularAlunos(pagina, [a], { dados: { [a.id]: DADOS_DA_ALUNA } })
+    await pagina.goto(`/alunos/${a.id}`)
+    await abaDaFicha(pagina, 'Treinos').click()
+    await expect(painel(pagina).getByText('Muhammad Ali')).toBeVisible()
+    expect(await pagina.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360)
+    expect(await auditar(pagina), 'aba Treinos').toEqual([])
+    await painel(pagina).getByRole('button', { name: 'Sparring' }).click()
+    expect(await auditar(pagina), 'aba Treinos filtrada').toEqual([])
+  })
+
+  test('a lista também passa no axe com os quatro status', async ({ pagina }) => {
+    const [a, b, c, d] = ['Ana', 'Bia', 'Caio', 'Davi'].map(n => ficha(n, { comConta: true }))
+    await simularAlunos(pagina, [a, b, c, d], {
+      status: { [a.id]: { cor: 'verde', dias: 1 }, [b.id]: { cor: 'amarelo', dias: 4 }, [c.id]: { cor: 'vermelho', dias: 9 }, [d.id]: { cor: 'cinza', dias: null } },
+    })
+    await pagina.goto('/alunos')
+    await expect(contador(pagina, '4 de 20 alunos')).toBeVisible()
+    expect(await auditar(pagina), 'lista com status').toEqual([])
   })
 })

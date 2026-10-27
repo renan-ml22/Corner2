@@ -12,6 +12,7 @@
   --color-red: oklch(0.63 0.21 25);
   --color-red-texto: oklch(0.75 0.15 25); /* vermelho para TEXTO pequeno sobre fundo escuro (contraste 4,5:1) */
   --color-green: oklch(0.72 0.15 150);
+  --color-amber: oklch(0.82 0.15 85);
   --font-body: -apple-system, 'Inter', system-ui, sans-serif;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);

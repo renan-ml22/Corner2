@@ -14,6 +14,7 @@ import { LIMITES_DA_FICHA, NOME_DO_NIVEL_DE_ALUNO, hrefDeTelefone, type DadosDaF
 import { aoTeclarNoGrupo } from '@/lib/teclado'
 import { TEXTOS } from '@/lib/textos'
 import ConviteDaFicha from './ConviteDaFicha'
+import TreinosDoAluno from './TreinosDoAluno'
 import estilos from './ficha.module.css'
 
 export default function FichaCliente({ id }: { id: string }) {
@@ -30,7 +31,9 @@ export default function FichaCliente({ id }: { id: string }) {
 }
 
 type Carga = { fase: 'carregando' } | { fase: 'naoEncontrada'; mensagem: string } | { fase: 'erro'; mensagem: string } | { fase: 'pronta'; ficha: FichaDeAluno; convite: { expiraEm: string } | null }
-type Aba = 'geral' | 'notas'
+type Aba = 'geral' | 'notas' | 'treinos'
+
+const ROTULO_DA_ABA: Record<Aba, string> = { geral: 'Visão geral', notas: 'Notas', treinos: 'Treinos' }
 
 function Ficha({ id }: { id: string }) {
   const [carga, setCarga] = useState<Carga>({ fase: 'carregando' })
@@ -83,7 +86,7 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
 }) {
   const router = useRouter()
   const avisar = useToast()
-  const [aba, setAba] = useState<Aba>('geral')
+  const [abaEscolhida, setAba] = useState<Aba>('geral')
   const [editando, setEditando] = useState(false)
   const [notas, setNotas] = useState(ficha.notas)
   const [ocupado, setOcupado] = useState(false)
@@ -91,6 +94,9 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
   const [dadosAlterados, setDadosAlterados] = useState(false) // o formulário de "Editar dados" tem algo não salvo
 
   const encerrada = ficha.status === 'encerrado'
+  // Só quem tem conta vinculada tem treinos para o treinador ver. Se o vínculo acabar com a aba aberta, volta à visão geral.
+  const abas: Aba[] = ficha.comConta && ficha.status === 'ativo' ? ['geral', 'notas', 'treinos'] : ['geral', 'notas']
+  const aba: Aba = abas.includes(abaEscolhida) ? abaEscolhida : 'geral'
   const convidada = ficha.status === 'convidado'
   const notasAlteradas = notas !== ficha.notas
 
@@ -181,12 +187,12 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
       </div>
 
       <div className={estilos.abas} role="tablist" aria-label="Seções da ficha" onKeyDown={e => aoTeclarNoGrupo(e, 'tab')}>
-        {(['geral', 'notas'] as const).map(a => (
+        {abas.map(a => (
           <button
             key={a} type="button" role="tab" id={`aba-${a}`} aria-selected={aba === a} aria-controls={`painel-${a}`} tabIndex={aba === a ? 0 : -1}
             className={aba === a ? 'ativa' : ''} onClick={() => trocarAba(a)}
           >
-            {a === 'geral' ? 'Visão geral' : 'Notas'}
+            {ROTULO_DA_ABA[a]}
           </button>
         ))}
       </div>
@@ -225,6 +231,8 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
             {erro && <p role="alert" className={estilos.erro}>{erro}</p>}
           </>
         ))}
+
+        {aba === 'treinos' && <TreinosDoAluno id={ficha.id} nome={ficha.nome} />}
 
         {aba === 'notas' && (
           <div className="surface-card form-card">

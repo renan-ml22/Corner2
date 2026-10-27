@@ -1,0 +1,20 @@
+.selo {
+  --cor-do-status: var(--color-neutral-400);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.selo[data-cor='verde'] { --cor-do-status: var(--green); }
+.selo[data-cor='amarelo'] { --cor-do-status: var(--color-amber); }
+.selo[data-cor='vermelho'] { --cor-do-status: var(--red); }
+
+.ponto {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--cor-do-status);
+}
