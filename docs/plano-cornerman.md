@@ -3,7 +3,7 @@
 Funcionalidade nova em 4 etapas. O desenho completo (decisões, segurança, o que ficou de fora) está em
 `docs/superpowers/specs/2026-10-26-cornerman-design.md`. Este arquivo conta o que já foi entregue e como funciona.
 
-## Etapa 1: plano e foto de perfil (código pronto; falta sincronizar o Stripe de teste)
+## Etapa 1: plano e foto de perfil (pronta; Stripe de teste sincronizado em 27/10/2026)
 
 ### Plano Cornerman
 
@@ -12,7 +12,7 @@ Funcionalidade nova em 4 etapas. O desenho completo (decisões, segurança, o qu
 - Quem já assina Iniciante, Amador ou Profissional não muda de preço, de nível nem de acesso.
 - O recurso exclusivo é `gestaoDeAlunos` (painel com até 20 alunos, fichas, notas e plano sugerido). A página dele chega na etapa 2: até lá, o cartão do plano já aparece na tela de assinatura, mas o pagamento está em modo de teste.
 - Tudo mora em `lib/assinatura/catalogo.ts` (fonte única). Chave do preço no Stripe: `cornerman_mensal` e `cornerman_anual`.
-- **Stripe de teste:** é preciso rodar `npm run stripe:sincronizar` (use `-- --simular` para só ver o que faria). Ele cria o produto "Corner Cornerman" e os dois preços, e atualiza a descrição do "Corner Profissional" ("Tudo do Cornerman…"). Enquanto isso não for feito, assinar o Cornerman falha no pagamento (o preço ainda não existe no Stripe). Só funciona com chave de teste (`sk_test_…`).
+- **Stripe de teste:** sincronizado em 27/10/2026 (produto "Corner Cornerman", `cornerman_mensal` e `cornerman_anual`, descrição do Profissional atualizada, Portal do Cliente atualizado; `npm run stripe:fumaca` passou). Se o catálogo mudar, rodar `npm run stripe:sincronizar` de novo (`-- --simular` mostra o que faria; só funciona com chave `sk_test_…`).
 
 ### Foto de perfil (todos os planos, inclusive o gratuito)
 
