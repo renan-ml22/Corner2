@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  apagarAlunoNoServidor, atualizarAlunoNoServidor, criarAlunoNoServidor, lerAlunoNoServidor, listarAlunosNoServidor,
+  apagarAlunoNoServidor, atualizarAlunoNoServidor, cancelarConviteNoServidor, criarAlunoNoServidor, gerarConviteNoServidor,
+  lerAlunoNoServidor, listarAlunosNoServidor,
 } from '@/lib/cornerman/cliente'
 
 // As chamadas que as telas do treinador fazem à API: o que enviam e como tratam cada tipo de resposta.
@@ -42,6 +43,51 @@ describe('o que é enviado', () => {
       [`/api/cornerman/alunos/${fichaDeExemplo.id}`, 'PATCH'],
       [`/api/cornerman/alunos/${fichaDeExemplo.id}`, 'DELETE'],
     ])
+  })
+})
+
+describe('convite (etapa 3a)', () => {
+  const ID = fichaDeExemplo.id
+
+  it('gerar: POST em /alunos/<id>/convite, sem corpo; devolve o link e a validade', async () => {
+    const f = responder(201, { link: 'https://corner2.vercel.app/convite/abc', expiraEm: '2026-11-10T12:00:00.000Z' })
+    const r = await gerarConviteNoServidor(ID)
+    expect(r).toEqual({ ok: true, valor: { link: 'https://corner2.vercel.app/convite/abc', expiraEm: '2026-11-10T12:00:00.000Z' } })
+    const [url, opcoes] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe(`/api/cornerman/alunos/${ID}/convite`)
+    expect(opcoes).toMatchObject({ method: 'POST', credentials: 'same-origin' })
+    expect(opcoes).not.toHaveProperty('body')
+  })
+
+  it('gerar: resposta sem link ou sem validade vira "resposta_invalida"', async () => {
+    responder(201, { link: 42, expiraEm: 'x' })
+    expect(await gerarConviteNoServidor(ID)).toMatchObject({ ok: false, codigo: 'resposta_invalida' })
+    responder(201, { qualquer: 'coisa' })
+    expect(await gerarConviteNoServidor(ID)).toMatchObject({ ok: false, codigo: 'resposta_invalida' })
+  })
+
+  it('gerar: o erro do servidor (limite, ficha com conta) chega com o texto e o código', async () => {
+    responder(409, { erro: 'Esta ficha já está vinculada a uma conta.', codigo: 'nao_convidavel' })
+    expect(await gerarConviteNoServidor(ID)).toEqual({ ok: false, status: 409, codigo: 'nao_convidavel', erro: 'Esta ficha já está vinculada a uma conta.' })
+  })
+
+  it('cancelar: DELETE em /alunos/<id>/convite', async () => {
+    const f = responder(200, { ok: true })
+    expect((await cancelarConviteNoServidor(ID)).ok).toBe(true)
+    const [url, opcoes] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe(`/api/cornerman/alunos/${ID}/convite`)
+    expect(opcoes.method).toBe('DELETE')
+  })
+
+  it('ler a ficha devolve também o convite pendente (ou null quando não há)', async () => {
+    responder(200, { aluno: fichaDeExemplo, convite: { expiraEm: '2026-11-10T12:00:00.000Z' } })
+    expect(await lerAlunoNoServidor(ID)).toEqual({ ok: true, valor: { aluno: fichaDeExemplo, convite: { expiraEm: '2026-11-10T12:00:00.000Z' } } })
+    responder(200, { aluno: fichaDeExemplo, convite: null })
+    expect(await lerAlunoNoServidor(ID)).toEqual({ ok: true, valor: { aluno: fichaDeExemplo, convite: null } })
+    responder(200, { aluno: fichaDeExemplo }) // servidor antigo, sem o campo
+    expect(await lerAlunoNoServidor(ID)).toEqual({ ok: true, valor: { aluno: fichaDeExemplo, convite: null } })
+    responder(200, { aluno: fichaDeExemplo, convite: { expiraEm: 42 } })
+    expect(await lerAlunoNoServidor(ID)).toEqual({ ok: true, valor: { aluno: fichaDeExemplo, convite: null } })
   })
 })
 

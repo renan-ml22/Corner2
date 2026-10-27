@@ -55,7 +55,30 @@ export async function listarAlunosNoServidor(): Promise<RespostaDaApi<ListaDeAlu
 }
 
 export const criarAlunoNoServidor = (dados: Partial<DadosDaFicha>) => umaFicha(chamar('POST', base, dados))
-export const lerAlunoNoServidor = (id: string) => umaFicha(chamar('GET', doAluno(id)))
+/** A ficha e o convite ainda não usado dela (sem o link: o servidor não guarda o token). */
+export interface FichaComConvite { aluno: FichaDeAluno; convite: { expiraEm: string } | null }
+
+export async function lerAlunoNoServidor(id: string): Promise<RespostaDaApi<FichaComConvite>> {
+  const r = await chamar('GET', doAluno(id))
+  if (!r.ok) return r
+  const aluno = comoFicha(r.json)
+  if (!aluno) return respostaInvalida()
+  const convite = isObj(r.json) && isObj(r.json.convite) && typeof r.json.convite.expiraEm === 'string' ? { expiraEm: r.json.convite.expiraEm } : null
+  return { ok: true, valor: { aluno, convite } }
+}
+
+/** Gera o link de convite da ficha. O link só vem nesta resposta; o servidor guarda apenas o hash. */
+export async function gerarConviteNoServidor(id: string): Promise<RespostaDaApi<{ link: string; expiraEm: string }>> {
+  const r = await chamar('POST', `${doAluno(id)}/convite`)
+  if (!r.ok) return r
+  const j = r.json
+  return isObj(j) && typeof j.link === 'string' && typeof j.expiraEm === 'string' ? { ok: true, valor: { link: j.link, expiraEm: j.expiraEm } } : respostaInvalida()
+}
+
+export async function cancelarConviteNoServidor(id: string): Promise<RespostaDaApi<true>> {
+  const r = await chamar('DELETE', `${doAluno(id)}/convite`)
+  return r.ok ? { ok: true, valor: true } : r
+}
 export const atualizarAlunoNoServidor = (id: string, campos: Record<string, unknown>) => umaFicha(chamar('PATCH', doAluno(id), campos))
 
 export async function apagarAlunoNoServidor(id: string): Promise<RespostaDaApi<true>> {

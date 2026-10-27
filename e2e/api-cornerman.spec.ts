@@ -96,3 +96,52 @@ test.describe('logado', () => {
     expect(await r.json()).toEqual({ pagamentoAtivo: false })
   })
 })
+
+
+// ── Convite (etapa 3a) ───────────────────────────────────────
+
+test.describe('convite: sem estar logado', () => {
+  test('gerar e cancelar respondem 401', async ({ request }) => {
+    expect((await request.post(`/api/cornerman/alunos/${UUID}/convite`, { headers: mesmoSite })).status()).toBe(401)
+    expect((await request.delete(`/api/cornerman/alunos/${UUID}/convite`, { headers: mesmoSite })).status()).toBe(401)
+  })
+})
+
+test.describe('convite: logado', () => {
+  test('pedido de outro site ou sem Origin é recusado com 403', async ({ pagina }) => {
+    const alheio = { origin: 'https://site-malicioso.com' }
+    for (const r of [
+      await pagina.request.post(`/api/cornerman/alunos/${UUID}/convite`, { headers: alheio }),
+      await pagina.request.delete(`/api/cornerman/alunos/${UUID}/convite`, { headers: alheio }),
+      await pagina.request.post(`/api/cornerman/alunos/${UUID}/convite`),
+    ]) {
+      expect(r.status()).toBe(403)
+      expect((await r.json()).codigo).toBe('origem_invalida')
+    }
+  })
+
+  test('id que não é um uuid: 404 "Aluno não encontrado." antes de tocar no banco', async ({ pagina }) => {
+    for (const id of ['abc', '1', 'x.y']) {
+      for (const r of [
+        await pagina.request.post(`/api/cornerman/alunos/${id}/convite`, { headers: mesmoSite }),
+        await pagina.request.delete(`/api/cornerman/alunos/${id}/convite`, { headers: mesmoSite }),
+      ]) {
+        expect(r.status(), id).toBe(404)
+        expect(await r.json()).toEqual({ erro: 'Aluno não encontrado.', codigo: 'nao_encontrado' })
+      }
+    }
+  })
+
+  test('sem o banco configurado: 503 claro, sem token e sem cache', async ({ pagina }) => {
+    for (const r of [
+      await pagina.request.post(`/api/cornerman/alunos/${UUID}/convite`, { headers: mesmoSite }),
+      await pagina.request.delete(`/api/cornerman/alunos/${UUID}/convite`, { headers: mesmoSite }),
+    ]) {
+      expect(r.status()).toBe(503)
+      expect(r.headers()['cache-control']).toBe('no-store')
+      const texto = await r.text()
+      expect(JSON.parse(texto).codigo).toBe('nao_configurado')
+      expect(texto).not.toMatch(/[A-Za-z0-9_-]{43}/)
+    }
+  })
+})

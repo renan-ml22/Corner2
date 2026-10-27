@@ -39,7 +39,7 @@ function Ficha({ id }: { id: string }) {
     let ativo = true
     void lerAlunoNoServidor(id).then(r => {
       if (!ativo) return
-      if (r.ok) setCarga({ fase: 'pronta', ficha: r.valor })
+      if (r.ok) setCarga({ fase: 'pronta', ficha: r.valor.aluno })
       else setCarga(r.status === 404 ? { fase: 'naoEncontrada', mensagem: r.erro } : { fase: 'erro', mensagem: r.erro })
     })
     return () => { ativo = false }

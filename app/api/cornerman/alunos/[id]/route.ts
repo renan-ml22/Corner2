@@ -1,6 +1,8 @@
 import { erro, responder } from '@/lib/assinatura/rota'
 import { prepararRotaDoTreinador } from '@/lib/cornerman/acesso'
 import { criarAlunosBancoSupabase } from '@/lib/cornerman/banco'
+import { criarConvitesBancoSupabase } from '@/lib/cornerman/convite-banco'
+import { convitePendenteDaFicha } from '@/lib/cornerman/convite-servico'
 import { ehIdDeFicha } from '@/lib/cornerman/ficha'
 import { LIMITE_DO_CORPO_BYTES, respostaDeErroDoCornerman } from '@/lib/cornerman/http'
 import { apagarAluno, atualizarAluno, lerAluno } from '@/lib/cornerman/servico'
@@ -30,7 +32,10 @@ export async function GET(request: Request, ctx: Contexto) {
   if (!db) return erro('nao_configurado', 'A conta na nuvem ainda não está disponível neste ambiente.', 503)
 
   try {
-    return responder({ aluno: await lerAluno(criarAlunosBancoSupabase(db), preparo.usuario.id, id) })
+    const aluno = await lerAluno(criarAlunosBancoSupabase(db), preparo.usuario.id, id)
+    // O convite ainda não usado (só a validade: o token não é guardado). Ficha que já tem conta não tem convite pendente.
+    const convite = aluno.comConta ? null : await convitePendenteDaFicha(criarConvitesBancoSupabase(db), preparo.usuario.id, id)
+    return responder({ aluno, convite })
   } catch (e) {
     const { status, corpo } = respostaDeErroDoCornerman(e)
     return responder(corpo, status)
