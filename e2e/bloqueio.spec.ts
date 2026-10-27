@@ -184,7 +184,7 @@ test.describe('Gratuito: o que fica bloqueado, com convite para assinar', () => 
     await expect(pagina.getByText(/a partir do plano Profissional/)).toBeVisible()
     await expect(pagina.getByRole('switch', { name: /Lembretes/ })).toHaveCount(0)
     await expect(pagina.getByRole('link', { name: /Importar backup: disponível no plano Profissional/ })).toBeVisible()
-    await expect(pagina.locator('input[type=file]')).toHaveCount(0)
+    await expect(pagina.locator('input[type=file][accept*="json"]')).toHaveCount(0)
   })
 })
 
@@ -242,7 +242,7 @@ test.describe('cada plano libera o seu pedaço', () => {
     await expect(pagina.getByText('Pancadas na cabeça')).toBeVisible()
     await pagina.goto('/perfil')
     await expect(pagina.getByRole('switch', { name: /Lembretes/ })).toBeVisible()
-    await expect(pagina.locator('input[type=file]')).toHaveCount(1)
+    await expect(pagina.locator('input[type=file][accept*="json"]')).toHaveCount(1)
     await pagina.goto('/hoje')
     await pagina.getByRole('button', { name: 'Registrar treino', exact: true }).click()
     await pagina.getByRole('dialog').getByRole('button', { name: /Sparring/ }).click()

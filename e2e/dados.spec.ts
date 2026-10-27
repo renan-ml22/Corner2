@@ -70,7 +70,7 @@ test.describe('dados: backup', () => {
     await gravarRaw(pagina, 'config', JSON.stringify({ metaSemanal: 4 }))
     await pagina.goto('/perfil')
 
-    await pagina.locator('input[type=file]').setInputFiles(arquivoJson('ok.json', backup({
+    await pagina.locator('input[type=file][accept*="json"]').setInputFiles(arquivoJson('ok.json', backup({
       historico: [treino('so-um', { rounds: 8 })], pesos: [{ id: 'q1', data: '2026-10-01', kg: 68 }],
     })))
     await expect(pagina.getByText('Backup importado')).toBeVisible()
@@ -85,20 +85,20 @@ test.describe('dados: backup', () => {
     const atual = JSON.stringify([treino('a')])
     await gravarRaw(pagina, 'historico', atual)
     await pagina.goto('/perfil')
-    await pagina.locator('input[type=file]').setInputFiles(arquivoJson('ruim.json', backup({ historico: [{ ...treino('x'), rpe: 99 }] })))
+    await pagina.locator('input[type=file][accept*="json"]').setInputFiles(arquivoJson('ruim.json', backup({ historico: [{ ...treino('x'), rpe: 99 }] })))
     await expect(pagina.getByText('O histórico do backup está corrompido.')).toBeVisible()
     expect(await lerRaw(pagina, 'historico')).toBe(atual)
   })
 
   test('backup de uma versão mais nova do app é recusado com orientação', async ({ pagina }) => {
     await pagina.goto('/perfil')
-    await pagina.locator('input[type=file]').setInputFiles(arquivoJson('futuro.json', backup({}, 2)))
+    await pagina.locator('input[type=file][accept*="json"]').setInputFiles(arquivoJson('futuro.json', backup({}, 2)))
     await expect(pagina.getByText(/mais nova do Corner/)).toBeVisible()
   })
 
   test('arquivo que não é um backup do Corner é recusado', async ({ pagina }) => {
     await pagina.goto('/perfil')
-    await pagina.locator('input[type=file]').setInputFiles(arquivoJson('outro.json', { app: 'outro', dados: {} }))
+    await pagina.locator('input[type=file][accept*="json"]').setInputFiles(arquivoJson('outro.json', { app: 'outro', dados: {} }))
     await expect(pagina.getByText('Este arquivo não é um backup do Corner.')).toBeVisible()
   })
 })
@@ -111,7 +111,7 @@ test.describe('dados: várias abas', () => {
     await expect(aba2.getByText('1 treino', { exact: true })).toBeVisible()
 
     await pagina.goto('/perfil')
-    await pagina.locator('input[type=file]').setInputFiles(arquivoJson('tres.json', backup({ historico: [treino('1'), treino('2'), treino('3')] })))
+    await pagina.locator('input[type=file][accept*="json"]').setInputFiles(arquivoJson('tres.json', backup({ historico: [treino('1'), treino('2'), treino('3')] })))
     await expect(aba2.getByText('3 treinos', { exact: true })).toBeVisible()
   })
 })
