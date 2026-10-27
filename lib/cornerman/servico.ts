@@ -9,11 +9,13 @@ import {
 } from './ficha'
 import type { Nivel } from '@/lib/onboarding'
 
-type Codigo = 'limite_de_alunos' | 'nao_encontrado' | 'dado_invalido'
+export type CodigoCornerman =
+  | 'limite_de_alunos' | 'nao_encontrado' | 'dado_invalido'
+  | 'convite_invalido' | 'proprio_convite' | 'ja_tem_treinador' | 'convite_pendente' | 'nao_convidavel'
 
 /** Erro com texto seguro para mostrar à pessoa e o status HTTP a devolver. */
 export class ErroCornerman extends Error {
-  constructor(readonly codigo: Codigo, mensagem: string, readonly status: number) {
+  constructor(readonly codigo: CodigoCornerman, mensagem: string, readonly status: number) {
     super(mensagem)
     this.name = 'ErroCornerman'
   }
@@ -81,7 +83,18 @@ export async function atualizarAluno(banco: AlunosBancoLike, coachId: string, id
   if (!ehIdDeFicha(id)) throw naoEncontrado()
   const v = validarAtualizacao(corpo)
   if (!v.ok) throw new ErroCornerman('dado_invalido', v.erro, 400)
-  const linha = await comLimite(banco.atualizar(coachId, id, v.valor))
+  const campos: Record<string, unknown> = { ...v.valor }
+
+  if (v.valor.status !== undefined) {
+    const atual = await banco.obter(coachId, id)
+    if (!atual) throw naoEncontrado()
+    // Ficha com convite pendente: o convite se cancela pela rota própria, e só então o status pode mudar.
+    if (atual.status === 'convidado') throw new ErroCornerman('convite_pendente', 'Cancele o convite antes de mudar o status da ficha.', 409)
+    // Encerrar uma ficha com conta desfaz o vínculo; reabrir depois não o restaura (decisão 17).
+    if (v.valor.status === 'encerrado' && atual.aluno_user_id !== null) campos.aluno_user_id = null
+  }
+
+  const linha = await comLimite(banco.atualizar(coachId, id, campos))
   if (!linha) throw naoEncontrado()
   return paraFicha(linha)
 }

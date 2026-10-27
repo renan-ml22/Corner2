@@ -240,6 +240,69 @@ describe('atualizarAluno', () => {
   })
 })
 
+describe('status com convite e vínculo (etapa 3a)', () => {
+  const comEstado = async (banco: BancoDeAlunosFalso, extra: Partial<LinhaDeAluno>) => {
+    const f = await criarAluno(banco, ANA, { nome: 'Beto' })
+    Object.assign(banco.linhas.get(f.id)!, extra)
+    return f
+  }
+
+  it('ficha em "convidado": mudar o status é recusado (409, "convite_pendente") e nada é gravado', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await comEstado(banco, { status: 'convidado' })
+    const escritas = banco.escritas
+    for (const status of ['ativo', 'encerrado']) {
+      const e = await erroDe(atualizarAluno(banco, ANA, f.id, { status }))
+      expect(e, status).toBeInstanceOf(ErroCornerman)
+      expect(e).toMatchObject({ codigo: 'convite_pendente', status: 409, message: 'Cancele o convite antes de mudar o status da ficha.' })
+    }
+    expect(banco.escritas).toBe(escritas)
+    expect(banco.linhas.get(f.id)!.status).toBe('convidado')
+  })
+
+  it('ficha em "convidado" aceita editar os outros campos, e as notas', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await comEstado(banco, { status: 'convidado' })
+    expect(await atualizarAluno(banco, ANA, f.id, { notas: 'x', estilo: 'Pressão' })).toMatchObject({ notas: 'x', estilo: 'Pressão', status: 'convidado' })
+  })
+
+  it('encerrar uma ficha com conta limpa o vínculo (o treinador perde o acesso)', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await comEstado(banco, { aluno_user_id: 'u_aluno' })
+    expect(f.comConta).toBe(false) // a ficha criada antes de fabricar a linha
+    expect((await lerAluno(banco, ANA, f.id)).comConta).toBe(true)
+    const encerrada = await atualizarAluno(banco, ANA, f.id, { status: 'encerrado' })
+    expect(encerrada).toMatchObject({ status: 'encerrado', comConta: false })
+    expect(banco.linhas.get(f.id)!.aluno_user_id).toBeNull()
+  })
+
+  it('reabrir uma ficha que já teve conta NÃO restaura o vínculo', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await comEstado(banco, { aluno_user_id: 'u_aluno' })
+    await atualizarAluno(banco, ANA, f.id, { status: 'encerrado' })
+    const reaberta = await atualizarAluno(banco, ANA, f.id, { status: 'ativo' })
+    expect(reaberta).toMatchObject({ status: 'ativo', comConta: false })
+    expect(banco.linhas.get(f.id)!.aluno_user_id).toBeNull()
+  })
+
+  it('encerrar uma ficha sem conta continua como antes (não manda aluno_user_id)', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const f = await criarAluno(banco, ANA, { nome: 'Beto' })
+    const camposEnviados: Record<string, unknown>[] = []
+    const original = banco.atualizar.bind(banco)
+    banco.atualizar = async (c, id, campos) => { camposEnviados.push(campos); return original(c, id, campos) }
+    await atualizarAluno(banco, ANA, f.id, { status: 'encerrado' })
+    expect(camposEnviados).toEqual([{ status: 'encerrado' }])
+  })
+
+  it('o bloqueio vale só para quem é dono: ficha de outro treinador continua dando "não encontrado"', async () => {
+    const banco = new BancoDeAlunosFalso()
+    const daBia = await criarAluno(banco, BIA, { nome: 'Da Bia' })
+    Object.assign(banco.linhas.get(daBia.id)!, { status: 'convidado' })
+    expect(await erroDe(atualizarAluno(banco, ANA, daBia.id, { status: 'ativo' }))).toMatchObject(naoEncontrado)
+  })
+})
+
 describe('apagarAluno', () => {
   it('apaga de verdade; ler depois e apagar de novo dão "não encontrado"', async () => {
     const banco = new BancoDeAlunosFalso()

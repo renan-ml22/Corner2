@@ -64,13 +64,22 @@ const ERRO = {
   foto: 'A foto precisa ser uma imagem JPEG pequena.',
 } as const satisfies Record<Campo, string>
 
+// O Postgres recusa NUL e substitutos soltos (UTF-16 sem par); controles como o sino ou o ESC só atrapalham. Ficam de fora,
+// com a quebra de linha e a tabulação permitidas só nas notas.
+const CONTROLE_EM_LINHA = /[\u0000-\u001f\u007f]/
+const CONTROLE_EM_NOTAS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/
+const SUBSTITUTO_SOLTO = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/
+const textoSujo = (s: string, multilinha: boolean) => (multilinha ? CONTROLE_EM_NOTAS : CONTROLE_EM_LINHA).test(s) || SUBSTITUTO_SOLTO.test(s)
+/** Sobra algo que se enxerga? Espaços (inclusive o inseparável e o ideográfico) e caracteres de formatação (largura zero, joiner) não contam. */
+const temCaractereVisivel = (s: string) => s.replace(/[\s\p{Z}\p{Cf}]/gu, '') !== ''
+
 /** Texto opcional: vazio ou só espaços vira `null`. */
 function textoOpcional(v: unknown, max: number, erro: string, padrao?: RegExp): Validacao<string | null> {
   if (v === null || v === undefined) return { ok: true, valor: null }
   if (typeof v !== 'string') return { ok: false, erro }
   const limpo = v.trim()
   if (limpo === '') return { ok: true, valor: null }
-  if (limpo.length > max || (padrao && !padrao.test(limpo))) return { ok: false, erro }
+  if (limpo.length > max || textoSujo(limpo, false) || (padrao && !padrao.test(limpo))) return { ok: false, erro }
   return { ok: true, valor: limpo }
 }
 
@@ -78,11 +87,13 @@ function lerCampo(campo: Campo, v: unknown): Validacao<unknown> {
   switch (campo) {
     case 'nome': {
       const nome = typeof v === 'string' ? v.trim() : ''
-      return nome.length >= 1 && nome.length <= LIMITES_DA_FICHA.nome ? { ok: true, valor: nome } : { ok: false, erro: ERRO.nome }
+      return nome.length >= 1 && nome.length <= LIMITES_DA_FICHA.nome && !textoSujo(nome, false) && temCaractereVisivel(nome)
+        ? { ok: true, valor: nome } : { ok: false, erro: ERRO.nome }
     }
     case 'email': {
       const r = textoOpcional(v, LIMITES_DA_FICHA.email, ERRO.email)
-      return r.ok && r.valor !== null && !emailValido(r.valor) ? { ok: false, erro: ERRO.email } : r
+      // Sem ? & # %: num link mailto: eles abririam campos escondidos (Cc, Bcc, assunto).
+      return r.ok && r.valor !== null && (!emailValido(r.valor) || /[?&#%]/.test(r.valor)) ? { ok: false, erro: ERRO.email } : r
     }
     case 'telefone':
       return textoOpcional(v, LIMITES_DA_FICHA.telefone, ERRO.telefone, TELEFONE)
@@ -93,7 +104,7 @@ function lerCampo(campo: Campo, v: unknown): Validacao<unknown> {
       return typeof v === 'string' && (NIVEIS as readonly string[]).includes(v) ? { ok: true, valor: v } : { ok: false, erro: ERRO.nivel }
     }
     case 'notas':
-      return typeof v === 'string' && v.length <= LIMITES_DA_FICHA.notas ? { ok: true, valor: v } : { ok: false, erro: ERRO.notas }
+      return typeof v === 'string' && v.length <= LIMITES_DA_FICHA.notas && !textoSujo(v, true) ? { ok: true, valor: v } : { ok: false, erro: ERRO.notas }
     case 'foto':
       return isFoto(v) ? { ok: true, valor: v } : { ok: false, erro: ERRO.foto }
   }

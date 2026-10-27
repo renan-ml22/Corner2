@@ -19,6 +19,52 @@ const recusa = (corpo: unknown) => {
   return r.ok ? '' : r.erro
 }
 
+describe('texto mais estrito (etapa 3a)', () => {
+  describe('e-mail sem ? & # % (não pode esconder Cc/Bcc num link mailto:)', () => {
+    it.each(['x?bcc=a@b.com@c.com', 'a?b@c.com', 'a&b@c.com', 'a#b@c.com', 'a%b@c.com', 'a@b.com?subject=x'])('recusa %j', email => {
+      recusa({ nome: 'A', email })
+    })
+    it.each(['a.b+c_d-e@exemplo.com.br', 'beto@exemplo.com'])('aceita %j', email => {
+      expect(aceita({ nome: 'A', email }).email).toBe(email)
+    })
+  })
+
+  describe('caracteres de controle, NUL e substitutos soltos (o banco os recusa)', () => {
+    const ruins = ['\u0000', '\u0007', '\u001b', '\u007f', '\uD800', '\uDFFF']
+    it.each(ruins)('nome com %j é recusado', c => { recusa({ nome: `A${c}B` }) })
+    it.each(ruins)('estilo com %j é recusado', c => { recusa({ nome: 'A', estilo: `a${c}b` }) })
+    it.each(ruins)('notas com %j são recusadas', c => { recusa({ nome: 'A', notas: `a${c}b` }) })
+    it.each(['\u0000', '\u0007'])('telefone e e-mail com %j são recusados', c => {
+      recusa({ nome: 'A', telefone: `11${c}9` })
+      recusa({ nome: 'A', email: `a${c}@b.com` })
+    })
+    it('quebra de linha e tabulação valem nas notas, e só nas notas', () => {
+      expect(aceita({ nome: 'A', notas: 'linha 1\nlinha 2\r\n\tcom tab' }).notas).toBe('linha 1\nlinha 2\r\n\tcom tab')
+      recusa({ nome: 'A\nB' })
+      recusa({ nome: 'A', estilo: 'a\tb' })
+    })
+    it('emoji composto e par substituto completo valem', () => {
+      expect(aceita({ nome: '👨‍👩‍👧 Família', notas: '🥊 ok' }).nome).toBe('👨‍👩‍👧 Família')
+    })
+    it('a atualização segue as mesmas regras', () => {
+      const r = validarAtualizacao({ notas: 'a\u0000b' })
+      expect(r.ok).toBe(false)
+    })
+  })
+
+  describe('nome precisa ter pelo menos um caractere visível', () => {
+    it.each(['​', '​​', '⁠', '﻿', '‍', ' ​ ', ' ', '　'])('recusa %j', nome => {
+      recusa({ nome })
+    })
+    it.each(['🥊', 'Zé', 'A', '李'])('aceita %j', nome => {
+      expect(aceita({ nome }).nome).toBe(nome)
+    })
+    it('na atualização também', () => {
+      expect(validarAtualizacao({ nome: '​' }).ok).toBe(false)
+    })
+  })
+})
+
 describe('hrefDeTelefone: o link tel: sem enfeites', () => {
   it.each([
     ['(11) 91234-5678', 'tel:11912345678'],
