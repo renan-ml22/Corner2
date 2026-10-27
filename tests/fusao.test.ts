@@ -69,8 +69,10 @@ describe('fundir: primeira vez que um aparelho com dados encontra uma conta que 
     expect(fundir('foto', 'data:image/jpeg;base64,AAAA', 'data:image/jpeg;base64,BBBB')).toBe('data:image/jpeg;base64,BBBB')
   })
 
-  it('quiz: vale o da conta', () => {
+  it('quiz: vale o da conta; se a conta não tem quiz, vale o do aparelho (nenhuma tela apaga o quiz, então vazio é "nunca fez")', () => {
     expect(fundir('quiz', '00020', '21110')).toBe('21110')
+    expect(fundir('quiz', '00020', '')).toBe('00020')
+    expect(fundir('quiz', '', '')).toBe('')
   })
 
   it('plano e estado do dia: vale o da conta', () => {

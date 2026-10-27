@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import FotoDePerfil from '@/components/FotoDePerfil'
 import type { DadosDoAluno } from '@/lib/cornerman/aluno-dados'
 import { dadosDoAlunoNoServidor } from '@/lib/cornerman/cliente'
@@ -18,21 +18,27 @@ const numero = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits:
 const plural = (n: number, um: string, varios: string) => `${numero(n)} ${n === 1 ? um : varios}`
 
 /** O que o treinador vê do aluno com conta: perfil resumido, os números dos últimos 30 dias, o gráfico por semana e cada treino. */
-export default function TreinosDoAluno({ id, nome }: { id: string; nome: string }) {
+export default function TreinosDoAluno({ id, nome, aoSemVinculo }: { id: string; nome: string; aoSemVinculo: () => void }) {
   const [carga, setCarga] = useState<Carga>({ fase: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [filtro, setFiltro] = useState<FiltroDeTipo>('todos')
   const [hoje] = useState(() => new Date())
+  // Guardado numa referência: a função muda a cada renderização da ficha e não pode refazer a busca.
+  const semVinculo = useRef(aoSemVinculo)
+  useEffect(() => { semVinculo.current = aoSemVinculo })
 
   useEffect(() => {
     let ativo = true
     void dadosDoAlunoNoServidor(id).then(r => {
-      if (ativo) setCarga(r.ok ? { fase: 'pronta', dados: r.valor } : { fase: 'erro', mensagem: r.erro })
+      if (!ativo) return
+      // O vínculo acabou (o aluno se desvinculou): a ficha se recarrega, e a aba some em vez de repetir um erro que não passa.
+      if (!r.ok && r.codigo === 'sem_vinculo') { semVinculo.current(); return }
+      setCarga(r.ok ? { fase: 'pronta', dados: r.valor } : { fase: 'erro', mensagem: r.erro })
     })
     return () => { ativo = false }
   }, [id, tentativa])
 
-  if (carga.fase === 'carregando') return <div className="skeleton" aria-busy="true" />
+  if (carga.fase === 'carregando') return <div className="skeleton" aria-busy="true"><span className="sr-only">Carregando os treinos…</span></div>
 
   if (carga.fase === 'erro') {
     return (
@@ -102,15 +108,15 @@ export default function TreinosDoAluno({ id, nome }: { id: string; nome: string 
                 </li>
               ))}
             </ul>
-            <p className={estilos.nota}>Semanas de segunda a domingo.</p>
+            <p className={estilos.nota}>Semanas de segunda a domingo. A primeira pode estar incompleta: o histórico mostrado tem 30 dias.</p>
           </section>
 
           {lista.length === 0 ? (
             <p className={`${estilos.vazio} ${estilos.semTreinos}`}>Nenhum treino deste tipo nos últimos 30 dias.</p>
           ) : (
             <ul aria-label="Lista de treinos" className={estilos.treinos}>
-              {lista.map(t => (
-                <li key={t.data} className="surface-card">
+              {lista.map((t, i) => (
+                <li key={`${t.data}-${i}`} className="surface-card">
                   <i className={`ph-bold ${CAT_ICONS[t.tipo]}`} aria-hidden="true" />
                   <span className={estilos.textos}>
                     <strong>{CAT_LABELS[t.tipo]}</strong>

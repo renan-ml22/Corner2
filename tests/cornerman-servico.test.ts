@@ -204,7 +204,7 @@ describe('listarAlunos: status de treino (decisão 12)', () => {
     expect(banco.consultasDeUltimos).toBe(0)
   })
 
-  it('o banco dos treinos falhar (ex.: SQL da etapa 3b ainda não rodou) não derruba a lista: todos cinza, e o registro não leva dado de ninguém', async () => {
+  it('o banco dos treinos falhar (ex.: SQL da etapa 3b ainda não rodou) não derruba a lista: todos cinza e marcados como "indisponível" (não como "sem treinos"), e o registro diz a causa sem dado de ninguém', async () => {
     const banco = new BancoDeAlunosFalso()
     const f = await criarAluno(banco, ANA, { nome: 'Beto Identificável' })
     comConta(banco, f.id)
@@ -213,10 +213,10 @@ describe('listarAlunos: status de treino (decisão 12)', () => {
     try {
       const r = await listarAlunos(banco, ANA, AGORA)
       expect(r.alunos).toHaveLength(1)
-      expect(r.alunos[0].treino).toEqual({ cor: 'cinza', dias: null })
+      expect(r.alunos[0].treino).toEqual({ cor: 'cinza', dias: null, indisponivel: true })
       expect(registro).toHaveBeenCalledTimes(1)
       expect(JSON.stringify(registro.mock.calls)).not.toContain('Identificável')
-      expect(JSON.stringify(registro.mock.calls)).toContain('Supabase (ler últimos treinos)')
+      expect(JSON.stringify(registro.mock.calls)).toContain('function public.ultimo_treino_por_aluno does not exist')
     } finally {
       registro.mockRestore()
     }

@@ -1018,6 +1018,14 @@ test.describe('status de treino na lista', () => {
     await expect(cartao('Eva')).toContainText('Ficha manual')
   })
 
+  test('quando o banco não consegue dizer o último treino, a lista avisa "Status indisponível" (não finge "sem treinos")', async ({ pagina }) => {
+    const a = ficha('Ana', { comConta: true })
+    await simularAlunos(pagina, [a], { status: { [a.id]: { cor: 'cinza', dias: null, indisponivel: true } } })
+    await pagina.goto('/alunos')
+    await expect(pagina.locator('[data-cor="cinza"]')).toHaveText('Status indisponível')
+    await expect(pagina.getByText('Sem treinos registrados')).toHaveCount(0)
+  })
+
   test('ficha encerrada não mostra status', async ({ pagina }) => {
     const e = ficha('Fábio', { status: 'encerrado' })
     await simularAlunos(pagina, [e], { status: { [e.id]: { cor: 'verde', dias: 0 } } })
@@ -1148,6 +1156,18 @@ test.describe('aba "Treinos" da ficha', () => {
     await expect(painel(pagina).getByRole('button', { name: 'Tentar de novo' })).toBeVisible()
     await abaDaFicha(pagina, 'Visão geral').click()
     await expect(pagina.getByRole('heading', { name: 'Aluna', level: 1 })).toBeVisible()
+  })
+
+  test('se o vínculo acabou com a ficha aberta: a aba Treinos some e a visão geral volta (sem "Tentar de novo" inútil)', async ({ pagina }) => {
+    const a = ficha('Aluna', { comConta: true })
+    const api = await simularAlunos(pagina, [a])
+    await pagina.goto(`/alunos/${a.id}`)
+    await expect(abaDaFicha(pagina, 'Treinos')).toBeVisible()
+    api.fichas[0].comConta = false // o aluno se desvinculou em outro aparelho
+    await abaDaFicha(pagina, 'Treinos').click()
+    await expect(abaDaFicha(pagina, 'Treinos')).toHaveCount(0)
+    await expect(abaDaFicha(pagina, 'Visão geral')).toHaveAttribute('aria-selected', 'true')
+    await expect(pagina.getByRole('button', { name: 'Tentar de novo' })).toHaveCount(0)
   })
   })
 

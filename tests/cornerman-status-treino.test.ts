@@ -51,6 +51,7 @@ describe('textoDoStatus: a cor nunca é a única informação', () => {
     [{ cor: 'amarelo', dias: 5 }, 'Treinou há 5 dias'],
     [{ cor: 'vermelho', dias: 12 }, 'Treinou há 12 dias'],
     [{ cor: 'cinza', dias: null }, 'Sem treinos registrados'],
+    [{ cor: 'cinza', dias: null, indisponivel: true }, 'Status indisponível'],
   ] as const)('%j → %s', (status, texto) => {
     expect(textoDoStatus(status)).toBe(texto)
   })

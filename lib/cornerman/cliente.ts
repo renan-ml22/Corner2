@@ -138,7 +138,7 @@ export async function apagarAlunoNoServidor(id: string): Promise<RespostaDaApi<t
 
 // ── Dados do aluno com conta (aba "Treinos" da ficha) ────────
 
-const textoOuNulo = (v: unknown) => v === null || typeof v === 'string'
+const NIVEIS_CONHECIDOS: readonly string[] = ['iniciante', 'intermediario', 'avancado']
 
 /** Confere o formato inteiro antes de a tela usar: um campo fora do lugar vira erro genérico, nunca um gráfico quebrado. */
 function comoDadosDoAluno(json: unknown): DadosDoAluno | null {
@@ -148,7 +148,7 @@ function comoDadosDoAluno(json: unknown): DadosDoAluno | null {
   const planoOk = d.plano === null || (isObj(d.plano) && typeof d.plano.nome === 'string' && typeof d.plano.semana === 'number' && typeof d.plano.semanas === 'number')
   const treinosOk = Array.isArray(d.treinos) && d.treinos.every(t => isObj(t) && typeof t.data === 'string' && isRegType(t.tipo)
     && [t.rounds, t.minPorRound, t.rpe, t.duracaoSegundos].every(n => typeof n === 'number' && Number.isFinite(n)))
-  if (!textoOuNulo(d.nivel) || typeof d.foto !== 'string' || !estiloOk || !planoOk || !treinosOk) return null
+  if (!(d.nivel === null || (typeof d.nivel === 'string' && NIVEIS_CONHECIDOS.includes(d.nivel))) || typeof d.foto !== 'string' || !estiloOk || !planoOk || !treinosOk) return null
   return d as unknown as DadosDoAluno
 }
 

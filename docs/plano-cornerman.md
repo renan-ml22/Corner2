@@ -97,9 +97,9 @@ Colar `supabase/cornerman-etapa-3a.sql` no SQL Editor do Supabase, **depois** do
 ### Como funciona por baixo
 
 - **Quiz guardado:** nova entidade `quiz` (texto `00020`, um dígito por pergunta, ou vazio), local primeiro e sincronizada com a conta em `user_data`, fora do backup. Só grava quem **termina** o quiz; abrir o resultado de outra pessoa pelo endereço não troca as suas respostas. Quem já tinha feito o quiz aparece como "ainda não fez" até refazer (o quiz antigo não guardava nada no aparelho).
-- **Rota** `GET /api/cornerman/alunos/[id]/dados`: confere origem, sessão, plano (Cornerman ou Profissional) e vínculo **no servidor**. O id da conta do aluno sai da ficha do treinador, nunca do pedido. Ficha de outro treinador, inexistente ou malformada: 404 igual às demais; ficha sem conta ativa: 409 `sem_vinculo`, mesmo que guarde um vínculo antigo.
+- **Rota** `GET /api/cornerman/alunos/[id]/dados`: confere sessão, plano (Cornerman ou Profissional) e vínculo **no servidor**. O id da conta do aluno sai da ficha do treinador, nunca do pedido. Ficha de outro treinador, inexistente ou malformada: 404 igual às demais; ficha sem conta ativa: 409 `sem_vinculo`, mesmo que guarde um vínculo antigo.
 - **Banco estreito** (`lib/cornerman/aluno-dados-banco.ts`): só seleciona `date,type,rounds,round_min,rpe,duration_seconds` dos treinos (a partir de 30 dias atrás), `plan_id,started_at`, `level` e as entidades `quiz` e `foto`. O serviço valida tudo e monta a resposta campo a campo.
-- **Status:** função SQL `ultimo_treino_por_aluno(p_coach)` (só para a chave de serviço) devolve a data do último treino de cada aluno ativo com conta. Se ela ainda não existir no banco, a lista continua funcionando (todos cinza) e o servidor registra só "Supabase (ler últimos treinos)".
+- **Status:** função SQL `ultimo_treino_por_aluno(p_coach)` (só para a chave de serviço) devolve a data do último treino de cada aluno ativo com conta. Se ela ainda não existir (ou o banco falhar), a lista continua funcionando, os alunos aparecem como "Status indisponível" (nunca como "sem treinos") e o servidor registra a mensagem do banco.
 
 ### Rulings (o desenho não dizia)
 

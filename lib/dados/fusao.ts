@@ -43,6 +43,11 @@ export function fundir<N extends NomeEntidade>(nome: N, local: DadosDoApp[N], se
         const l = local as DadosDoApp['lesoes'], s = servidor as DadosDoApp['lesoes']
         return uniao(s, l, x => x.id)
       }
+      case 'quiz': {
+        // Nenhuma tela apaga o quiz: vazio na conta é "nunca fez", e o do aparelho não pode se perder.
+        const l = local as DadosDoApp['quiz'], s = servidor as DadosDoApp['quiz']
+        return s === '' ? l : s
+      }
       case 'config':
       case 'reag':
         return { ...(local as object), ...(servidor as object) }

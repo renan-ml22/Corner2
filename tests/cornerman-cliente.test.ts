@@ -233,6 +233,7 @@ describe('dados do aluno (etapa 3b)', () => {
     ['treino com número em texto', { dados: { ...dados, treinos: [{ ...dados.treinos[0], rpe: '8' }] } }],
     ['estilo incompleto', { dados: { ...dados, estilo: { nome: 'Ali' } } }],
     ['foto que não é texto', { dados: { ...dados, foto: 5 } }],
+    ['nível que o app não conhece', { dados: { ...dados, nivel: 'campeao' } }],
   ])('resposta fora do formato (%s): erro genérico, nunca dado quebrado', async (_nome, corpo) => {
     responder(200, corpo)
     expect(await dadosDoAlunoNoServidor(ID)).toEqual({ ok: false, status: 200, codigo: 'resposta_invalida', erro: 'Não foi possível continuar. Tente novamente.' })

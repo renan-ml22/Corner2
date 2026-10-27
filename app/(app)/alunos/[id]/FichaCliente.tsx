@@ -232,7 +232,7 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
           </>
         ))}
 
-        {aba === 'treinos' && <TreinosDoAluno id={ficha.id} nome={ficha.nome} />}
+        {aba === 'treinos' && <TreinosDoAluno id={ficha.id} nome={ficha.nome} aoSemVinculo={() => void aoRecarregar()} />}
 
         {aba === 'notas' && (
           <div className="surface-card form-card">

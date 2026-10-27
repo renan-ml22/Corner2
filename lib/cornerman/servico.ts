@@ -8,7 +8,7 @@ import {
   type FichaDeAluno, type StatusDaFicha,
 } from './ficha'
 import type { Nivel } from '@/lib/onboarding'
-import { SEM_DADOS, statusDeTreino, type StatusDeTreino } from './status-treino'
+import { INDISPONIVEL, SEM_DADOS, statusDeTreino, type StatusDeTreino } from './status-treino'
 
 export type CodigoCornerman =
   | 'limite_de_alunos' | 'nao_encontrado' | 'dado_invalido'
@@ -67,16 +67,18 @@ export type AlunoNaLista = FichaDeAluno & { treino: StatusDeTreino }
 export const ondeFalhou = (e: unknown): string | null => (e instanceof Error ? /^Supabase \([^)]*\)/.exec(e.message)?.[0] ?? null : null)
 
 /**
- * Os últimos treinos dos alunos com conta. Se o banco falhar (ou a função SQL da etapa 3b ainda não existir), a lista
- * continua útil: ninguém ganha cor, e o registro leva só onde falhou.
+ * Os últimos treinos dos alunos com conta, ou `null` se o banco falhar (ou a função SQL da etapa 3b ainda não existir):
+ * a lista continua útil, mas os alunos aparecem como "status indisponível", nunca como "sem treinos". O registro leva a mensagem
+ * do banco (só nome de função e código, a chamada só leva o id do treinador), sem dado de nenhuma ficha.
  */
-async function ultimosTreinosOuNada(banco: AlunosBancoLike, coachId: string): Promise<Record<string, string>> {
+async function ultimosTreinosOuNada(banco: AlunosBancoLike, coachId: string): Promise<Record<string, string> | null> {
   try {
     return await banco.ultimosTreinos(coachId)
   } catch (e) {
     const onde = ondeFalhou(e)
-    console.error(`[cornerman] não foi possível ler os últimos treinos${onde ? `: ${onde}` : ''}`)
-    return {}
+    const causa = e instanceof Error ? e.message.slice(0, 200) : 'erro desconhecido'
+    console.error(`[cornerman] não foi possível ler os últimos treinos${onde ? `: ${causa}` : ` (${e instanceof Error ? e.name : causa})`}`)
+    return null
   }
 }
 
@@ -84,7 +86,8 @@ export async function listarAlunos(banco: AlunosBancoLike, coachId: string, agor
   const fichas = (await banco.listar(coachId)).map(paraFicha)
   const comStatus = (f: FichaDeAluno) => f.status === 'ativo' && f.comConta
   const ultimos = fichas.some(comStatus) ? await ultimosTreinosOuNada(banco, coachId) : {}
-  const naLista = (f: FichaDeAluno): AlunoNaLista => ({ ...f, treino: comStatus(f) ? statusDeTreino(ultimos[f.id] ?? null, agora) : SEM_DADOS })
+  const treinoDe = (f: FichaDeAluno): StatusDeTreino => (!comStatus(f) ? SEM_DADOS : ultimos === null ? INDISPONIVEL : statusDeTreino(ultimos[f.id] ?? null, agora))
+  const naLista = (f: FichaDeAluno): AlunoNaLista => ({ ...f, treino: treinoDe(f) })
 
   const ativas = fichas.filter(f => f.status !== 'encerrado').sort(porNome).map(naLista)
   const encerradas = fichas.filter(f => f.status === 'encerrado').sort(porNome).map(naLista)

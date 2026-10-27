@@ -7,9 +7,12 @@ export interface StatusDeTreino {
   cor: CorDeStatus
   /** Dias de calendário desde o último treino; `null` quando não há treino. */
   dias: number | null
+  /** O banco não conseguiu dizer o último treino: não é o mesmo que "sem treinos". */
+  indisponivel?: true
 }
 
 export const SEM_DADOS: StatusDeTreino = { cor: 'cinza', dias: null }
+export const INDISPONIVEL: StatusDeTreino = { cor: 'cinza', dias: null, indisponivel: true }
 
 const FUSO = 'America/Sao_Paulo'
 const DIA_MS = 24 * 60 * 60 * 1000
@@ -34,6 +37,7 @@ export function statusDeTreino(ultimoTreino: string | null, agora: Date): Status
 }
 
 export function textoDoStatus(s: StatusDeTreino): string {
+  if (s.indisponivel) return 'Status indisponível'
   if (s.dias === null) return 'Sem treinos registrados'
   if (s.dias === 0) return 'Treinou hoje'
   if (s.dias === 1) return 'Treinou ontem'
