@@ -10,6 +10,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { iguais } from '../lib/dados/fusao'
 import { ErroConta, criarConta, entrarNoSupabase, type AuthLike } from '../lib/contas'
+import { criarAlunosBancoSupabase } from '../lib/cornerman/banco'
+import { ErroCornerman, apagarAluno, atualizarAluno, criarAluno, lerAluno, listarAlunos } from '../lib/cornerman/servico'
 import { criarBancoSupabase } from '../lib/dados/servidor/banco-supabase'
 import { ErroDados, carregarDados, salvarEntidades } from '../lib/dados/servidor/servico'
 import { criarClienteParaEntrar, getSupabase } from '../lib/supabase'
@@ -78,6 +80,7 @@ async function limpar() {
     await db.from('active_plans').delete().eq('user_id', id)
     await db.from('profiles').delete().eq('id', id)
     await db.from('user_data').delete().eq('user_id', id)
+    await db.from('coach_alunos').delete().eq('coach_id', id) // erro (tabela ainda não criada) é ignorado
   }
 }
 
@@ -88,7 +91,7 @@ async function contarLinhas(): Promise<number> {
     if (data?.user) total++ // o usuário ainda existe no Auth
   }
   for (const id of [ana.id, bia.id, ...contasCriadas]) {
-    for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id']] as const) {
+    for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id'], ['coach_alunos', 'coach_id']] as const) {
       const { count } = await db.from(tabela).select('*', { count: 'exact', head: true }).eq(coluna, id)
       total += count ?? 0
     }
@@ -198,9 +201,72 @@ async function principal() {
   }
 }
 
+const FOTO_DE_TESTE = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/=='
+
+/** Fichas de aluno do treinador (supabase/cornerman-etapa-2.sql): isolamento, limite de 20 e corrida na vaga 20. */
+async function blocoDosAlunos() {
+  const sondagem = await db.from('coach_alunos').select('id').limit(1)
+  if (sondagem.error) {
+    console.log('PULOU   fichas de aluno: a tabela coach_alunos não existe (rode supabase/cornerman-etapa-2.sql no SQL Editor do Supabase)')
+    return
+  }
+  const alunos = criarAlunosBancoSupabase(db)
+  const erroDe = (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e)
+  const naoEncontrado = (e: unknown) => e instanceof ErroCornerman && e.codigo === 'nao_encontrado' && e.status === 404
+
+  // 1. Ida e volta, com o que costuma quebrar (emoji, aspas, quebra de linha) e a foto.
+  const notas = 'Senti o ombro 🥊 "forte"\ne a mão'
+  const criada = await criarAluno(alunos, ana.id, { nome: 'Beto 🥊', email: 'beto@exemplo.com', telefone: '(11) 91234-5678', nivel: 'avancado', estilo: 'Out-boxer', notas, foto: FOTO_DE_TESTE })
+  const lida = await lerAluno(alunos, ana.id, criada.id)
+  confere('a ficha volta idêntica (emoji, aspas, quebra de linha e foto)', iguais(lida, criada) && lida.nome === 'Beto 🥊' && lida.notas === notas && lida.foto === FOTO_DE_TESTE && lida.status === 'ativo' && !lida.comConta)
+
+  // 2. Isolamento: a ficha de outro treinador responde igual a um id que não existe.
+  const inexistente = '00000000-0000-4000-8000-000000000000'
+  const lerDaAna = await erroDe(lerAluno(alunos, bia.id, criada.id))
+  const lerInexistente = await erroDe(lerAluno(alunos, bia.id, inexistente))
+  confere('a Bia não lê a ficha da Ana (404, igual a um id que não existe)', naoEncontrado(lerDaAna) && naoEncontrado(lerInexistente) && (lerDaAna as Error).message === (lerInexistente as Error).message)
+  confere('a Bia não altera a ficha da Ana', naoEncontrado(await erroDe(atualizarAluno(alunos, bia.id, criada.id, { notas: 'invasão' }))) && (await lerAluno(alunos, ana.id, criada.id)).notas === notas)
+  confere('a Bia não apaga a ficha da Ana', naoEncontrado(await erroDe(apagarAluno(alunos, bia.id, criada.id))) && (await lerAluno(alunos, ana.id, criada.id)).id === criada.id)
+  confere('a lista da Bia está vazia e a da Ana tem a ficha', (await listarAlunos(alunos, bia.id)).alunos.length === 0 && (await listarAlunos(alunos, ana.id)).alunos.length === 1)
+
+  // 3. Limite de 20 (gatilho do banco).
+  for (let i = 2; i <= 20; i++) await criarAluno(alunos, ana.id, { nome: `Aluno ${String(i).padStart(2, '0')}` })
+  const lista20 = await listarAlunos(alunos, ana.id)
+  confere('20 fichas ativas: "20 de 20"', lista20.alunos.length === 20 && lista20.ativos === 20 && lista20.limite === 20)
+  const vinteEUm = await erroDe(criarAluno(alunos, ana.id, { nome: 'Aluno 21' }))
+  confere('a 21ª ficha é recusada (409, limite_de_alunos)', vinteEUm instanceof ErroCornerman && vinteEUm.codigo === 'limite_de_alunos' && vinteEUm.status === 409 && (await listarAlunos(alunos, ana.id)).alunos.length === 20)
+  confere('o limite é por treinador: a Bia cadastra normalmente', (await criarAluno(alunos, bia.id, { nome: 'Da Bia' })).status === 'ativo')
+
+  // 4. Encerrar libera a vaga; reabrir com 20 ativas é recusado; dois pedidos juntos na última vaga: só um entra.
+  const alunosDaAna = (await listarAlunos(alunos, ana.id)).alunos
+  const encerrada = await atualizarAluno(alunos, ana.id, alunosDaAna[0].id, { status: 'encerrado' })
+  confere('encerrar libera a vaga ("19 de 20")', encerrada.status === 'encerrado' && (await listarAlunos(alunos, ana.id)).ativos === 19)
+  const corrida = await Promise.allSettled([criarAluno(alunos, ana.id, { nome: 'Corrida A' }), criarAluno(alunos, ana.id, { nome: 'Corrida B' })])
+  const entraram = corrida.filter(r => r.status === 'fulfilled').length
+  const recusadas = corrida.filter(r => r.status === 'rejected' && r.reason instanceof ErroCornerman && r.reason.codigo === 'limite_de_alunos').length
+  confere('dois pedidos ao mesmo tempo na vaga 20: só um entra e o outro é recusado pelo limite', entraram === 1 && recusadas === 1, JSON.stringify(corrida.map(r => r.status)))
+  confere('continuam 20 ativas', (await listarAlunos(alunos, ana.id)).ativos === 20)
+  const reabrir = await erroDe(atualizarAluno(alunos, ana.id, encerrada.id, { status: 'ativo' }))
+  confere('reabrir uma ficha encerrada com 20 ativas é recusado e ela continua encerrada', reabrir instanceof ErroCornerman && reabrir.codigo === 'limite_de_alunos' && (await lerAluno(alunos, ana.id, encerrada.id)).status === 'encerrado')
+
+  // 5. Apagar de verdade libera a vaga, e reabrir passa a funcionar.
+  await apagarAluno(alunos, ana.id, alunosDaAna[1].id)
+  confere('apagar remove a ficha', naoEncontrado(await erroDe(lerAluno(alunos, ana.id, alunosDaAna[1].id))))
+  confere('com vaga livre, reabrir funciona', (await atualizarAluno(alunos, ana.id, encerrada.id, { status: 'ativo' })).status === 'ativo')
+
+  // 6. A chave pública não lê a tabela.
+  const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  if (chavePublica) {
+    const anon = createClient(url!, chavePublica, { auth: { persistSession: false, autoRefreshToken: false } })
+    const { data, error } = await anon.from('coach_alunos').select('*').limit(5)
+    confere('a chave pública não lê coach_alunos', !!error || (data ?? []).length === 0, `${(data ?? []).length} linhas visíveis`)
+  }
+}
+
 async function executar() {
   try {
     await principal()
+    await blocoDosAlunos()
   } finally {
     await limpar()
     const sobrou = await contarLinhas()
