@@ -30,10 +30,12 @@ interface Props {
   /** Erro devolvido pelo servidor (ou de rede) para mostrar acima do botão. */
   erro: string | null
   aoCancelar?: () => void
+  /** Avisa quando o formulário passa a ter (ou deixa de ter) algo digitado e ainda não salvo. */
+  aoAlterar?: (alterado: boolean) => void
 }
 
 /** Formulário da ficha de aluno: usado no cadastro e na edição dos dados. */
-export default function FormularioDeAluno({ inicial, rotuloDoBotao, aoEnviar, ocupado, erro, aoCancelar }: Props) {
+export default function FormularioDeAluno({ inicial, rotuloDoBotao, aoEnviar, ocupado, erro, aoCancelar, aoAlterar }: Props) {
   const id = useId()
   const avisar = useToast()
   const [nome, setNome] = useState(inicial?.nome ?? '')
@@ -44,6 +46,25 @@ export default function FormularioDeAluno({ inicial, rotuloDoBotao, aoEnviar, oc
   const [notas, setNotas] = useState(inicial?.notas ?? '')
   const [foto, setFoto] = useState(inicial?.foto ?? '')
   const [erroLocal, setErroLocal] = useState<string | null>(null)
+
+  // O que havia ao abrir: voltar a este valor desfaz a "alteração".
+  const [original] = useState(() => ({
+    nome: inicial?.nome ?? '', email: inicial?.email ?? '', telefone: inicial?.telefone ?? '', nivel: inicial?.nivel ?? '',
+    estilo: inicial?.estilo ?? '', notas: inicial?.notas ?? '', foto: inicial?.foto ?? '',
+  }))
+  const alterado = nome !== original.nome || email !== original.email || telefone !== original.telefone || nivel !== original.nivel
+    || estilo !== original.estilo || notas !== original.notas || foto !== original.foto
+
+  useEffect(() => { aoAlterar?.(alterado) }, [alterado, aoAlterar])
+  useEffect(() => () => aoAlterar?.(false), [aoAlterar]) // ao fechar o formulário, nada mais está pendente
+
+  // Fechar ou recarregar a página com algo digitado e não salvo perderia tudo: o navegador pergunta antes.
+  useEffect(() => {
+    if (!alterado) return
+    const aviso = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', aviso)
+    return () => window.removeEventListener('beforeunload', aviso)
+  }, [alterado])
 
   // Segunda barreira contra clique duplo, além do botão desligado: vale até quem chamou terminar (`ocupado` voltar a falso).
   const enviando = useRef(false)

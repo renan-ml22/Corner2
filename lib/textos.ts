@@ -39,6 +39,7 @@ export const TEXTOS = {
     encerrarFicha: (nome: string) => `Encerrar a ficha de ${nome}? Ela deixa de contar nos seus 20 alunos e pode ser reaberta depois.`,
     apagarFicha: (nome: string) => `Apagar de vez a ficha de ${nome}? Isso não pode ser desfeito.`,
     descartarNotas: 'Você alterou as notas e ainda não salvou. Sair desta aba descarta a alteração. Continuar?',
+    descartarDados: 'Você alterou os dados e ainda não salvou. Sair desta aba descarta a alteração. Continuar?',
     sairDoTimer: 'Sair do Timer? A contagem em andamento será perdida.',
     reiniciarTimer: 'Reiniciar o timer? O que já passou será perdido.',
     importarBackup: 'Importar substitui os dados atuais deste aparelho pelos do backup. Continuar?',

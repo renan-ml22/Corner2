@@ -623,3 +623,100 @@ test.describe('ficha: respostas de erro de propósito', () => {
     await expect(pagina.getByRole('button', { name: 'Salvar notas' })).toBeEnabled()
   })
 })
+
+// ── Alterações não salvas nos formulários ────────────────────
+
+const protegeContraSaida = (pagina: Page) =>
+  pagina.evaluate(() => {
+    const e = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(e)
+    return e.defaultPrevented
+  })
+
+test.describe('formulários: o que foi digitado e não salvo não se perde sem aviso', () => {
+  test.beforeEach(async ({ pagina }) => {
+    await simularEstado(pagina, ativa('cornerman'))
+  })
+
+  const beto = () => ficha('Beto Silva', { email: 'beto@exemplo.com', nivel: 'avancado', estilo: 'Out-boxer', notas: 'Treina de manhã' })
+
+  test('editando os dados e trocando para a aba Notas: pergunta; "Cancelar" mantém o que foi digitado', async ({ pagina }) => {
+    const b = beto()
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await pagina.getByRole('button', { name: 'Editar dados' }).click()
+    await pagina.getByLabel('Estilo').fill('Pressão')
+
+    pagina.removeAllListeners('dialog')
+    const perguntas: string[] = []
+    pagina.once('dialog', d => { perguntas.push(d.message()); void d.dismiss() })
+    await abaDaFicha(pagina, 'Notas').click()
+    expect(perguntas).toEqual(['Você alterou os dados e ainda não salvou. Sair desta aba descarta a alteração. Continuar?'])
+    await expect(abaDaFicha(pagina, 'Visão geral')).toHaveAttribute('aria-selected', 'true')
+    await expect(pagina.getByLabel('Estilo')).toHaveValue('Pressão')
+
+    pagina.once('dialog', d => void d.accept())
+    await abaDaFicha(pagina, 'Notas').click()
+    await expect(abaDaFicha(pagina, 'Notas')).toHaveAttribute('aria-selected', 'true')
+    await abaDaFicha(pagina, 'Visão geral').click()
+    await expect(pagina.getByText('Out-boxer')).toBeVisible() // voltou à visão geral, com o valor original
+    await expect(pagina.getByLabel('Estilo')).toHaveCount(0)
+  })
+
+  test('mexer nas notas dentro do formulário de dados também conta como alteração', async ({ pagina }) => {
+    const b = beto()
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await pagina.getByRole('button', { name: 'Editar dados' }).click()
+    await pagina.getByLabel('Notas').fill('Treina de manhã e à noite')
+    expect(await protegeContraSaida(pagina)).toBe(true)
+  })
+
+  test('sem alterações, trocar de aba não pergunta nada', async ({ pagina }) => {
+    const b = beto()
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await pagina.getByRole('button', { name: 'Editar dados' }).click()
+    pagina.removeAllListeners('dialog')
+    const perguntas: string[] = []
+    pagina.on('dialog', d => { perguntas.push(d.message()); void d.accept() })
+    await abaDaFicha(pagina, 'Notas').click()
+    await expect(abaDaFicha(pagina, 'Notas')).toHaveAttribute('aria-selected', 'true')
+    expect(perguntas).toEqual([])
+  })
+
+  test('voltar ao valor original desfaz a "alteração": nada a perder, nada a perguntar', async ({ pagina }) => {
+    const b = beto()
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    await pagina.getByRole('button', { name: 'Editar dados' }).click()
+    await pagina.getByLabel('Estilo').fill('Pressão')
+    expect(await protegeContraSaida(pagina)).toBe(true)
+    await pagina.getByLabel('Estilo').fill('Out-boxer')
+    expect(await protegeContraSaida(pagina)).toBe(false)
+  })
+
+  test('recarregar ou fechar a página com o formulário de dados alterado é protegido pelo navegador', async ({ pagina }) => {
+    const b = beto()
+    await simularAlunos(pagina, [b])
+    await pagina.goto(`/alunos/${b.id}`)
+    expect(await protegeContraSaida(pagina)).toBe(false)
+    await pagina.getByRole('button', { name: 'Editar dados' }).click()
+    expect(await protegeContraSaida(pagina)).toBe(false)
+    await pagina.getByLabel('Nome').fill('Beto Silva Júnior')
+    expect(await protegeContraSaida(pagina)).toBe(true)
+    await pagina.getByRole('button', { name: 'Cancelar' }).click()
+    expect(await protegeContraSaida(pagina)).toBe(false)
+  })
+
+  test('cadastro novo: com algo digitado a saída é protegida; vazio, não; depois de cadastrar, não', async ({ pagina }) => {
+    await simularAlunos(pagina)
+    await pagina.goto('/alunos/novo')
+    expect(await protegeContraSaida(pagina)).toBe(false)
+    await pagina.getByLabel('Nome').fill('Zé')
+    expect(await protegeContraSaida(pagina)).toBe(true)
+    await pagina.getByRole('button', { name: 'Cadastrar' }).click()
+    await expect(pagina).toHaveURL('/alunos')
+    expect(await protegeContraSaida(pagina)).toBe(false)
+  })
+})

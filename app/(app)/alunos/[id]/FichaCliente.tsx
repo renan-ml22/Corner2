@@ -76,6 +76,7 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
   const [notas, setNotas] = useState(ficha.notas)
   const [ocupado, setOcupado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [dadosAlterados, setDadosAlterados] = useState(false) // o formulário de "Editar dados" tem algo não salvo
 
   const encerrada = ficha.status === 'encerrado'
   const notasAlteradas = notas !== ficha.notas
@@ -93,6 +94,10 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
     if (aba === 'notas' && notasAlteradas) {
       if (!window.confirm(TEXTOS.confirmar.descartarNotas)) return
       setNotas(ficha.notas)
+    }
+    if (aba === 'geral' && editando) {
+      if (dadosAlterados && !window.confirm(TEXTOS.confirmar.descartarDados)) return
+      setEditando(false) // sair da aba fecha o formulário: ao voltar, a visão geral
     }
     setErro(null)
     setAba(nova)
@@ -177,7 +182,7 @@ function FichaAberta({ ficha, aoMudar }: { ficha: FichaDeAluno; aoMudar: (f: Fic
         {aba === 'geral' && (editando ? (
           <FormularioDeAluno
             inicial={ficha} rotuloDoBotao="Salvar dados" aoEnviar={dados => void salvarDados(dados)} ocupado={ocupado} erro={erro}
-            aoCancelar={() => { setErro(null); setEditando(false) }}
+            aoCancelar={() => { setErro(null); setEditando(false) }} aoAlterar={setDadosAlterados}
           />
         ) : (
           <>
