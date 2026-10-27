@@ -20,6 +20,11 @@ export const TEXTOS = {
     backupGrande: 'Arquivo grande demais para ser um backup do Corner',
     backupFalhou: 'Não foi possível importar',
     permitirNotificacoes: 'Permita as notificações no navegador para receber o lembrete',
+    fotoSalva: 'Foto de perfil salva',
+    fotoRemovida: 'Foto removida',
+    fotoNaoEImagem: 'Escolha uma imagem.',
+    fotoGrande: 'Essa imagem é grande demais. Escolha uma de até 15 MB.',
+    fotoIlegivel: 'Não foi possível ler essa imagem. Tente outra, de preferência JPG ou PNG.',
   },
   confirmar: {
     encerrarPlano: (nome: string) => `Encerrar o plano ${nome}? Seus treinos registrados continuam salvos.`,

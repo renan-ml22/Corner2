@@ -1,0 +1,15 @@
+.inicial {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--blue));
+  font-weight: 800;
+}
+
+.foto {
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-raised);
+}

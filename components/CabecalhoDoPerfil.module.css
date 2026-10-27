@@ -1,0 +1,34 @@
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem;
+}
+
+.dados {
+  min-width: 0;
+}
+
+.dados h2 {
+  overflow-wrap: anywhere;
+}
+
+.dados p {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+/* O campo de arquivo fica escondido dentro do rótulo: o anel de foco aparece no rótulo inteiro. */
+.escolher:has(input:focus-visible) {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
