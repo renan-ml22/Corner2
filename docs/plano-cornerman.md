@@ -3,7 +3,7 @@
 Funcionalidade nova em 4 etapas. O desenho completo (decisões, segurança, o que ficou de fora) está em
 `docs/superpowers/specs/2026-10-26-cornerman-design.md`. Este arquivo conta o que já foi entregue e como funciona.
 
-## Etapa 1: plano e foto de perfil (pronta)
+## Etapa 1: plano e foto de perfil (código pronto; falta sincronizar o Stripe de teste)
 
 ### Plano Cornerman
 
