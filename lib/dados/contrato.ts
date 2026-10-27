@@ -123,5 +123,12 @@ export interface AssinaturaGuardada { estado: EstadoAssinatura; em: string }
 export const isAssinaturaGuardada = (v: unknown): v is AssinaturaGuardada | null =>
   v === null || (isObj(v) && isEstadoAssinatura(v.estado) && isStr(v.em))
 
+/** Maior foto de perfil aceita, em caracteres do texto `data:image/jpeg;base64,…`. Uma foto de 200×200 tem uns 14 000. */
+export const TAMANHO_MAX_DA_FOTO = 60_000
+
+/** Foto de perfil: JPEG em `data:` estrito, ou vazio para "sem foto" (o banco não aceita nulo nessa coluna). */
+export const isFoto = (v: unknown): v is string =>
+  v === '' || (isStr(v) && v.length <= TAMANHO_MAX_DA_FOTO && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(v))
+
 /** Data do último lembrete disparado (ou vazio). */
 export const isLembrete = (v: unknown): v is string => v === '' || isChave(v)

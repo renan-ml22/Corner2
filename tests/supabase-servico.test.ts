@@ -43,11 +43,12 @@ const TUDO = {
   reag: { 'fun-s1-qua': 4 },
   checklist: { data: '2026-10-14', itens: { aquecimento: true } },
   ajuste: { data: '2026-10-14', aplicado: true },
+  foto: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==',
 }
 
 describe('as entidades que vão para o banco', () => {
   it('são as de dados do atleta; lembrete (do aparelho) e assinatura (cópia do Stripe) ficam de fora', () => {
-    expect([...ENTIDADES_SINCRONIZADAS].sort()).toEqual(['ajuste', 'checkins', 'checklist', 'config', 'historico', 'lesoes', 'pesos', 'plano', 'reag'])
+    expect([...ENTIDADES_SINCRONIZADAS].sort()).toEqual(['ajuste', 'checkins', 'checklist', 'config', 'foto', 'historico', 'lesoes', 'pesos', 'plano', 'reag'])
   })
 })
 
@@ -88,6 +89,14 @@ describe('salvar e carregar', () => {
     const dados = await carregarDados(banco, renan.id)
     expect(dados).toHaveProperty('plano', null)
     expect(banco.planos.has(renan.id)).toBe(false)
+  })
+
+  it('foto removida é gravada como texto vazio (nunca nulo) e volta como vazio, não como ausente', async () => {
+    const banco = new BancoFalso()
+    await salvarEntidades(banco, renan, { foto: TUDO.foto })
+    await salvarEntidades(banco, renan, { foto: '' })
+    expect(banco.dados.get(renan.id)!.get('foto')).toBe('')
+    expect(await carregarDados(banco, renan.id)).toHaveProperty('foto', '')
   })
 
   it('treino que saiu da lista some do banco; os que ficaram continuam', async () => {
@@ -156,6 +165,14 @@ describe('o que chega de fora é validado antes de gravar qualquer coisa', () =>
     await recusa({ historico: [treino('a'), treino('a')] }, 'dado_invalido') // ids repetidos
   })
 
+  it('foto que não é JPEG em data URI, é nula ou passa de 60 000 caracteres: recusa o pedido inteiro', async () => {
+    const jpeg = 'data:image/jpeg;base64,'
+    await recusa({ pesos: [], foto: 'data:image/svg+xml;base64,PHN2Zz4=' }, 'dado_invalido')
+    await recusa({ foto: 'javascript:alert(1)' }, 'dado_invalido')
+    await recusa({ foto: null }, 'dado_invalido')
+    await recusa({ foto: jpeg + 'A'.repeat(60_000) }, 'dado_invalido')
+  })
+
   it(`lista maior que o limite (${LIMITE_DE_ITENS} itens) é recusada com 413`, async () => {
     const muitos = Array.from({ length: LIMITE_DE_ITENS + 1 }, (_, i) => treino(`t${i}`))
     await recusa({ historico: muitos }, 'muito_grande', 413)
@@ -178,6 +195,13 @@ describe('o que vem do banco também é validado', () => {
     const dados = await carregarDados(banco, renan.id)
     expect(dados.checkins).toEqual(TUDO.checkins)
     expect(dados).not.toHaveProperty('pesos')
+  })
+
+  it('foto corrompida no banco não aparece (nem como vazio)', async () => {
+    const banco = new BancoFalso()
+    await salvarEntidades(banco, renan, { foto: TUDO.foto })
+    banco.dados.get(renan.id)!.set('foto', 'data:image/svg+xml;base64,PHN2Zz4=')
+    expect(await carregarDados(banco, renan.id)).not.toHaveProperty('foto')
   })
 
   it('configuração com campo inválido mantém os válidos', async () => {

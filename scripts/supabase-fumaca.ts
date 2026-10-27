@@ -62,6 +62,7 @@ const TUDO = {
   reag: { 'fun-s1-qua': 4 },
   checklist: { data: '2026-10-14', itens: { aquecimento: true } },
   ajuste: { data: '2026-10-14', aplicado: true },
+  foto: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/==',
 }
 
 /** Entrar como o app faz: cada login usa um cliente descartável (o compartilhado se recusa a entrar). */
@@ -123,9 +124,10 @@ async function principal() {
   confere('as outras entidades não foram tocadas', iguais(apos.config, TUDO.config) && iguais(apos.pesos, TUDO.pesos))
 
   // 4. Vazio de propósito é diferente de nunca gravado.
-  await salvarEntidades(banco, ana, { historico: [], plano: null })
+  await salvarEntidades(banco, ana, { historico: [], plano: null, foto: '' })
   const vazio = await carregarDados(banco, ana.id)
   confere('histórico vazio e "sem plano" voltam como gravados, e não como ausentes', iguais(vazio.historico, []) && Object.hasOwn(vazio, 'plano') && vazio.plano === null)
+  confere('foto removida volta como texto vazio (o banco não aceita nulo)', Object.hasOwn(vazio, 'foto') && vazio.foto === '', JSON.stringify(vazio.foto))
 
   // 5. Isolamento entre usuários.
   confere('outro usuário não vê nada da Ana', iguais(await carregarDados(banco, bia.id), {}))

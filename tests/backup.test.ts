@@ -28,8 +28,8 @@ describe('tabela de entidades', () => {
     expect([...NOMES_NO_BACKUP].sort()).toEqual(['checkins', 'config', 'historico', 'lesoes', 'pesos', 'plano', 'reag'])
   })
 
-  it('o que é só do dia (checklist, ajuste, lembrete) não entra no backup', () => {
-    for (const nome of ['checklist', 'ajuste', 'lembrete', 'assinatura'] as NomeEntidade[]) {
+  it('o que é só do dia (checklist, ajuste, lembrete), a cópia da assinatura e a foto de perfil não entram no backup', () => {
+    for (const nome of ['checklist', 'ajuste', 'lembrete', 'assinatura', 'foto'] as NomeEntidade[]) {
       expect(NOMES_NO_BACKUP).not.toContain(nome)
     }
   })

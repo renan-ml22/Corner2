@@ -65,6 +65,10 @@ describe('fundir: primeira vez que um aparelho com dados encontra uma conta que 
     expect(fundir('reag', { a: 1, b: 2 }, { b: 4 })).toEqual({ a: 1, b: 4 })
   })
 
+  it('foto de perfil: vale a da conta', () => {
+    expect(fundir('foto', 'data:image/jpeg;base64,AAAA', 'data:image/jpeg;base64,BBBB')).toBe('data:image/jpeg;base64,BBBB')
+  })
+
   it('plano e estado do dia: vale o da conta', () => {
     expect(fundir('plano', { planoId: 'fundamentos', inicio: '2026-10-05' }, { planoId: 'base-aerobica', inicio: '2026-10-12' }))
       .toEqual({ planoId: 'base-aerobica', inicio: '2026-10-12' })

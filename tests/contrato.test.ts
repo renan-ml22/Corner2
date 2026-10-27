@@ -18,6 +18,7 @@ import {
   isCheckin,
   isChecklist,
   isConfigParcial,
+  isFoto,
   isLembrete,
   isLesao,
   isPesoRegistro,
@@ -26,6 +27,7 @@ import {
   isWorkoutEntry,
   limparConfig,
   limparLista,
+  TAMANHO_MAX_DA_FOTO,
 } from '@/lib/dados/contrato'
 
 const TODOS_OS_TIPOS: RegType[] = ['tec', 'con', 'spa']
@@ -629,6 +631,38 @@ describe('isLembrete (data do último lembrete disparado)', () => {
 
   it.each(['2026-02-31', 'hoje', 20261014, null])('rejeita %s', valor => {
     expect(isLembrete(valor)).toBe(false)
+  })
+})
+
+describe('isFoto (foto de perfil: JPEG em data URI, ou vazio para "sem foto")', () => {
+  const PREFIXO = 'data:image/jpeg;base64,'
+  const comTamanho = (n: number) => PREFIXO + 'A'.repeat(n - PREFIXO.length)
+
+  it('aceita vazio (sem foto) e um JPEG em base64', () => {
+    expect(isFoto('')).toBe(true)
+    expect(isFoto(`${PREFIXO}/9j/4AAQSkZJRg==`)).toBe(true)
+  })
+
+  it('o limite é de 60 000 caracteres: aceita exatamente 60 000 e recusa 60 001', () => {
+    expect(TAMANHO_MAX_DA_FOTO).toBe(60_000)
+    expect(isFoto(comTamanho(60_000))).toBe(true)
+    expect(isFoto(comTamanho(60_001))).toBe(false)
+  })
+
+  it.each([
+    ['PNG', 'data:image/png;base64,AAAA'],
+    ['SVG', 'data:image/svg+xml;base64,PHN2Zz4='],
+    ['endereço javascript', 'javascript:alert(1)'],
+    ['endereço http', 'https://exemplo.com/a.jpg'],
+    ['espaço no meio do base64', `${PREFIXO}AA AA`],
+    ['quebra de linha no base64', `${PREFIXO}AA\nAA`],
+    ['base64 vazio', PREFIXO],
+    ['texto depois do base64', `${PREFIXO}AAAA<script>`],
+    ['null', null],
+    ['número', 42],
+    ['objeto', {}],
+  ])('recusa %s', (_nome, valor) => {
+    expect(isFoto(valor)).toBe(false)
   })
 })
 

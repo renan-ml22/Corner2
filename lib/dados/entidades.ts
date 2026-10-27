@@ -5,7 +5,7 @@ import type {
   AjusteDoDia, Checkin, ChecklistDoDia, Configuracoes, Lesao, PesoRegistro, PlanoAtivo, Reagendamentos, WorkoutEntry,
 } from '@/lib/tipos'
 import {
-  isAjuste, isArrayDe, isAssinaturaGuardada, isCheckin, isChecklist, isConfigParcial, isLembrete, isLesao, isPesoRegistro, isPlanoAtivo, isReag,
+  isAjuste, isArrayDe, isAssinaturaGuardada, isCheckin, isChecklist, isConfigParcial, isFoto, isLembrete, isLesao, isPesoRegistro, isPlanoAtivo, isReag,
   isWorkoutEntry, limparConfig, limparLista, type AssinaturaGuardada,
 } from './contrato'
 
@@ -21,6 +21,8 @@ export interface DadosDoApp {
   reag: Reagendamentos
   /** Data (YYYY-MM-DD) do último lembrete diário disparado */
   lembrete: string
+  /** Foto de perfil: JPEG 200×200 em `data:image/jpeg;base64,…`, ou vazio quando não há foto */
+  foto: string
   /** Último estado da assinatura informado pelo servidor (cópia local; quem manda é o Stripe) */
   assinatura: AssinaturaGuardada | null
 }
@@ -50,6 +52,7 @@ export const ENTIDADES: { [N in NomeEntidade]: Entidade<DadosDoApp[N]> } = {
   ajuste: { inicial: { data: '', aplicado: false }, validar: isAjuste },
   reag: { inicial: {}, validar: isReag, erroBackup: 'Os reagendamentos do backup são inválidos.' },
   lembrete: { inicial: '', validar: isLembrete },
+  foto: { inicial: '', validar: isFoto },
   assinatura: { inicial: null, validar: isAssinaturaGuardada },
 }
 
@@ -57,7 +60,7 @@ export const ENTIDADES: { [N in NomeEntidade]: Entidade<DadosDoApp[N]> } = {
  * O que vai para a conta (banco). `lembrete` (data do último aviso neste aparelho) e `assinatura` (cópia do que
  * o Stripe informou) ficam só no aparelho de propósito.
  */
-export const ENTIDADES_SINCRONIZADAS = ['historico', 'plano', 'config', 'checklist', 'checkins', 'lesoes', 'pesos', 'ajuste', 'reag'] as const satisfies readonly NomeEntidade[]
+export const ENTIDADES_SINCRONIZADAS = ['historico', 'plano', 'config', 'checklist', 'checkins', 'lesoes', 'pesos', 'ajuste', 'reag', 'foto'] as const satisfies readonly NomeEntidade[]
 export type EntidadeSincronizada = (typeof ENTIDADES_SINCRONIZADAS)[number]
 
 export const NOMES_ENTIDADES = Object.keys(ENTIDADES) as NomeEntidade[]
