@@ -3,21 +3,46 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { contraste } from './contraste'
 import {
-  CHAVE_DO_TIMER, CONFIG_PADRAO, configDeTexto, DESCANSOS_SEG, LIMITES, duracaoTotal, formatarTempo, gravarConfig, lerConfig, normalizarConfig,
-  rotuloDaFase, rotuloDoDescanso, somarRoundSeg, somarRounds, type ConfigTimer,
+  CHAVE_DO_TIMER, CONFIG_PADRAO, configDeTexto, LIMITES, duracaoTotal, formatarTempo, gravarConfig, juntarTempo, lerConfig, minutosDoRound, normalizarConfig,
+  rotuloDaFase, rotuloDoDescanso, separarTempo, somarRounds, type ConfigTimer,
 } from '@/lib/timer'
 
 // Configuração do cronômetro livre (aba Timer): limites, padrão, validação do que vem do aparelho e textos.
 
 describe('padrão e limites', () => {
-  it('começa com 3 rounds de 3 minutos, descanso de 1 minuto, preparo de 10 s ligado, vibração ligada e som ligado', () => {
-    expect(CONFIG_PADRAO).toEqual({ rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 80, mudo: false })
+  it('começa com 3 rounds de 3 minutos, descanso de 1 minuto, preparo de 10 s ligado, vibração ligada e som no máximo', () => {
+    expect(CONFIG_PADRAO).toEqual({ rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 100, mudo: false })
   })
 
-  it('rounds de 1 a 20; round de 1 a 5 minutos em passos de 30 s; descanso de 30 s, 1, 2 ou 3 minutos', () => {
+  it('rounds de 1 a 20; round de 10 s a 10 min e descanso de 0 a 10 min, os dois de segundo em segundo', () => {
     expect(LIMITES.rounds).toEqual({ min: 1, max: 20 })
-    expect(LIMITES.roundSeg).toEqual({ min: 60, max: 300, passo: 30 })
-    expect([...DESCANSOS_SEG]).toEqual([30, 60, 120, 180])
+    expect(LIMITES.roundSeg).toEqual({ min: 10, max: 600 })
+    expect(LIMITES.descansoSeg).toEqual({ min: 0, max: 600 })
+  })
+})
+
+describe('separarTempo e juntarTempo (minutos + segundos de 0 a 59)', () => {
+  it.each([[0, 0, 0], [5, 0, 5], [59, 0, 59], [60, 1, 0], [90, 1, 30], [185, 3, 5], [600, 10, 0]])('%i s = %i min e %i s', (total, minutos, segundos) => {
+    expect(separarTempo(total)).toEqual({ minutos, segundos })
+    expect(juntarTempo(minutos, segundos, { min: 0, max: 600 })).toBe(total)
+  })
+
+  it('segundos de 0 a 59 mudam o tempo de segundo em segundo', () => {
+    const limites = { min: 10, max: 600 }
+    for (let s = 0; s <= 59; s++) expect(juntarTempo(3, s, limites)).toBe(180 + s)
+  })
+
+  it('o resultado nunca sai dos limites: 0:03 num round vira 0:10; 10:30 vira 10:00', () => {
+    expect(juntarTempo(0, 3, LIMITES.roundSeg)).toBe(10)
+    expect(juntarTempo(10, 30, LIMITES.roundSeg)).toBe(600)
+    expect(juntarTempo(0, 0, LIMITES.descansoSeg)).toBe(0)
+  })
+
+  it('valores quebrados ou inválidos viram o mais próximo válido', () => {
+    expect(juntarTempo(Number.NaN, Number.NaN, LIMITES.roundSeg)).toBe(10)
+    expect(juntarTempo(2.6, 29.6, LIMITES.roundSeg)).toBe(3 * 60 + 30)
+    expect(separarTempo(-5)).toEqual({ minutos: 0, segundos: 0 })
+    expect(separarTempo(Number.NaN)).toEqual({ minutos: 0, segundos: 0 })
   })
 })
 
@@ -33,15 +58,9 @@ describe('somarRounds', () => {
   })
 })
 
-describe('somarRoundSeg', () => {
-  it('anda de 30 em 30 segundos', () => {
-    expect(somarRoundSeg(180, 1)).toBe(210)
-    expect(somarRoundSeg(180, -1)).toBe(150)
-    expect(somarRoundSeg(60, 1)).toBe(90)
-  })
-  it('fica entre 1:00 e 5:00', () => {
-    expect(somarRoundSeg(300, 1)).toBe(300)
-    expect(somarRoundSeg(60, -1)).toBe(60)
+describe('minutosDoRound (o registro do treino guarda o round em minutos)', () => {
+  it.each([[60, 1], [90, 1.5], [180, 3], [45, 0.75], [100, 1.67], [10, 0.17]])('%i s -> %f min', (seg, min) => {
+    expect(minutosDoRound(seg)).toBe(min)
   })
 })
 
@@ -57,8 +76,8 @@ describe('formatarTempo', () => {
 })
 
 describe('rotuloDoDescanso e rotuloDaFase', () => {
-  it('descanso: 30 s, 1 min, 2 min, 3 min', () => {
-    expect(DESCANSOS_SEG.map(rotuloDoDescanso)).toEqual(['30 s', '1 min', '2 min', '3 min'])
+  it('descanso: segundos até 59, minutos cheios, minutos e segundos, e "sem descanso"', () => {
+    expect([0, 5, 30, 59, 60, 90, 120, 185, 600].map(rotuloDoDescanso)).toEqual(['sem descanso', '5 s', '30 s', '59 s', '1 min', '1 min 30 s', '2 min', '3 min 5 s', '10 min'])
   })
   it('as fases têm o nome em maiúsculas pedido', () => {
     expect(rotuloDaFase('preparo')).toBe('PREPARAÇÃO')
@@ -92,7 +111,7 @@ describe('normalizarConfig: o que vem do aparelho pode estar velho, quebrado ou 
   })
 
   it('campo por campo: o que está errado volta ao padrão, o que está certo fica', () => {
-    const r = normalizarConfig({ rounds: 'oito', roundSeg: 120, descansoSeg: 45, preparo: 'sim', vibracao: false, volume: 'alto', mudo: 1 })
+    const r = normalizarConfig({ rounds: 'oito', roundSeg: 120, descansoSeg: 'x', preparo: 'sim', vibracao: false, volume: 'alto', mudo: 1 })
     expect(r).toEqual({ ...CONFIG_PADRAO, roundSeg: 120, vibracao: false })
   })
 
@@ -100,17 +119,25 @@ describe('normalizarConfig: o que vem do aparelho pode estar velho, quebrado ou 
     expect(normalizarConfig({ rounds: 99 }).rounds).toBe(20)
     expect(normalizarConfig({ rounds: 0 }).rounds).toBe(1)
     expect(normalizarConfig({ rounds: -4 }).rounds).toBe(1)
-    expect(normalizarConfig({ roundSeg: 9999 }).roundSeg).toBe(300)
-    expect(normalizarConfig({ roundSeg: 10 }).roundSeg).toBe(60)
+    expect(normalizarConfig({ roundSeg: 9999 }).roundSeg).toBe(600)
+    expect(normalizarConfig({ roundSeg: 3 }).roundSeg).toBe(10)
+    expect(normalizarConfig({ descansoSeg: 9999 }).descansoSeg).toBe(600)
+    expect(normalizarConfig({ descansoSeg: -60 }).descansoSeg).toBe(0)
     expect(normalizarConfig({ volume: 250 }).volume).toBe(100)
     expect(normalizarConfig({ volume: -5 }).volume).toBe(0)
   })
 
-  it('números quebrados são arredondados: rounds ao inteiro, round ao passo de 30 s, volume ao inteiro', () => {
+  it('números quebrados são arredondados ao inteiro (os tempos são de segundo em segundo)', () => {
     expect(normalizarConfig({ rounds: 5.6 }).rounds).toBe(6)
-    expect(normalizarConfig({ roundSeg: 100 }).roundSeg).toBe(90)
-    expect(normalizarConfig({ roundSeg: 110 }).roundSeg).toBe(120)
+    expect(normalizarConfig({ roundSeg: 100 }).roundSeg).toBe(100)
+    expect(normalizarConfig({ roundSeg: 110.4 }).roundSeg).toBe(110)
+    expect(normalizarConfig({ descansoSeg: 45 }).descansoSeg).toBe(45)
     expect(normalizarConfig({ volume: 42.4 }).volume).toBe(42)
+  })
+
+  it('o que foi guardado na versão antiga (round de 30 em 30 s, descanso de 30 s a 3 min) continua valendo', () => {
+    const antiga = { rounds: 4, roundSeg: 150, descansoSeg: 120, preparo: true, vibracao: true, volume: 80, mudo: false }
+    expect(normalizarConfig(antiga)).toEqual(antiga)
   })
 
   it('NaN, Infinity e texto nos números voltam ao padrão', () => {
@@ -119,8 +146,8 @@ describe('normalizarConfig: o que vem do aparelho pode estar velho, quebrado ou 
     }
   })
 
-  it('descanso fora da lista (30, 60, 120, 180) volta ao padrão', () => {
-    for (const ruim of [0, 45, 90, 240, -60]) expect(normalizarConfig({ descansoSeg: ruim }).descansoSeg, String(ruim)).toBe(60)
+  it('descanso que não é número volta ao padrão', () => {
+    for (const ruim of ['45', null, Number.NaN, true]) expect(normalizarConfig({ descansoSeg: ruim }).descansoSeg, String(ruim)).toBe(60)
   })
 
   it('campos desconhecidos e chaves perigosas são ignorados', () => {

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
+import { FREQ_BASE_DO_SINO, PARCIAIS_DO_SINO } from '../lib/som-timer'
 import { SEM_ASSINATURA_TESTE, ativa, simularEstado } from './assinatura-simulada'
 import { expect, lerJson, test } from './fixtures'
 
@@ -68,7 +69,13 @@ async function avancarDevagar(pagina: Page, segundos: number) {
     await pagina.evaluate(() => new Promise<void>(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0) }))
   }
 }
-const oscs = (pagina: Page) => pagina.evaluate(() => window.__audio.oscs)
+/** As frequências (Hz, arredondadas) tocadas até agora. */
+const oscs = (pagina: Page) => pagina.evaluate(() => window.__audio.oscs.map(f => Math.round(f)))
+/** O que o sino toca em `batidas` badaladas seguidas: os tons do sino, na ordem, repetidos a cada batida. */
+const sino = (batidas: number) => Array.from({ length: batidas }, () => PARCIAIS_DO_SINO.map(p => Math.round(FREQ_BASE_DO_SINO * p.razao))).flat()
+/** A contagem 3-2-1: um bipe por número, cada vez mais agudo. */
+const CONTAGEM = [1000, 1250, 1600]
+const AVISO_10S = [660]
 
 async function auditar(pagina: Page) {
   // Espera a troca de cor da fase terminar: medir contraste no meio da transição lê uma cor misturada.
@@ -116,13 +123,15 @@ test.describe('timer: configuração', () => {
     const painel = pagina.getByRole('dialog', { name: 'Configurações do timer' })
     await painel.getByRole('button', { name: 'Aumentar Rounds' }).click()
     await painel.getByRole('button', { name: 'Aumentar Rounds' }).click()
-    await painel.getByRole('button', { name: 'Diminuir Tempo do round' }).click()
-    await painel.getByRole('radio', { name: '2 min' }).click()
+    await painel.getByRole('button', { name: 'Diminuir Minutos do round' }).click()
+    await painel.getByRole('slider', { name: 'Segundos do round' }).fill('30')
+    await painel.getByRole('button', { name: 'Aumentar Minutos do descanso' }).click()
     await painel.getByRole('switch', { name: /Preparação de 10 s/ }).uncheck()
     await painel.getByRole('switch', { name: /Vibração/ }).uncheck()
     // O painel continua aberto depois de cada toque (mudar o tempo recria o cronômetro, mas não o painel).
     await expect(painel).toBeVisible()
-    await expect(painel.getByRole('radio', { name: '2 min' })).toHaveAttribute('aria-checked', 'true')
+    await expect(painel.getByRole('slider', { name: 'Segundos do round' })).toHaveValue('30')
+    await expect(painel.getByText('02:30', { exact: true })).toBeVisible()
     await painel.getByRole('button', { name: 'Fechar' }).click()
 
     await expect(pagina.getByText('Round 1 / 5')).toBeVisible()
@@ -136,18 +145,59 @@ test.describe('timer: configuração', () => {
     await expect(tempo(pagina)).toHaveText('02:30')
   })
 
-  test('limites: de 1 a 20 rounds, de 01:00 a 05:00 por round', async ({ pagina }) => {
-    await abrirTimer(pagina, { ...CONFIG_CURTA, rounds: 20, roundSeg: 300 })
+  test('limites: de 1 a 20 rounds, de 00:10 a 10:00 por round, de 0 a 10:00 de descanso', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, rounds: 20, roundSeg: 600, descansoSeg: 600 })
     await pagina.getByRole('button', { name: 'Ajustes' }).click()
     const painel = pagina.getByRole('dialog', { name: 'Configurações do timer' })
     await expect(painel.getByRole('button', { name: 'Aumentar Rounds' })).toBeDisabled()
-    await expect(painel.getByRole('button', { name: 'Aumentar Tempo do round' })).toBeDisabled()
+    await expect(painel.getByRole('button', { name: 'Aumentar Minutos do round' })).toBeDisabled()
+    await expect(painel.getByRole('button', { name: 'Aumentar Minutos do descanso' })).toBeDisabled()
+    // 10:00 é o teto: com 10 minutos, os segundos ficam em 0 e não passam disso.
+    await expect(painel.getByRole('slider', { name: 'Segundos do round' })).toHaveValue('0')
+    await painel.getByRole('slider', { name: 'Segundos do round' }).fill('40')
+    await expect(painel.getByRole('slider', { name: 'Segundos do round' })).toHaveValue('0')
     await painel.getByRole('button', { name: 'Fechar' }).click()
-    await pagina.evaluate(() => localStorage.setItem('corner:timer:config', JSON.stringify({ rounds: 1, roundSeg: 60 })))
+
+    await pagina.evaluate(() => localStorage.setItem('corner:timer:config', JSON.stringify({ rounds: 1, roundSeg: 10, descansoSeg: 0 })))
     await pagina.reload()
     await pagina.getByRole('button', { name: 'Ajustes' }).click()
     await expect(pagina.getByRole('button', { name: 'Diminuir Rounds' })).toBeDisabled()
-    await expect(pagina.getByRole('button', { name: 'Diminuir Tempo do round' })).toBeDisabled()
+    await expect(pagina.getByRole('button', { name: 'Diminuir Minutos do round' })).toBeDisabled()
+    await expect(pagina.getByRole('button', { name: 'Diminuir Minutos do descanso' })).toBeDisabled()
+    // Um round não pode ter menos de 10 s: 0 min e 3 s volta para 10 s.
+    await pagina.getByRole('slider', { name: 'Segundos do round' }).fill('3')
+    await expect(pagina.getByRole('slider', { name: 'Segundos do round' })).toHaveValue('10')
+    await pagina.getByRole('button', { name: 'Fechar' }).click()
+    await expect(tempo(pagina)).toHaveText('00:10')
+  })
+
+  test('os segundos (0 a 59) mudam o tempo de segundo em segundo, no round e no descanso, e o resumo mostra o total', async ({ pagina }) => {
+    await abrirTimer(pagina, null)
+    await pagina.getByRole('button', { name: 'Ajustes' }).click()
+    const painel = pagina.getByRole('dialog', { name: 'Configurações do timer' })
+    const segundosRound = painel.getByRole('slider', { name: 'Segundos do round' })
+    const segundosDescanso = painel.getByRole('slider', { name: 'Segundos do descanso' })
+    await expect(segundosRound).toHaveAttribute('min', '0')
+    await expect(segundosRound).toHaveAttribute('max', '59')
+    await expect(segundosDescanso).toHaveAttribute('min', '0')
+    await expect(segundosDescanso).toHaveAttribute('max', '59')
+    await segundosRound.fill('47')
+    await segundosDescanso.fill('15')
+    await expect(painel.getByText('03:47', { exact: true })).toBeVisible()
+    await painel.getByRole('button', { name: 'Fechar' }).click()
+    await expect(tempo(pagina)).toHaveText('03:47')
+    // 10 s de preparo + 3 × 3:47 + 2 × 1:15 = 10 + 681 + 150 = 841 s = 14:01
+    await expect(pagina.getByText(/3 × 03:47 · descanso 1 min 15 s · 14:01 no total/)).toBeVisible()
+    expect(await pagina.evaluate(() => JSON.parse(localStorage.getItem('corner:timer:config')!))).toMatchObject({ roundSeg: 227, descansoSeg: 75 })
+  })
+
+  test('descanso de 0: os rounds seguem um atrás do outro, sem fase de descanso', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, roundSeg: 20, descansoSeg: 0, preparo: false })
+    await expect(pagina.getByText(/2 × 00:20 · sem descanso · 00:40 no total/)).toBeVisible()
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await avancar(pagina, 20)
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'round')
+    await expect(pagina.getByText('Round 2 / 2')).toBeVisible()
   })
 
   test('configuração quebrada ou adulterada no aparelho não derruba a tela: volta ao padrão, campo por campo', async ({ pagina }) => {
@@ -192,6 +242,20 @@ test.describe('timer: andamento', () => {
     await expect(pagina.getByText('2/2')).toBeVisible()
     // 2 rounds de 1 min + 1 descanso de 30 s + 10 s de preparo = 02:40
     await expect(pagina.getByRole('group').or(pagina.locator('dl')).getByText('02:40')).toBeVisible()
+  })
+
+  test('com tempos de segundo em segundo (round de 25 s, descanso de 7 s), cada fase dura exatamente isso', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, roundSeg: 25, descansoSeg: 7, preparo: false })
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await expect(tempo(pagina)).toHaveText('00:25')
+    await avancar(pagina, 25)
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'descanso')
+    await expect(tempo(pagina)).toHaveText('00:07')
+    await avancar(pagina, 7)
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'round')
+    await expect(pagina.getByText('Round 2 / 2')).toBeVisible()
+    await avancar(pagina, 25)
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'fim')
   })
 
   test('pausar para o relógio e retomar continua de onde parou', async ({ pagina }) => {
@@ -304,30 +368,37 @@ test.describe('timer: sons e vibração', () => {
     await expect.poll(() => pagina.evaluate(() => window.__audio.criados)).toBe(1)
   })
 
-  test('toca a campainha no início do round, o aviso aos 10 s, o bipe longo no fim do round e a sequência no fim', async ({ pagina }) => {
+  test('toca o sino no início do round, "ting ting ting" no fim, a contagem 3-2-1 antes de cada troca e o aviso dos 10 s', async ({ pagina }) => {
     await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false })
     await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
-    // Início do round 1: 3 bipes curtos e 1 longo, todos de 880 Hz.
-    await expect.poll(() => oscs(pagina)).toEqual([880, 880, 880, 880])
+    // Início do round 1: uma badalada longa de sino.
+    await expect.poll(() => oscs(pagina)).toEqual(sino(1))
     await avancar(pagina, 49)
     await expect(tempo(pagina)).toHaveText('00:11')
-    expect(await oscs(pagina)).toEqual([880, 880, 880, 880])
+    expect(await oscs(pagina)).toEqual(sino(1))
     await avancar(pagina, 1)
     // Faltando 10 s: 1 bipe de 660 Hz.
-    await expect.poll(() => oscs(pagina)).toEqual([880, 880, 880, 880, 660])
-    await avancar(pagina, 10)
-    // Fim do round, começo do descanso: 1 bipe de 440 Hz.
-    await expect.poll(() => oscs(pagina)).toEqual([880, 880, 880, 880, 660, 440])
-    await avancarDevagar(pagina, 27)
-    // Faltam 3 s do descanso: primeiro bipe da contagem (um por segundo: 3, 2 e 1).
-    await expect.poll(async () => (await oscs(pagina)).length).toBe(6 + 1)
-    await avancarDevagar(pagina, 3)
-    // Mais 2 bipes da contagem, e a campainha do round 2 (3 curtos e 1 longo): 6 + 3 + 4 sons, todos de 880 Hz.
-    await expect.poll(async () => (await oscs(pagina)).slice(6)).toEqual(Array(7).fill(880))
-    await avancar(pagina, 60)
+    await expect.poll(() => oscs(pagina)).toEqual([...sino(1), ...AVISO_10S])
+    // Últimos 3 s do round: contagem 3-2-1 (um bipe por segundo, cada um mais agudo). Fim do round: "ting ting ting".
+    await avancarDevagar(pagina, 10)
+    await expect.poll(() => oscs(pagina)).toEqual([...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(3)])
+    // Descanso de 30 s: contagem 3-2-1 nos últimos 3 s e, ao acabar, o sino do round 2.
+    await avancarDevagar(pagina, 30)
+    await expect.poll(() => oscs(pagina)).toEqual([...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(3), ...CONTAGEM, ...sino(1)])
+    // Round 2: aviso, contagem e, no fim de tudo, 4 badaladas.
+    await avancarDevagar(pagina, 60)
     await expect(fase(pagina)).toHaveAttribute('data-fase', 'fim')
-    // Fim de todos os rounds: 880 -> 1100 -> 1320 Hz.
-    await expect.poll(async () => (await oscs(pagina)).slice(-3)).toEqual([880, 1100, 1320])
+    await expect.poll(() => oscs(pagina)).toEqual([
+      ...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(3), ...CONTAGEM, ...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(4),
+    ])
+  })
+
+  test('a contagem 3-2-1 também toca no fim da preparação de 10 s, antes do sino do round 1', async ({ pagina }) => {
+    await abrirTimer(pagina)
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await avancarDevagar(pagina, 10)
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'round')
+    await expect.poll(() => oscs(pagina)).toEqual([...CONTAGEM, ...sino(1)])
   })
 
   test('mudo: o timer anda, mas nenhum som é gerado; ligar o som volta a tocar', async ({ pagina }) => {
@@ -339,9 +410,9 @@ test.describe('timer: sons e vibração', () => {
     expect(await oscs(pagina)).toEqual([])
     await pagina.getByRole('button', { name: 'Mudo' }).click()
     await expect(pagina.getByRole('button', { name: 'Mudo' })).toHaveAttribute('aria-pressed', 'false')
-    await avancar(pagina, 30)
-    // Só o que vem depois de desmutar: 3 bipes de contagem do descanso e a campainha do round 2 (o sino do descanso não toca de novo).
-    await expect.poll(() => oscs(pagina)).toEqual(Array(7).fill(880))
+    await avancarDevagar(pagina, 20)
+    // Só o que vem depois de desmutar: a contagem 3-2-1 do descanso e o sino do round 2 (o do descanso não toca de novo).
+    await expect.poll(() => oscs(pagina)).toEqual([...CONTAGEM, ...sino(1)])
     expect((await pagina.evaluate(() => JSON.parse(localStorage.getItem('corner:timer:config')!))).mudo).toBe(false)
   })
 

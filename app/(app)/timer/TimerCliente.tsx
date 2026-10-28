@@ -10,7 +10,7 @@ import { definirTimerAndando, useTimerAndando } from '@/hooks/useTimerAndando'
 import { criarSonsDoTimer } from '@/lib/som-timer'
 import { TEXTOS } from '@/lib/textos'
 import {
-  PREPARO_DO_TIMER_SEG, duracaoTotal, formatarTempo, rotuloDaFase, rotuloDoDescanso, type ConfigTimer, type FaseVisual,
+  PREPARO_DO_TIMER_SEG, duracaoTotal, formatarTempo, minutosDoRound, rotuloDaFase, rotuloDoDescanso, type ConfigTimer, type FaseVisual,
 } from '@/lib/timer'
 import { CAT_LABELS, TIPOS, type RegType } from '@/lib/tipos'
 import ConfiguracoesDoTimer from './ConfiguracoesDoTimer'
@@ -71,6 +71,7 @@ function Mostrador({ config, alterar, reiniciar, abrirConfig }: { config: Config
     descansoSeg: config.descansoSeg,
     preparoSeg: config.preparo ? PREPARO_DO_TIMER_SEG : 0,
     sons,
+    contagemNoRound: true,
     vibracao: config.vibracao,
   })
 
@@ -117,7 +118,7 @@ function Mostrador({ config, alterar, reiniciar, abrirConfig }: { config: Config
   const registrar = () => openRegister({
     tipo,
     rounds: Math.max(1, c.roundsFeitos),
-    minPorRound: config.roundSeg / 60,
+    minPorRound: minutosDoRound(config.roundSeg),
     duracaoSegundos: Math.max(1, Math.round(c.decorridoReal)),
   })
 
@@ -134,7 +135,7 @@ function Mostrador({ config, alterar, reiniciar, abrirConfig }: { config: Config
           <div>
             <h1 className={estilos.titulo}>Timer</h1>
             <p className={estilos.resumoTopo}>
-              {config.rounds} × {formatarTempo(config.roundSeg)} · descanso {rotuloDoDescanso(config.descansoSeg)} · {formatarTempo(duracaoTotal(config))} no total
+              {config.rounds} × {formatarTempo(config.roundSeg)} · {config.descansoSeg > 0 ? `descanso ${rotuloDoDescanso(config.descansoSeg)}` : 'sem descanso'} · {formatarTempo(duracaoTotal(config))} no total
             </p>
           </div>
           <div className={estilos.iconesTopo}>

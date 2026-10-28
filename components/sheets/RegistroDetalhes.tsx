@@ -33,7 +33,7 @@ export default function RegistroDetalhes() {
     <SheetFrame title={CAT_LABELS[regType]} onBack={() => setSheet('type')} onClose={closeSheet}>
       <div className={comum.grade}>
         <Stepper label="Rounds" value={rounds} unit="" min={1} max={20} onChange={setRounds} />
-        <Stepper label="Duração do round" value={roundMin} unit="min" min={1} max={5} onChange={setRoundMin} />
+        <Stepper label="Duração do round" value={roundMin} unit="min" min={0.5} max={10} onChange={setRoundMin} />
       </div>
 
       <div className={estilos.esforco}>

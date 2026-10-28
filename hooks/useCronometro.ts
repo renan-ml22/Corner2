@@ -51,9 +51,19 @@ export interface SonsDoCronometro {
   inicioDescanso: (ctx: AudioContext | null) => void
   /** Faltam 10 segundos para o fim do round */
   aviso: (ctx: AudioContext | null) => void
-  /** Últimos 3 segundos do preparo e do descanso */
-  contagem: (ctx: AudioContext | null) => void
+  /** Contagem dos últimos 3 segundos: `restante` é 3, 2 ou 1 */
+  contagem: (ctx: AudioContext | null, restante: number) => void
   fim: (ctx: AudioContext | null) => void
+}
+
+/**
+ * O número (3, 2 ou 1) da contagem regressiva a tocar agora, ou null. O preparo e o descanso sempre contam; o round só
+ * se `contagemNoRound`. Numa fase curta, a contagem não começa no primeiro segundo (o sino de início ainda está soando).
+ */
+export function numeroDaContagem(fase: Pick<FaseCrono, 'tipo' | 'duracao'>, restante: number, contagemNoRound: boolean): 1 | 2 | 3 | null {
+  if (fase.tipo === 'round' && !contagemNoRound) return null
+  if (restante < 1 || restante > 3 || restante >= fase.duracao) return null
+  return restante as 1 | 2 | 3
 }
 
 export const SONS_DO_TREINO: SonsDoCronometro = {
@@ -89,6 +99,8 @@ interface Opcoes {
   /** Segundos de contagem antes do primeiro round (0 = sem preparo). Padrão: 10. */
   preparoSeg?: number
   sons?: SonsDoCronometro
+  /** Contar 3-2-1 também no fim de cada round (padrão: não; o treino do plano só conta no preparo e no descanso). */
+  contagemNoRound?: boolean
   /** Vibrar a cada troca de fase (onde o aparelho deixa). Padrão: sim. */
   vibracao?: boolean
 }
@@ -97,7 +109,7 @@ interface Opcoes {
  * Cronômetro de rounds. O tempo vem do relógio (Date.now) e não de contar "ticks",
  * então segue correto mesmo quando o navegador reduz a frequência dos timers em segundo plano.
  */
-export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREPARO_SEG, sons = SONS_DO_TREINO, vibracao = true }: Opcoes) {
+export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREPARO_SEG, sons = SONS_DO_TREINO, contagemNoRound = false, vibracao = true }: Opcoes) {
   const [fases] = useState(() => montarFases(rounds, roundSeg, descansoSeg, preparoSeg))
   const [exec, setExec] = useState<Execucao | null>(null)
   const [agora, setAgora] = useState(0)
@@ -173,8 +185,9 @@ export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREP
     if (fase.tipo === 'round' && fase.duracao > 25 && restante <= 10 && restante > 0) {
       disparar('aviso', () => { sons.aviso(ctx); if (vibracao) vibrar([80, 60, 80]) })
     }
-    if (fase.tipo !== 'round' && restante >= 1 && restante <= 3) disparar(`c${restante}`, () => sons.contagem(ctx))
-  }, [estado, idx, fase, restante, decorrido, sons, vibracao])
+    const contagem = numeroDaContagem(fase, restante, contagemNoRound)
+    if (contagem) disparar(`c${contagem}`, () => sons.contagem(ctx, contagem))
+  }, [estado, idx, fase, restante, decorrido, sons, contagemNoRound, vibracao])
 
   // O áudio é fechado ao sair da tela (com uma folga para o som do fim terminar de tocar) e ao iniciar de novo: o Safari limita quantos ficam abertos.
   useEffect(() => () => fecharAudio(audioRef.current, 3000), [])

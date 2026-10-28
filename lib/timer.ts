@@ -2,12 +2,11 @@
 
 export const LIMITES = {
   rounds: { min: 1, max: 20 },
-  /** Duração do round em segundos: de 1:00 a 5:00, de 30 em 30. */
-  roundSeg: { min: 60, max: 300, passo: 30 },
+  /** Duração do round em segundos: de 0:10 a 10:00, de segundo em segundo. */
+  roundSeg: { min: 10, max: 600 },
+  /** Descanso entre rounds em segundos: de 0 (sem descanso) a 10:00, de segundo em segundo. */
+  descansoSeg: { min: 0, max: 600 },
 } as const
-
-/** Descansos oferecidos, em segundos: 30 s, 1, 2 e 3 minutos. */
-export const DESCANSOS_SEG = [30, 60, 120, 180] as const
 
 export interface ConfigTimer {
   rounds: number
@@ -21,15 +20,23 @@ export interface ConfigTimer {
   mudo: boolean
 }
 
-export const CONFIG_PADRAO: ConfigTimer = { rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 80, mudo: false }
+export const CONFIG_PADRAO: ConfigTimer = { rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 100, mudo: false }
 
 const entre = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
 export const somarRounds = (rounds: number, delta: number): number => entre(rounds + delta, LIMITES.rounds.min, LIMITES.rounds.max)
 
-/** `passos` de 30 s para cima (positivo) ou para baixo (negativo). */
-export const somarRoundSeg = (seg: number, passos: number): number =>
-  entre(seg + passos * LIMITES.roundSeg.passo, LIMITES.roundSeg.min, LIMITES.roundSeg.max)
+/** 185 -> 3 min e 5 s. Negativo ou inválido vira 0. */
+export function separarTempo(seg: number): { minutos: number; segundos: number } {
+  const s = Number.isFinite(seg) ? Math.max(0, Math.round(seg)) : 0
+  return { minutos: Math.floor(s / 60), segundos: s % 60 }
+}
+
+/** Minutos + segundos (0 a 59) viram o total em segundos, sempre dentro dos limites. */
+export function juntarTempo(minutos: number, segundos: number, { min, max }: { min: number; max: number }): number {
+  const total = (Number.isFinite(minutos) ? Math.round(minutos) : 0) * 60 + (Number.isFinite(segundos) ? Math.round(segundos) : 0)
+  return entre(total, min, max)
+}
 
 /** 90 -> "01:30". Negativo, quebrado ou inválido não gera texto estranho. */
 export function formatarTempo(seg: number): string {
@@ -37,8 +44,14 @@ export function formatarTempo(seg: number): string {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
+/** O tempo do round em minutos, como o registro do treino guarda (90 s -> 1,5), com no máximo 2 casas. */
+export const minutosDoRound = (seg: number): number => Math.round((seg / 60) * 100) / 100
+
+/** 0 -> "sem descanso", 30 -> "30 s", 60 -> "1 min", 90 -> "1 min 30 s". */
 export function rotuloDoDescanso(seg: number): string {
-  return seg >= 60 && seg % 60 === 0 ? `${seg / 60} min` : `${seg} s`
+  const { minutos, segundos } = separarTempo(seg)
+  if (minutos === 0 && segundos === 0) return 'sem descanso'
+  return [minutos > 0 ? `${minutos} min` : '', segundos > 0 ? `${segundos} s` : ''].filter(Boolean).join(' ')
 }
 
 /** O que a tela mostra: as quatro fases do treino, mais "pronto" (antes de iniciar). */
@@ -68,9 +81,8 @@ export function normalizarConfig(valor: unknown): ConfigTimer {
   const padrao = CONFIG_PADRAO
 
   const rounds = ehNumero(v.rounds) ? entre(Math.round(v.rounds), LIMITES.rounds.min, LIMITES.rounds.max) : padrao.rounds
-  const { min, max, passo } = LIMITES.roundSeg
-  const roundSeg = ehNumero(v.roundSeg) ? entre(min + Math.round((v.roundSeg - min) / passo) * passo, min, max) : padrao.roundSeg
-  const descansoSeg = (DESCANSOS_SEG as readonly unknown[]).includes(v.descansoSeg) ? (v.descansoSeg as number) : padrao.descansoSeg
+  const roundSeg = ehNumero(v.roundSeg) ? entre(Math.round(v.roundSeg), LIMITES.roundSeg.min, LIMITES.roundSeg.max) : padrao.roundSeg
+  const descansoSeg = ehNumero(v.descansoSeg) ? entre(Math.round(v.descansoSeg), LIMITES.descansoSeg.min, LIMITES.descansoSeg.max) : padrao.descansoSeg
   const volume = ehNumero(v.volume) ? entre(Math.round(v.volume), 0, 100) : padrao.volume
 
   return {

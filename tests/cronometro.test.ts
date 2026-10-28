@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { PREPARO_SEG, encerrarExecucao, medirRelogio, montarFases, type Execucao } from '@/hooks/useCronometro'
+import { PREPARO_SEG, encerrarExecucao, medirRelogio, montarFases, numeroDaContagem, type Execucao } from '@/hooks/useCronometro'
+
+// A contagem 3-2-1: quando ela toca e quando não.
+describe('numeroDaContagem', () => {
+  const preparo = { tipo: 'preparo', duracao: 10 } as const
+  const descanso = { tipo: 'descanso', duracao: 60 } as const
+  const round = { tipo: 'round', duracao: 180 } as const
+
+  it('nos últimos 3 segundos do preparo e do descanso, devolve 3, 2 e 1', () => {
+    for (const fase of [preparo, descanso]) {
+      expect([4, 3, 2, 1, 0].map(r => numeroDaContagem(fase, r, false))).toEqual([null, 3, 2, 1, null])
+    }
+  })
+
+  it('no round, só conta se pedirem (o treino do plano não conta no round; o Timer conta)', () => {
+    expect([3, 2, 1].map(r => numeroDaContagem(round, r, false))).toEqual([null, null, null])
+    expect([4, 3, 2, 1, 0].map(r => numeroDaContagem(round, r, true))).toEqual([null, 3, 2, 1, null])
+  })
+
+  it('fase curta demais não conta já no primeiro segundo (o sino de início ainda está tocando): 3 s de descanso não faz "3"', () => {
+    expect(numeroDaContagem({ tipo: 'descanso', duracao: 3 }, 3, true)).toBeNull()
+    expect(numeroDaContagem({ tipo: 'descanso', duracao: 3 }, 2, true)).toBe(2)
+    expect(numeroDaContagem({ tipo: 'descanso', duracao: 4 }, 3, true)).toBe(3)
+  })
+})
 
 // A lista de fases do cronômetro: preparo, rounds e descansos, cada uma com o segundo em que começa.
 

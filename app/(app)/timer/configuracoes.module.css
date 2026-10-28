@@ -57,6 +57,10 @@
 
 .interruptor:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
+.tempoTopo { display: flex; align-items: baseline; justify-content: space-between; }
+
+.tempoTotal { color: var(--color-text); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 .volumeTopo { display: flex; align-items: baseline; justify-content: space-between; }
 
 .volumeTopo span { color: var(--color-neutral-300); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }

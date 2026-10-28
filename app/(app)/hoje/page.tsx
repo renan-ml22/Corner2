@@ -96,6 +96,12 @@ export default function HojePage() {
         </button>
       )}
 
+      <Link href="/quiz" className={`surface-card cta-card ${estilos.destaqueCta}`}>
+        <i className="ph-fill ph-trophy" aria-hidden="true" />
+        <span><strong>Qual é o seu estilo de lutador?</strong><small>Descubra com qual atleta você mais se parece. Clique aqui.</small></span>
+        <i className="ph-bold ph-caret-right" aria-hidden="true" />
+      </Link>
+
       <div className="section-heading"><h2>Como você está</h2></div>
       {podeCheckin ? <CheckinCard /> : <ConviteAoPlano recurso="checkin" compacto />}
       {ajuste && ajuste.nivel !== "normal" && (
@@ -214,7 +220,7 @@ export default function HojePage() {
 
       <div className="section-heading"><h2>Para evoluir</h2></div>
       <div className="atalhos">
-        <AtalhosDeEstilo />
+        <AtalhosDeEstilo semQuiz />
         <Link href="/tecnicas" className="surface-card cta-card">
           <i className="ph-fill ph-books" aria-hidden="true" />
           <span><strong>Biblioteca técnica</strong><small>Golpes, combinações e defesa</small></span>
