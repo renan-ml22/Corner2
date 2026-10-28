@@ -12,7 +12,7 @@ import { INDISPONIVEL, SEM_DADOS, statusDeTreino, type StatusDeTreino } from './
 
 export type CodigoCornerman =
   | 'limite_de_alunos' | 'nao_encontrado' | 'dado_invalido'
-  | 'convite_invalido' | 'proprio_convite' | 'ja_tem_treinador' | 'convite_pendente' | 'nao_convidavel' | 'sem_vinculo'
+  | 'convite_invalido' | 'proprio_convite' | 'ja_tem_treinador' | 'convite_pendente' | 'nao_convidavel' | 'sem_vinculo' | 'ficha_encerrada'
 
 /** Erro com texto seguro para mostrar à pessoa e o status HTTP a devolver. */
 export class ErroCornerman extends Error {
@@ -130,4 +130,14 @@ export async function atualizarAluno(banco: AlunosBancoLike, coachId: string, id
 
 export async function apagarAluno(banco: AlunosBancoLike, coachId: string, id: string): Promise<void> {
   if (!ehIdDeFicha(id) || !(await banco.apagar(coachId, id))) throw naoEncontrado()
+}
+
+/**
+ * Quantos alunos com conta estão há 7 dias ou mais sem treinar (o selo da aba "Alunos"). Mesma regra e mesma função SQL da
+ * lista, mas sem ler as fichas nem as fotos. Quem nunca treinou é cinza, não vermelho. Se o banco falhar, a falha SOBE: um
+ * "0" no lugar de "não sei" esconderia aluno parado.
+ */
+export async function contarAlunosVermelhos(banco: AlunosBancoLike, coachId: string, agora: Date = new Date()): Promise<number> {
+  const ultimos = await banco.ultimosTreinos(coachId)
+  return Object.values(ultimos).filter(instante => statusDeTreino(instante, agora).cor === 'vermelho').length
 }

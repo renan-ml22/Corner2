@@ -25,7 +25,7 @@ function traduzir(e: unknown): never {
   throw e
 }
 
-const primeiroNome = (nome: string | null): string => nome?.trim().split(/\s+/)[0] || 'Um treinador'
+export const primeiroNome = (nome: string | null): string => nome?.trim().split(/\s+/)[0] || 'Um treinador'
 
 /** Gera o convite da ficha: o link com o token (a única vez que ele existe), válido por 14 dias. O link anterior morre. */
 export async function criarConviteDaFicha(banco: ConvitesBancoLike, coachId: string, alunoId: string, origem: string, agora: Date = new Date()): Promise<{ link: string; expiraEm: string }> {

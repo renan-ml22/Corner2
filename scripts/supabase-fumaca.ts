@@ -17,7 +17,9 @@ import { criarConvitesBancoSupabase } from '../lib/cornerman/convite-banco'
 import {
   aceitarConvite, cancelarConviteDaFicha, consultarConvite, criarConviteDaFicha, desvincularDoTreinador, meuTreinador,
 } from '../lib/cornerman/convite-servico'
-import { ErroCornerman, apagarAluno, atualizarAluno, criarAluno, lerAluno, listarAlunos } from '../lib/cornerman/servico'
+import { ErroCornerman, apagarAluno, atualizarAluno, contarAlunosVermelhos, criarAluno, lerAluno, listarAlunos } from '../lib/cornerman/servico'
+import { criarSugestoesBancoSupabase } from '../lib/cornerman/sugestao-banco'
+import { historicoDeSugestoes, responderSugestao, sugerirPlano, sugestoesDoAluno } from '../lib/cornerman/sugestao-servico'
 import { criarBancoSupabase } from '../lib/dados/servidor/banco-supabase'
 import { ErroDados, carregarDados, salvarEntidades } from '../lib/dados/servidor/servico'
 import { criarClienteParaEntrar, getSupabase } from '../lib/supabase'
@@ -99,7 +101,7 @@ async function contarLinhas(): Promise<number> {
     if (data?.user) total++ // o usuário ainda existe no Auth
   }
   for (const id of [ana.id, bia.id, ...contasCriadas, ...idsExtras]) {
-    for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id'], ['coach_alunos', 'coach_id'], ['coach_invites', 'coach_id']] as const) {
+    for (const [tabela, coluna] of [['workouts', 'user_id'], ['active_plans', 'user_id'], ['profiles', 'id'], ['user_data', 'user_id'], ['coach_alunos', 'coach_id'], ['coach_invites', 'coach_id'], ['coach_suggestions', 'coach_id']] as const) {
       const { count } = await db.from(tabela).select('*', { count: 'exact', head: true }).eq(coluna, id)
       total += count ?? 0
     }
@@ -430,12 +432,95 @@ async function blocoDosDadosDoAluno() {
   }
 }
 
+/** Sugestões de plano (supabase/cornerman-etapa-4.sql): uma pendente por aluno, vínculo que acaba cancela, e quem pode responder. */
+async function blocoDasSugestoes() {
+  const sondagem = await db.rpc('sugestoes_do_aluno', { p_user: 'u_fumaca_sondagem' })
+  if (sondagem.error) {
+    console.log('PULOU   sugestões de plano: a função sugestoes_do_aluno não existe (rode supabase/cornerman-etapa-4.sql no SQL Editor do Supabase)')
+    return
+  }
+  const fichas = criarAlunosBancoSupabase(db)
+  const sugestoes = criarSugestoesBancoSupabase(db)
+  const erroDe = (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e)
+  const codigoDe = (e: unknown) => (e instanceof ErroCornerman ? e.codigo : String(e))
+
+  const otavio = { id: `u_fumaca_${agora}_otavio`, nome: 'Otávio Treinador' }
+  const lia = { id: `u_fumaca_${agora}_lia2`, nome: 'Lia Treinadora' }
+  const aluna = { id: `u_fumaca_${agora}_sug_aluna`, nome: 'Aluna das sugestões' }
+  const intrusa = `u_fumaca_${agora}_sug_intrusa`
+  idsExtras.push(otavio.id, lia.id, aluna.id, intrusa)
+  await salvarEntidades(banco, otavio, { config: { metaSemanal: 3 } })
+  await salvarEntidades(banco, lia, { config: { metaSemanal: 3 } })
+  await salvarEntidades(banco, aluna, {
+    historico: [{ id: 'sg1', data: new Date(Date.now() - 10 * 86_400_000).toISOString(), tipo: 'tec', rounds: 3, minPorRound: 3, rpe: 5, duracaoSegundos: 600 }],
+  })
+
+  const vinculada = await criarAluno(fichas, otavio.id, { nome: 'Aluna' })
+  const manual = await criarAluno(fichas, otavio.id, { nome: 'Manual' })
+  const deLia = await criarAluno(fichas, lia.id, { nome: 'Dani' })
+  await db.from('coach_alunos').update({ aluno_user_id: aluna.id }).eq('id', vinculada.id) // o vínculo de verdade é testado no bloco dos convites
+  const pendentes = async (coachId: string, fichaId: string) => (await sugestoes.historico(coachId, fichaId)).filter(s => s.status === 'pendente').length
+
+  // 1. Uma pendente por aluno: a nova troca a antiga.
+  confere('sugerir para aluno com conta grava como pendente', (await sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'fundamentos', mensagem: 'Comece por aqui.' })).status === 'pendente')
+  await sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'base-aerobica' })
+  const historico = await historicoDeSugestoes(fichas, sugestoes, otavio.id, vinculada.id)
+  confere('a nova sugestão substitui a pendente: uma pendente e uma substituída', historico.length === 2 && historico[0].status === 'pendente' && historico[0].planoId === 'base-aerobica' && historico[1].status === 'substituida', JSON.stringify(historico.map(h => h.status)))
+  await Promise.all([1, 2, 3, 4].map(n => sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: n % 2 ? 'fundamentos' : 'tecnica-avancada' })))
+  confere('quatro sugestões ao mesmo tempo: continua só UMA pendente (o banco garante)', await pendentes(otavio.id, vinculada.id) === 1)
+
+  // 2. Ficha sem conta só registra; quem não é dono não sugere nem lê.
+  confere('ficha manual: fica só registrada', (await sugerirPlano(sugestoes, otavio.id, manual.id, { planoId: 'fundamentos' })).status === 'registrada')
+  confere('outro treinador não sugere na ficha (nao_encontrado, igual a id que não existe)', codigoDe(await erroDe(sugerirPlano(sugestoes, lia.id, vinculada.id, { planoId: 'fundamentos' }))) === 'nao_encontrado')
+  confere('outro treinador não lê o histórico (404)', codigoDe(await erroDe(historicoDeSugestoes(fichas, sugestoes, lia.id, vinculada.id))) === 'nao_encontrado')
+
+  // 3. O que o aluno vê e quem pode responder.
+  const doAluno = await sugestoesDoAluno(sugestoes, aluna.id)
+  confere('o aluno vê só a pendente, com o primeiro nome do treinador', doAluno.pendente?.treinador === 'Otávio' && doAluno.aceita === null, JSON.stringify(doAluno))
+  confere('outra conta não vê nada', (await sugestoesDoAluno(sugestoes, intrusa)).pendente === null)
+  confere('outra conta não consegue responder (404)', codigoDe(await erroDe(responderSugestao(sugestoes, intrusa, doAluno.pendente!.id, true))) === 'nao_encontrado')
+  confere('o treinador não responde pelo aluno (404)', codigoDe(await erroDe(responderSugestao(sugestoes, otavio.id, doAluno.pendente!.id, true))) === 'nao_encontrado')
+  const respostas = await Promise.all([true, false, true].map(a => erroDe(responderSugestao(sugestoes, aluna.id, doAluno.pendente!.id, a))))
+  confere('três respostas ao mesmo tempo: só uma vence', respostas.filter(r => r === null).length === 1, JSON.stringify(respostas.map(r => (r === null ? 'ok' : codigoDe(r)))))
+  confere('respondida: não é mais pendente', (await sugestoesDoAluno(sugestoes, aluna.id)).pendente === null)
+
+  // 4. Selo da aba: treinou há 10 dias = vermelho; ficha manual não conta.
+  confere('o selo da aba conta 1 aluno há 7+ dias sem treinar', await contarAlunosVermelhos(fichas, otavio.id) === 1)
+
+  // 5. Vínculo que acaba cancela a pendente, e ela não reaparece no próximo vínculo.
+  await sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'fundamentos' })
+  await desvincularDoTreinador(criarConvitesBancoSupabase(db), aluna.id)
+  const aposDesvincular = await sugestoes.historico(otavio.id, vinculada.id)
+  confere('o aluno se desvincula: a pendente vira cancelada', aposDesvincular[0]?.status === 'cancelada' && !aposDesvincular.some(s => s.status === 'pendente'), JSON.stringify(aposDesvincular.map(s => s.status)))
+  confere('ficha encerrada: não aceita sugestão (ficha_encerrada)', codigoDe(await erroDe(sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'fundamentos' }))) === 'ficha_encerrada')
+  await db.from('coach_alunos').update({ aluno_user_id: aluna.id, status: 'ativo' }).eq('id', vinculada.id)
+  confere('vínculo refeito: a sugestão cancelada NÃO reaparece', (await sugestoesDoAluno(sugestoes, aluna.id)).pendente === null)
+
+  // 6. Encerrar a ficha pelo treinador também cancela; o banco recusa texto grande; apagar a ficha apaga o histórico.
+  await sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'fundamentos' })
+  await atualizarAluno(fichas, otavio.id, vinculada.id, { status: 'encerrado' })
+  confere('o treinador encerra a ficha: a pendente vira cancelada', (await sugestoes.historico(otavio.id, vinculada.id))[0]?.status === 'cancelada')
+  confere('o banco recusa mensagem com mais de 500 caracteres', !!(await db.rpc('sugerir_plano', { p_coach: lia.id, p_aluno: deLia.id, p_plano: 'fundamentos', p_mensagem: 'a'.repeat(501) })).error)
+  await sugerirPlano(sugestoes, lia.id, deLia.id, { planoId: 'fundamentos' })
+  await apagarAluno(fichas, lia.id, deLia.id)
+  const restou = await db.from('coach_suggestions').select('id', { count: 'exact', head: true }).eq('aluno_id', deLia.id)
+  confere('apagar a ficha apaga o histórico de sugestões', (restou.count ?? 0) === 0)
+
+  // 7. A chave pública não executa a função.
+  const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  if (chavePublica) {
+    const anon = createClient(url!, chavePublica, { auth: { persistSession: false, autoRefreshToken: false } })
+    confere('a chave pública não executa sugerir_plano', !!(await anon.rpc('sugerir_plano', { p_coach: otavio.id, p_aluno: manual.id, p_plano: 'fundamentos', p_mensagem: '' })).error)
+  }
+}
+
 async function executar() {
   try {
     await principal()
     await blocoDosAlunos()
     await blocoDosConvites()
     await blocoDosDadosDoAluno()
+    await blocoDasSugestoes()
   } finally {
     await limpar()
     const sobrou = await contarLinhas()

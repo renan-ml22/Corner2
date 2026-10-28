@@ -6,6 +6,7 @@ import { isRegType } from '@/lib/tipos'
 import type { DadosDoAluno } from './aluno-dados'
 import type { DadosDaFicha, FichaDeAluno } from './ficha'
 import type { AlunoNaLista } from './servico'
+import { STATUS_DA_SUGESTAO, type NovaSugestao, type StatusDaSugestao, type SugestaoDaFicha, type SugestaoParaOAluno, type SugestoesDoAluno } from './sugestao'
 
 export type RespostaDaApi<T> = { ok: true; valor: T } | { ok: false; erro: string; codigo: string; status: number }
 
@@ -158,4 +159,75 @@ export async function dadosDoAlunoNoServidor(id: string): Promise<RespostaDaApi<
   if (!r.ok) return r
   const dados = comoDadosDoAluno(r.json)
   return dados ? { ok: true, valor: dados } : respostaInvalida()
+}
+
+// ── Sugestões de plano e selo da aba "Alunos" (etapa 4) ──────
+
+const texto = (v: unknown): v is string => typeof v === 'string'
+const textoOuNulo = (v: unknown): v is string | null => v === null || typeof v === 'string'
+
+function comoSugestaoDaFicha(v: unknown): SugestaoDaFicha | null {
+  if (!isObj(v) || !texto(v.id) || !texto(v.planoId) || !texto(v.planoNome) || !texto(v.mensagem) || !texto(v.criadaEm) || !textoOuNulo(v.respondidaEm)) return null
+  return STATUS_DA_SUGESTAO.includes(v.status as StatusDaSugestao) ? (v as unknown as SugestaoDaFicha) : null
+}
+
+function comoListaDeSugestoes(v: unknown): SugestaoDaFicha[] | null {
+  if (!Array.isArray(v)) return null
+  const lista = v.map(comoSugestaoDaFicha)
+  return lista.every((s): s is SugestaoDaFicha => s !== null) ? lista : null
+}
+
+function comoSugestaoParaOAluno(v: unknown): SugestaoParaOAluno | null | undefined {
+  if (v === null) return null
+  if (!isObj(v) || !texto(v.id) || !texto(v.planoId) || !texto(v.planoNome) || !texto(v.mensagem) || !texto(v.treinador) || !texto(v.criadaEm) || !textoOuNulo(v.respondidaEm)) return undefined
+  return v as unknown as SugestaoParaOAluno
+}
+
+const doAlunoSugestoes = (id: string) => `${doAluno(id)}/sugestoes`
+const daSugestao = (id: string) => `/api/sugestao-do-treinador/${encodeURIComponent(id)}`
+
+/** O histórico de sugestões de uma ficha, da mais nova para a mais antiga. */
+export async function historicoDeSugestoesNoServidor(id: string): Promise<RespostaDaApi<SugestaoDaFicha[]>> {
+  const r = await chamar('GET', doAlunoSugestoes(id))
+  if (!r.ok) return r
+  const lista = isObj(r.json) ? comoListaDeSugestoes(r.json.sugestoes) : null
+  return lista ? { ok: true, valor: lista } : respostaInvalida()
+}
+
+/** Sugere um plano. `pendente`: o aluno recebe o aviso; `registrada`: ficha sem conta, fica só no histórico. */
+export async function sugerirPlanoNoServidor(id: string, sugestao: NovaSugestao): Promise<RespostaDaApi<{ status: 'pendente' | 'registrada'; sugestoes: SugestaoDaFicha[] }>> {
+  const r = await chamar('POST', doAlunoSugestoes(id), sugestao)
+  if (!r.ok) return r
+  const lista = isObj(r.json) ? comoListaDeSugestoes(r.json.sugestoes) : null
+  const status = isObj(r.json) ? r.json.status : undefined
+  return lista && (status === 'pendente' || status === 'registrada') ? { ok: true, valor: { status, sugestoes: lista } } : respostaInvalida()
+}
+
+/** O selo da aba "Alunos": quantos alunos estão há 7+ dias sem treinar; `null` quando o ambiente não tem banco. */
+export async function seloDeAlunosNoServidor(): Promise<RespostaDaApi<number | null>> {
+  const r = await chamar('GET', `${base}/selo`)
+  if (!r.ok) return r
+  const v = isObj(r.json) ? r.json.vermelhos : undefined
+  if (v === null) return { ok: true, valor: null }
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0 ? { ok: true, valor: v } : respostaInvalida()
+}
+
+/** O aluno: a sugestão que espera resposta e a última que ele aceitou neste vínculo. */
+export async function sugestaoDoTreinadorNoServidor(): Promise<RespostaDaApi<SugestoesDoAluno>> {
+  const r = await chamar('GET', '/api/sugestao-do-treinador')
+  if (!r.ok) return r
+  if (!isObj(r.json)) return respostaInvalida()
+  const pendente = comoSugestaoParaOAluno(r.json.pendente)
+  const aceita = comoSugestaoParaOAluno(r.json.aceita)
+  return pendente !== undefined && aceita !== undefined ? { ok: true, valor: { pendente, aceita } } : respostaInvalida()
+}
+
+export async function aceitarSugestaoNoServidor(id: string): Promise<RespostaDaApi<true>> {
+  const r = await chamar('POST', `${daSugestao(id)}/aceitar`)
+  return r.ok ? { ok: true, valor: true } : r
+}
+
+export async function recusarSugestaoNoServidor(id: string): Promise<RespostaDaApi<true>> {
+  const r = await chamar('POST', `${daSugestao(id)}/recusar`)
+  return r.ok ? { ok: true, valor: true } : r
 }

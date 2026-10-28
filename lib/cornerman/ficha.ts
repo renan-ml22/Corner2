@@ -81,7 +81,7 @@ function temSubstitutoSolto(s: string): boolean {
   }
   return false
 }
-const textoSujo = (s: string, multilinha: boolean) => (multilinha ? CONTROLE_EM_NOTAS : CONTROLE_EM_LINHA).test(s) || temSubstitutoSolto(s)
+export const textoSujo = (s: string, multilinha: boolean) => (multilinha ? CONTROLE_EM_NOTAS : CONTROLE_EM_LINHA).test(s) || temSubstitutoSolto(s)
 /** Sobra algo que se enxerga? Espaços (inclusive o inseparável e o ideográfico) e caracteres de formatação (largura zero, joiner) não contam. */
 const temCaractereVisivel = (s: string) => s.replace(/[\s\p{Z}\p{Cf}]/gu, '') !== ''
 
