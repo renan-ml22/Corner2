@@ -16,6 +16,9 @@ import { proximaSessao, segundaDaSemanaDoPlano, semanaAtualDoPlano, sessoesComSt
 import estilos from './plano.module.css'
 import { TEXTOS } from "@/lib/textos";
 import { ConviteAoPlano } from "@/components/ConviteAoPlano";
+import SeloDoTreinador from "@/components/SeloDoTreinador";
+import { useSugestaoDoTreinador } from "@/hooks/useSugestaoDoTreinador";
+import { treinadorDoPlano } from "@/lib/cornerman/sugestao-selo";
 import { useAssinatura } from "@/hooks/useAssinatura";
 import { RECURSO_DO_PLANO_DE_TREINO } from "@/lib/assinatura/catalogo";
 
@@ -27,6 +30,7 @@ export default function PlanoPage() {
   const { config } = usePreferencias();
   const { openPlanos, openRegister } = usePainelAcoes();
   const showToast = useToast();
+  const sugestaoDoTreinador = useSugestaoDoTreinador();
   // null = acompanhar a semana atual
   const [semanaEscolhida, setSemanaEscolhida] = useState<number | null>(null);
 
@@ -113,6 +117,7 @@ export default function PlanoPage() {
             <span className="nivel-badge">{plano.nivelLabel}</span>
             <h2>{plano.nome}</h2>
             <p>{plano.diasPorSemana}× por semana · {plano.semanas} semanas</p>
+            {treinadorDoPlano(planoAtivo, sugestaoDoTreinador.aceita) && <SeloDoTreinador nome={treinadorDoPlano(planoAtivo, sugestaoDoTreinador.aceita)!} />}
           </div>
           <button type="button" className="btn-ghost small" onClick={openPlanos}>Trocar</button>
         </div>

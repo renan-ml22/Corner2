@@ -56,7 +56,7 @@ class BancoDeSugestoesFalso implements SugestoesBancoLike {
     return this.sugestoes
       .filter(s => (s.status === 'pendente' || s.status === 'aceita') && this.fichas.get(s.aluno_id)?.aluno_user_id === alunoUserId && this.fichas.get(s.aluno_id)?.status === 'ativo')
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
-      .map(({ aluno_id: _ignorado, ...resto }) => resto)
+      .map(s => ({ id: s.id, plano_id: s.plano_id, mensagem: s.mensagem, status: s.status, created_at: s.created_at, answered_at: s.answered_at, coach_id: s.coach_id }))
   }
 
   async responder(alunoUserId: string, id: string, aceitar: boolean) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { abaAtiva } from '@/lib/navegacao'
+import { abaAtiva, textoDoSeloDeAlunos, descricaoDoSeloDeAlunos } from '@/lib/navegacao'
 
 // Qual aba da barra de baixo fica acesa em cada tela. Exercícios, quiz e atletas moram na aba Plano.
 
@@ -10,6 +10,7 @@ describe('abaAtiva', () => {
     ['/timer', '/timer'],
     ['/progresso', '/progresso'],
     ['/perfil', '/perfil'],
+    ['/alunos', '/alunos'],
   ])('%s acende a própria aba', (caminho, aba) => {
     expect(abaAtiva(caminho)).toBe(aba)
   })
@@ -18,8 +19,8 @@ describe('abaAtiva', () => {
     expect(abaAtiva(caminho)).toBe('/plano')
   })
 
-  it.each(['/alunos', '/alunos/novo', '/alunos/3f2b8c1e-9a4d-4e7b-8c21-5d6e7f8a9b0c'])('%s (área do treinador) acende a aba Perfil', caminho => {
-    expect(abaAtiva(caminho)).toBe('/perfil')
+  it.each(['/alunos', '/alunos/novo', '/alunos/3f2b8c1e-9a4d-4e7b-8c21-5d6e7f8a9b0c'])('%s (área do treinador) acende a aba Alunos', caminho => {
+    expect(abaAtiva(caminho)).toBe('/alunos')
   })
 
   it('/alunos-x e /alunosx não acendem nada', () => {
@@ -47,5 +48,31 @@ describe('abaAtiva', () => {
     expect(abaAtiva('/atletas-x/ali')).toBeNull()
     expect(abaAtiva('/hojeee')).toBeNull()
     expect(abaAtiva('/timers')).toBeNull()
+  })
+})
+
+describe('selo vermelho da aba Alunos', () => {
+  it('sem alunos parados, não há selo', () => {
+    expect(textoDoSeloDeAlunos(0)).toBeNull()
+    expect(descricaoDoSeloDeAlunos(0)).toBeNull()
+  })
+
+  it('mostra o número; acima de 9, "9+" para caber no círculo', () => {
+    expect(textoDoSeloDeAlunos(1)).toBe('1')
+    expect(textoDoSeloDeAlunos(9)).toBe('9')
+    expect(textoDoSeloDeAlunos(10)).toBe('9+')
+    expect(textoDoSeloDeAlunos(20)).toBe('9+')
+  })
+
+  it('a descrição para leitor de tela diz o número exato, no singular e no plural', () => {
+    expect(descricaoDoSeloDeAlunos(1)).toBe('1 aluno sem treinar há 7 dias ou mais')
+    expect(descricaoDoSeloDeAlunos(12)).toBe('12 alunos sem treinar há 7 dias ou mais')
+  })
+
+  it('valor que não faz sentido (negativo, quebrado, NaN) não vira selo', () => {
+    for (const n of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(textoDoSeloDeAlunos(n)).toBeNull()
+      expect(descricaoDoSeloDeAlunos(n)).toBeNull()
+    }
   })
 })

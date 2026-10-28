@@ -1,0 +1,74 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+}
+
+.explicacao {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.rotulo {
+  display: block;
+  margin: 0.9rem 0 0.4rem;
+  color: var(--color-neutral-300);
+  font-size: 0.82rem;
+}
+
+.contador {
+  align-self: flex-end;
+  margin: 0.3rem 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.aviso {
+  margin: 0 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.erro { margin-bottom: 0.8rem; color: oklch(0.82 0.1 25); font-size: 0.85rem; line-height: 1.45; }
+
+.vazio { color: var(--muted); font-size: 0.88rem; }
+
+.historico {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historico :global(.surface-card) {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+}
+
+.historico small { color: var(--muted); font-size: 0.75rem; }
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 0.6rem;
+}
+
+.mensagem {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* O estado vai sempre escrito; a cor só reforça. */
+.status { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+.pendente { color: var(--color-amber); }
+.aceita { color: oklch(0.8 0.14 150); }
+.recusada { color: oklch(0.82 0.1 25); }

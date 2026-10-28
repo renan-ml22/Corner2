@@ -24,6 +24,10 @@ import {
 import estilos from './hoje.module.css'
 import estilosSessao from '@/components/SessaoCard.module.css'
 import { ConviteAoPlano } from '@/components/ConviteAoPlano'
+import SeloDoTreinador from '@/components/SeloDoTreinador'
+import SugestaoDoTreinador from '@/components/SugestaoDoTreinador'
+import { useSugestaoDoTreinador } from '@/hooks/useSugestaoDoTreinador'
+import { treinadorDoPlano } from '@/lib/cornerman/sugestao-selo'
 import { useAssinatura } from '@/hooks/useAssinatura'
 import { RECURSO_DO_PLANO_DE_TREINO } from '@/lib/assinatura/catalogo'
 
@@ -40,6 +44,8 @@ export default function HojePage() {
   const alertas = useAlertas();
   const { checkinHoje, ajusteAplicado, aplicarAjuste } = useCheckins();
   const { openRegister, openPlanos, openNotif, openOnboarding } = usePainelAcoes();
+  const sugestaoDoTreinador = useSugestaoDoTreinador();
+  const treinadorDoPlanoAtivo = treinadorDoPlano(planoAtivo, sugestaoDoTreinador.aceita);
 
   if (!pronto || !assinaturaPronta) return <main className="page-container" aria-busy="true"><div className="skeleton" /></main>;
 
@@ -88,6 +94,8 @@ export default function HojePage() {
         </button>
       </header>
 
+      {sugestaoDoTreinador.pendente && <SugestaoDoTreinador sugestao={sugestaoDoTreinador.pendente} aoResponder={sugestaoDoTreinador.respondida} />}
+
       {!config.onboardingFeito && (
         <button type="button" className={`surface-card cta-card ${estilos.destaqueCta}`} onClick={openOnboarding}>
           <i className="ph-fill ph-boxing-glove" aria-hidden="true" />
@@ -135,6 +143,8 @@ export default function HojePage() {
         <h2>Treino de hoje</h2>
         {plano && !planoConcluido && <span>{plano.nome} · semana {semanaPlano}/{plano.semanas}</span>}
       </div>
+
+      {plano && !planoConcluido && treinadorDoPlanoAtivo && <p className="mb-12"><SeloDoTreinador nome={treinadorDoPlanoAtivo} /></p>}
 
       {planoBloqueado && <div className="mb-12"><ConviteAoPlano recurso={RECURSO_DO_PLANO_DE_TREINO[planoBloqueado.id]} /></div>}
 

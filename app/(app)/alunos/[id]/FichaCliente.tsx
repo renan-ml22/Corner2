@@ -14,6 +14,7 @@ import { LIMITES_DA_FICHA, NOME_DO_NIVEL_DE_ALUNO, hrefDeTelefone, type DadosDaF
 import { aoTeclarNoGrupo } from '@/lib/teclado'
 import { TEXTOS } from '@/lib/textos'
 import ConviteDaFicha from './ConviteDaFicha'
+import SugerirPlano from './SugerirPlano'
 import TreinosDoAluno from './TreinosDoAluno'
 import estilos from './ficha.module.css'
 
@@ -31,9 +32,9 @@ export default function FichaCliente({ id }: { id: string }) {
 }
 
 type Carga = { fase: 'carregando' } | { fase: 'naoEncontrada'; mensagem: string } | { fase: 'erro'; mensagem: string } | { fase: 'pronta'; ficha: FichaDeAluno; convite: { expiraEm: string } | null }
-type Aba = 'geral' | 'notas' | 'treinos'
+type Aba = 'geral' | 'notas' | 'treinos' | 'sugestao'
 
-const ROTULO_DA_ABA: Record<Aba, string> = { geral: 'Visão geral', notas: 'Notas', treinos: 'Treinos' }
+const ROTULO_DA_ABA: Record<Aba, string> = { geral: 'Visão geral', notas: 'Notas', treinos: 'Treinos', sugestao: 'Plano sugerido' }
 
 function Ficha({ id }: { id: string }) {
   const [carga, setCarga] = useState<Carga>({ fase: 'carregando' })
@@ -95,7 +96,7 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
 
   const encerrada = ficha.status === 'encerrado'
   // Só quem tem conta vinculada tem treinos para o treinador ver. Se o vínculo acabar com a aba aberta, volta à visão geral.
-  const abas: Aba[] = ficha.comConta && ficha.status === 'ativo' ? ['geral', 'notas', 'treinos'] : ['geral', 'notas']
+  const abas: Aba[] = ficha.comConta && ficha.status === 'ativo' ? ['geral', 'notas', 'treinos', 'sugestao'] : ['geral', 'notas', 'sugestao']
   const aba: Aba = abas.includes(abaEscolhida) ? abaEscolhida : 'geral'
   const convidada = ficha.status === 'convidado'
   const notasAlteradas = notas !== ficha.notas
@@ -233,6 +234,8 @@ function FichaAberta({ ficha, convite, aoMudar, aoRecarregar }: {
         ))}
 
         {aba === 'treinos' && <TreinosDoAluno id={ficha.id} nome={ficha.nome} aoSemVinculo={() => void aoRecarregar()} />}
+
+        {aba === 'sugestao' && <SugerirPlano ficha={ficha} />}
 
         {aba === 'notas' && (
           <div className="surface-card form-card">
