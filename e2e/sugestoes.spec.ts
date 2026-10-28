@@ -181,7 +181,7 @@ test.describe('aluno: aviso na tela Hoje', () => {
     expect(api.escritas()).toEqual([{ metodo: 'POST', caminho: `/api/sugestao-do-treinador/${sugestaoDeExemplo().id}/aceitar` }])
   })
 
-  test('aceitar com outro plano ativo: pergunta antes de trocar; já estar nele não pergunta nem reinicia a semana', async ({ pagina }) => {
+  test('aceitar com outro plano ativo: pergunta antes de trocar e começa o plano na semana atual', async ({ pagina }) => {
     await simularEstado(pagina, ativa('amador'))
     await simularSugestaoDoTreinador(pagina, { pendente: sugestaoDeExemplo({ planoId: 'base-aerobica', planoNome: 'Base Aeróbica' }) })
     await pagina.goto('/hoje')
@@ -196,7 +196,7 @@ test.describe('aluno: aviso na tela Hoje', () => {
     expect(await lerJson(pagina, 'plano')).toEqual({ planoId: 'base-aerobica', inicio: '2026-10-12' })
   })
 
-  test('sugestão do plano que a pessoa já usa: aceitar não reinicia nada', async ({ pagina }) => {
+  test('sugestão do plano que a pessoa já usa: aceitar não pergunta, não reinicia a semana e mostra o selo', async ({ pagina }) => {
     await simularEstado(pagina, ativa('iniciante'))
     await simularSugestaoDoTreinador(pagina, { pendente: sugestaoDeExemplo() })
     await pagina.goto('/hoje')
@@ -209,6 +209,7 @@ test.describe('aluno: aviso na tela Hoje', () => {
     await expect(aviso(pagina)).toHaveCount(0)
     expect(perguntas).toEqual([])
     expect(await lerJson(pagina, 'plano')).toEqual({ planoId: 'fundamentos', inicio: '2026-10-05' })
+    await expect(pagina.getByText('Sugerido pelo seu treinador Marcos')).toBeVisible()
   })
 
   test('plano que o nível da pessoa não libera: convite ao plano, sem botão de aceitar, e a sugestão continua', async ({ pagina }) => {
@@ -305,7 +306,7 @@ test.describe('aluno: selo "Sugerido pelo seu treinador"', () => {
     await expect(pagina.getByText('Sugerido pelo seu treinador Marcos')).toBeVisible()
   })
 
-  test('sem selo quando o plano ativo é outro ou foi escolhido antes da aceitação', async ({ pagina }) => {
+  test('sem selo quando o plano ativo é outro; com o mesmo plano de semanas antes, o selo continua', async ({ pagina }) => {
     await simularEstado(pagina, ativa('amador'))
     await simularSugestaoDoTreinador(pagina, { aceita: aceitaEm('2026-10-13T15:00:00.000Z') })
     await pagina.goto('/plano')
@@ -317,7 +318,7 @@ test.describe('aluno: selo "Sugerido pelo seu treinador"', () => {
     await gravarRaw(pagina, 'plano', JSON.stringify({ planoId: 'fundamentos', inicio: '2026-10-05' }))
     await pagina.reload()
     await expect(pagina.getByRole('heading', { name: 'Fundamentos' })).toBeVisible()
-    await expect(pagina.getByText('Sugerido pelo seu treinador')).toHaveCount(0)
+    await expect(pagina.getByText('Sugerido pelo seu treinador Marcos')).toBeVisible()
   })
 })
 

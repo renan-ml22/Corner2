@@ -9,7 +9,8 @@ import { ErroCornerman, contarAlunosVermelhos } from '@/lib/cornerman/servico'
 import { historicoDeSugestoes, responderSugestao, sugerirPlano, sugestoesDoAluno } from '@/lib/cornerman/sugestao-servico'
 
 interface Ficha { id: string; coach_id: string; status: 'ativo' | 'convidado' | 'encerrado'; aluno_user_id: string | null }
-interface Sugestao extends LinhaDaSugestaoDoAluno { aluno_id: string }
+/** `aluno_user_id`: a conta vinculada quando a sugestão foi enviada. `vinculo_encerrado`: o vínculo daquela conta acabou depois. */
+interface Sugestao extends LinhaDaSugestaoDoAluno { aluno_id: string; aluno_user_id: string | null; vinculo_encerrado: boolean }
 
 /**
  * Banco em memória com a semântica das funções SQL da etapa 4: o treinador só mexe nas próprias fichas, uma pendente por
@@ -40,8 +41,30 @@ class BancoDeSugestoesFalso implements SugestoesBancoLike {
     if (f.status === 'encerrado') throw new Error('ficha_encerrada')
     const comConta = f.aluno_user_id !== null && f.status === 'ativo'
     if (comConta) for (const s of this.sugestoes) if (s.aluno_id === alunoId && s.status === 'pendente') { s.status = 'substituida'; s.answered_at = this.tick() }
-    this.sugestoes.push({ id: randomUUID(), aluno_id: alunoId, coach_id: coachId, plano_id: planoId, mensagem, status: comConta ? 'pendente' : 'registrada', created_at: this.tick(), answered_at: null })
+    this.sugestoes.push({
+      id: randomUUID(), aluno_id: alunoId, coach_id: coachId, plano_id: planoId, mensagem, status: comConta ? 'pendente' : 'registrada',
+      created_at: this.tick(), answered_at: null, aluno_user_id: comConta ? f.aluno_user_id : null, vinculo_encerrado: false,
+    })
     return comConta ? 'pendente' as const : 'registrada' as const
+  }
+
+  /** O gatilho do SQL: a ficha perde a conta; a pendente vira `cancelada` e a aceita fica marcada como de um vínculo que acabou. */
+  desvincular(fichaId: string) {
+    const f = this.fichas.get(fichaId)!
+    f.aluno_user_id = null
+    f.status = 'encerrado'
+    for (const s of this.sugestoes) {
+      if (s.aluno_id !== fichaId || s.vinculo_encerrado) continue
+      if (s.status === 'pendente') { s.status = 'cancelada'; s.answered_at = this.tick(); s.vinculo_encerrado = true }
+      else if (s.status === 'aceita') s.vinculo_encerrado = true
+    }
+  }
+
+  /** Um novo convite aceito: a mesma ficha ganha a conta e volta a "ativo". */
+  vincular(fichaId: string, alunoUserId: string) {
+    const f = this.fichas.get(fichaId)!
+    f.aluno_user_id = alunoUserId
+    f.status = 'ativo'
   }
 
   async historico(coachId: string, alunoId: string): Promise<LinhaDeSugestao[]> {
@@ -54,7 +77,8 @@ class BancoDeSugestoesFalso implements SugestoesBancoLike {
   async doAluno(alunoUserId: string): Promise<LinhaDaSugestaoDoAluno[]> {
     this.entrar()
     return this.sugestoes
-      .filter(s => (s.status === 'pendente' || s.status === 'aceita') && this.fichas.get(s.aluno_id)?.aluno_user_id === alunoUserId && this.fichas.get(s.aluno_id)?.status === 'ativo')
+      .filter(s => (s.status === 'pendente' || s.status === 'aceita') && s.aluno_user_id === alunoUserId && !s.vinculo_encerrado
+        && this.fichas.get(s.aluno_id)?.aluno_user_id === alunoUserId && this.fichas.get(s.aluno_id)?.status === 'ativo')
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .map(s => ({ id: s.id, plano_id: s.plano_id, mensagem: s.mensagem, status: s.status, created_at: s.created_at, answered_at: s.answered_at, coach_id: s.coach_id }))
   }
@@ -63,7 +87,7 @@ class BancoDeSugestoesFalso implements SugestoesBancoLike {
     this.entrar()
     const s = this.sugestoes.find(x => x.id === id)
     const f = s ? this.fichas.get(s.aluno_id) : undefined
-    if (!s || s.status !== 'pendente' || !f || f.aluno_user_id !== alunoUserId || f.status !== 'ativo') return false
+    if (!s || s.status !== 'pendente' || s.aluno_user_id !== alunoUserId || s.vinculo_encerrado || !f || f.aluno_user_id !== alunoUserId || f.status !== 'ativo') return false
     s.status = aceitar ? 'aceita' : 'recusada'
     s.answered_at = this.tick()
     return true
@@ -175,14 +199,14 @@ describe('historicoDeSugestoes', () => {
 
   it('plano que saiu dos dados do app aparece com um nome seguro, não quebra', async () => {
     const { banco, ficha } = cenario()
-    banco.sugestoes.push({ id: randomUUID(), aluno_id: ficha.id, coach_id: TREINADOR, plano_id: 'plano-que-saiu', mensagem: '', status: 'pendente', created_at: '2026-10-28T10:00:00.000Z', answered_at: null })
+    banco.sugestoes.push({ id: randomUUID(), aluno_id: ficha.id, coach_id: TREINADOR, plano_id: 'plano-que-saiu', mensagem: '', status: 'pendente', created_at: '2026-10-28T10:00:00.000Z', answered_at: null, aluno_user_id: ALUNA, vinculo_encerrado: false })
     const [s] = await historicoDeSugestoes(alunos(banco.fichas), banco, TREINADOR, ficha.id)
     expect(s.planoNome).toBe('Plano removido')
   })
 
   it('linha com status desconhecido é descartada em vez de mostrada com texto errado', async () => {
     const { banco, ficha } = cenario()
-    banco.sugestoes.push({ id: randomUUID(), aluno_id: ficha.id, coach_id: TREINADOR, plano_id: 'fundamentos', mensagem: '', status: 'inventado', created_at: '2026-10-28T10:00:00.000Z', answered_at: null })
+    banco.sugestoes.push({ id: randomUUID(), aluno_id: ficha.id, coach_id: TREINADOR, plano_id: 'fundamentos', mensagem: '', status: 'inventado', created_at: '2026-10-28T10:00:00.000Z', answered_at: null, aluno_user_id: ALUNA, vinculo_encerrado: false })
     expect(await historicoDeSugestoes(alunos(banco.fichas), banco, TREINADOR, ficha.id)).toEqual([])
   })
 
@@ -249,6 +273,54 @@ describe('sugestoesDoAluno', () => {
     const { banco } = cenario()
     banco.falha = new Error('Supabase (ler sugestões): caiu')
     expect(await codigoDe(sugestoesDoAluno(banco, ALUNA))).toBe('outro:Supabase (ler sugestões): caiu')
+  })
+})
+
+describe('vínculo que acaba e volta (a mesma ficha, outra conta ou a mesma)', () => {
+  /** Aceita uma sugestão com mensagem pessoal, desvincula e deixa a ficha pronta para um novo vínculo. */
+  async function aceitaEDesvincula() {
+    const { banco, ficha } = cenario()
+    await sugerirPlano(banco, TREINADOR, ficha.id, { planoId: 'fundamentos', mensagem: 'Por causa do joelho, comece leve.' })
+    const { pendente } = await sugestoesDoAluno(banco, ALUNA)
+    await responderSugestao(banco, ALUNA, pendente!.id, true)
+    expect((await sugestoesDoAluno(banco, ALUNA)).aceita).not.toBeNull()
+    banco.desvincular(ficha.id)
+    return { banco, ficha }
+  }
+
+  it('desvinculado: a aceita some da tela do aluno', async () => {
+    const { banco } = await aceitaEDesvincula()
+    expect(await sugestoesDoAluno(banco, ALUNA)).toEqual({ pendente: null, aceita: null })
+  })
+
+  it('outra conta se vincula à mesma ficha: NÃO vê a mensagem nem a aceita da conta anterior', async () => {
+    const { banco, ficha } = await aceitaEDesvincula()
+    banco.vincular(ficha.id, 'u_outra_conta')
+    expect(await sugestoesDoAluno(banco, 'u_outra_conta')).toEqual({ pendente: null, aceita: null })
+  })
+
+  it('a mesma conta volta para o mesmo treinador: o vínculo é novo, a aceita antiga não reaparece', async () => {
+    const { banco, ficha } = await aceitaEDesvincula()
+    banco.vincular(ficha.id, ALUNA)
+    expect(await sugestoesDoAluno(banco, ALUNA)).toEqual({ pendente: null, aceita: null })
+    // E uma sugestão nova no vínculo novo funciona normalmente.
+    await sugerirPlano(banco, TREINADOR, ficha.id, { planoId: 'base-aerobica' })
+    expect((await sugestoesDoAluno(banco, ALUNA)).pendente?.planoId).toBe('base-aerobica')
+  })
+
+  it('o treinador continua vendo no histórico da ficha o que aconteceu em cada vínculo', async () => {
+    const { banco, ficha } = await aceitaEDesvincula()
+    expect((await banco.historico(TREINADOR, ficha.id)).map(s => s.status)).toEqual(['aceita'])
+  })
+
+  it('a pendente de um vínculo que acabou vira cancelada e não responde mais', async () => {
+    const { banco, ficha } = cenario()
+    await sugerirPlano(banco, TREINADOR, ficha.id, { planoId: 'fundamentos' })
+    const id = (await banco.historico(TREINADOR, ficha.id))[0].id
+    banco.desvincular(ficha.id)
+    expect((await banco.historico(TREINADOR, ficha.id))[0].status).toBe('cancelada')
+    banco.vincular(ficha.id, ALUNA)
+    expect(await codigoDe(responderSugestao(banco, ALUNA, id, true))).toBe('nao_encontrado:404')
   })
 })
 

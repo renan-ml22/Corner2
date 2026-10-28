@@ -306,6 +306,8 @@ create table if not exists public.coach_suggestions (
   id           uuid primary key default gen_random_uuid(),
   coach_id     text not null,
   aluno_id     uuid not null references public.coach_alunos(id) on delete cascade,  -- apagar a ficha apaga o histórico
+  aluno_user_id     text,                                  -- a conta vinculada quando foi enviada (vazio em "registrada")
+  vinculo_encerrado boolean not null default false,        -- o vínculo daquela conta acabou depois: a aceita deixa de aparecer ao aluno
   plano_id     text not null check (char_length(plano_id) between 1 and 60),
   mensagem     text not null default '' check (char_length(mensagem) <= 500),
   status       text not null default 'pendente'
@@ -352,8 +354,8 @@ begin
     v_status := 'registrada';
   end if;
 
-  insert into public.coach_suggestions (coach_id, aluno_id, plano_id, mensagem, status)
-    values (p_coach, p_aluno, p_plano, p_mensagem, v_status);
+  insert into public.coach_suggestions (coach_id, aluno_id, aluno_user_id, plano_id, mensagem, status)
+    values (p_coach, p_aluno, case when v_status = 'pendente' then v_ficha.aluno_user_id end, p_plano, p_mensagem, v_status);
   return v_status;
 end;
 $$;
@@ -362,8 +364,9 @@ revoke all on function public.sugerir_plano(text, uuid, text, text) from public,
 grant execute on function public.sugerir_plano(text, uuid, text, text) to service_role;
 
 -- ── O que o aluno vê ─────────────────────────────────────────
--- As sugestões pendente e aceita do vínculo ATIVO desta conta (as mais novas primeiro). Depois de desvincular, a ficha
--- perde a conta e some daqui.
+-- As sugestões pendente e aceita do vínculo ATIVO desta conta (as mais novas primeiro). Só as enviadas a ESTA conta e de um
+-- vínculo que não acabou: depois de desvincular, nada do vínculo antigo aparece, nem para a mesma conta que volta nem para
+-- outra conta que aceite um convite novo da mesma ficha.
 create or replace function public.sugestoes_do_aluno(p_user text)
 returns table (id uuid, plano_id text, mensagem text, status text, created_at timestamptz, answered_at timestamptz, coach_id text)
 language sql
@@ -375,6 +378,8 @@ as $$
     join public.coach_alunos a on a.id = s.aluno_id
    where a.aluno_user_id = p_user
      and a.status = 'ativo'
+     and s.aluno_user_id = p_user
+     and not s.vinculo_encerrado
      and s.status in ('pendente', 'aceita')
    order by s.created_at desc
    limit 20;
@@ -398,6 +403,8 @@ begin
     from public.coach_alunos a
    where s.id = p_id
      and s.status = 'pendente'
+     and s.aluno_user_id = p_user
+     and not s.vinculo_encerrado
      and a.id = s.aluno_id
      and a.aluno_user_id = p_user
      and a.status = 'ativo';
@@ -410,16 +417,21 @@ revoke all on function public.responder_sugestao(text, uuid, boolean) from publi
 grant execute on function public.responder_sugestao(text, uuid, boolean) to service_role;
 
 -- ── Vínculo que acaba cancela a pendente ─────────────────────
--- Quando a ficha perde a conta (o aluno se desvincula ou o treinador encerra a ficha), a sugestão pendente vira "cancelada":
--- ela não reaparece se a mesma ficha for vinculada de novo mais tarde.
+-- Quando a ficha perde a conta (o aluno se desvincula ou o treinador encerra a ficha), a sugestão pendente vira "cancelada"
+-- e a aceita fica marcada como de um vínculo que acabou. Nada disso reaparece se a mesma ficha for vinculada de novo mais
+-- tarde, seja pela mesma conta ou por outra (a mensagem pessoal escrita para um aluno nunca chega a outra pessoa). O
+-- treinador continua vendo tudo no histórico da ficha.
 create or replace function public.cancelar_sugestoes_ao_desvincular()
 returns trigger
 language plpgsql
 set search_path = public
 as $$
 begin
-  update public.coach_suggestions set status = 'cancelada', answered_at = now()
-    where aluno_id = new.id and status = 'pendente';
+  update public.coach_suggestions
+     set status = case when status = 'pendente' then 'cancelada' else status end,
+         answered_at = case when status = 'pendente' then now() else answered_at end,
+         vinculo_encerrado = true
+   where aluno_id = new.id and status in ('pendente', 'aceita') and not vinculo_encerrado;
   return new;
 end;
 $$;

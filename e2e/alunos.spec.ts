@@ -135,16 +135,17 @@ test.describe('lista', () => {
     expect(larguraDoConteudo).toBeLessThanOrEqual(360)
   })
 
-  test('o atalho "Meus alunos" no Perfil leva à lista e a aba Perfil fica acesa', async ({ pagina }) => {
+  test('o atalho "Meus alunos" no Perfil leva à lista e a aba Alunos da barra fica acesa', async ({ pagina }) => {
     await simularAlunos(pagina, fichas(1))
     await pagina.goto('/perfil')
     await pagina.getByRole('link', { name: /Meus alunos/ }).click()
     await expect(pagina).toHaveURL('/alunos')
     const nav = pagina.getByRole('navigation', { name: 'Navegação principal' })
-    await expect(nav.getByRole('link', { name: 'Perfil' })).toHaveAttribute('aria-current', 'page')
+    await expect(nav.getByRole('link', { name: 'Alunos' })).toHaveAttribute('aria-current', 'page')
+    await expect(nav.getByRole('link', { name: 'Perfil' })).not.toHaveAttribute('aria-current', 'page')
     await novoAluno(pagina).click()
     await expect(pagina).toHaveURL('/alunos/novo')
-    await expect(nav.getByRole('link', { name: 'Perfil' })).toHaveAttribute('aria-current', 'page')
+    await expect(nav.getByRole('link', { name: 'Alunos' })).toHaveAttribute('aria-current', 'page')
   })
 
   test('acessibilidade (axe): vazia, com fichas e com o limite', async ({ pagina }) => {

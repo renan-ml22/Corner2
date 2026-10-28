@@ -496,6 +496,23 @@ async function blocoDasSugestoes() {
   await db.from('coach_alunos').update({ aluno_user_id: aluna.id, status: 'ativo' }).eq('id', vinculada.id)
   confere('vínculo refeito: a sugestão cancelada NÃO reaparece', (await sugestoesDoAluno(sugestoes, aluna.id)).pendente === null)
 
+  // 5b. A ACEITA de um vínculo que acabou também não reaparece: nem para outra conta que se vincule à mesma ficha (a mensagem
+  // pessoal escrita para um aluno nunca chega a outro), nem para a mesma conta que volta.
+  await sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'tecnica-avancada', mensagem: 'MENSAGEM-PESSOAL-DA-ALUNA' })
+  const aceitavel = (await sugestoesDoAluno(sugestoes, aluna.id)).pendente!
+  await responderSugestao(sugestoes, aluna.id, aceitavel.id, true)
+  const durante = await sugestoesDoAluno(sugestoes, aluna.id)
+  confere('enquanto o vínculo dura, a aceita aparece (para o selo do plano)', durante.aceita?.planoId === 'tecnica-avancada' && durante.aceita.mensagem === 'MENSAGEM-PESSOAL-DA-ALUNA')
+  await desvincularDoTreinador(criarConvitesBancoSupabase(db), aluna.id)
+  await db.from('coach_alunos').update({ aluno_user_id: intrusa, status: 'ativo' }).eq('id', vinculada.id)
+  const paraOutra = await sugestoesDoAluno(sugestoes, intrusa)
+  confere('outra conta que se vincula à mesma ficha NÃO vê a aceita nem a mensagem da anterior', paraOutra.aceita === null && paraOutra.pendente === null, JSON.stringify(paraOutra))
+  await desvincularDoTreinador(criarConvitesBancoSupabase(db), intrusa)
+  await db.from('coach_alunos').update({ aluno_user_id: aluna.id, status: 'ativo' }).eq('id', vinculada.id)
+  const volta = await sugestoesDoAluno(sugestoes, aluna.id)
+  confere('a mesma conta que volta ao treinador também não revê a aceita antiga', volta.aceita === null && volta.pendente === null, JSON.stringify(volta))
+  confere('o treinador continua vendo a aceita no histórico da ficha', (await sugestoes.historico(otavio.id, vinculada.id)).some(s => s.status === 'aceita'))
+
   // 6. Encerrar a ficha pelo treinador também cancela; o banco recusa texto grande; apagar a ficha apaga o histórico.
   await sugerirPlano(sugestoes, otavio.id, vinculada.id, { planoId: 'fundamentos' })
   await atualizarAluno(fichas, otavio.id, vinculada.id, { status: 'encerrado' })
@@ -511,6 +528,10 @@ async function blocoDasSugestoes() {
   if (chavePublica) {
     const anon = createClient(url!, chavePublica, { auth: { persistSession: false, autoRefreshToken: false } })
     confere('a chave pública não executa sugerir_plano', !!(await anon.rpc('sugerir_plano', { p_coach: otavio.id, p_aluno: manual.id, p_plano: 'fundamentos', p_mensagem: '' })).error)
+    confere('a chave pública não executa sugestoes_do_aluno', !!(await anon.rpc('sugestoes_do_aluno', { p_user: aluna.id })).error)
+    confere('a chave pública não executa responder_sugestao', !!(await anon.rpc('responder_sugestao', { p_user: aluna.id, p_id: aceitavel.id, p_aceitar: true })).error)
+    const leitura = await anon.from('coach_suggestions').select('id').limit(1)
+    confere('a chave pública não lê coach_suggestions', !!leitura.error || (leitura.data ?? []).length === 0)
   }
 }
 

@@ -29,7 +29,7 @@ Funcionalidade nova em 4 etapas. O desenho completo (decisões, segurança, o qu
 - Testes de navegador (Chrome real): a tela de assinatura com 4 planos; a foto de ponta a ponta (recorte central de verdade, guardada como JPEG de 200×200, continua depois de recarregar, remoção, arquivo que não é imagem, arquivo quebrado, arquivo grande demais, acessibilidade com axe).
 - `npm run supabase:fumaca` (Supabase real, só com usuários de teste que são apagados no fim): a foto vai e volta, e a remoção volta como texto vazio.
 
-## Etapa 2: fichas e painel "Meus Alunos" (código pronto; falta rodar o SQL no Supabase)
+## Etapa 2: fichas e painel "Meus Alunos" (publicada em 27/10/2026; SQL aplicado e conferido no banco real)
 
 ### O que o treinador faz
 
@@ -60,7 +60,7 @@ Colar `supabase/cornerman-etapa-2.sql` no **SQL Editor do Supabase** e rodar (é
 - Unidade: validação da ficha, serviço (com banco de mentira que imita o gatilho), banco (cliente do Supabase de mentira: todo pedido filtra pelo treinador), trava de plano (por nível e situação da assinatura, cookie de outro usuário ou adulterado, Stripe fora do ar), tradução de erros sem vazar dados, chamadas do navegador, aba acesa.
 - Navegador (Chrome real): a API real sem banco (401, 403, 404, 503, 400, 413, nada repete o que foi enviado) e as telas com a API simulada em memória (lista, limite, cadastro com foto, duplo clique, sem conexão, ficha, notas, HTML nas notas, editar só o que mudou, encerrar, reabrir, apagar, cancelar as perguntas, teclado, axe, 360 px).
 
-## Etapa 3a: convites e vínculo (código pronto; falta rodar o SQL no Supabase)
+## Etapa 3a: convites e vínculo (publicada em 27/10/2026; SQL aplicado e conferido no banco real)
 
 ### O fluxo
 
@@ -86,7 +86,7 @@ Colar `supabase/cornerman-etapa-2.sql` no **SQL Editor do Supabase** e rodar (é
 
 Colar `supabase/cornerman-etapa-3a.sql` no SQL Editor do Supabase, **depois** do `cornerman-etapa-2.sql` (é idempotente). Depois, `npm run supabase:fumaca` confere de verdade o aceite simultâneo, o índice de um treinador por aluno, o desvínculo e que o token nunca está no banco (hoje esses blocos imprimem "PULOU").
 
-## Etapa 3b: dados do aluno no painel (código pronto; falta rodar o SQL no Supabase)
+## Etapa 3b: dados do aluno no painel (publicada em 27/10/2026; SQL aplicado e conferido no banco real)
 
 ### O que o treinador vê
 
@@ -112,6 +112,40 @@ Colar `supabase/cornerman-etapa-3a.sql` no SQL Editor do Supabase, **depois** do
 
 Colar `supabase/cornerman-etapa-3b.sql` no SQL Editor do Supabase (depois dos arquivos das etapas 2 e 3a; é idempotente). Depois, `npm run supabase:fumaca` confere no banco real o último treino, o isolamento entre treinadores, os 30 dias, que nada de saúde sai e que a chave pública não executa a função (hoje o bloco imprime "PULOU").
 
-## Etapas seguintes
+## Etapa 4: sugestões de plano e aba "Alunos" (código pronto; falta rodar o SQL no Supabase)
 
-4. Sugestões de plano e a aba "Alunos" na barra.
+Plano e decisões: `docs/superpowers/plans/2026-10-28-cornerman-etapa-4-sugestoes-e-barra.md`.
+
+### O que o treinador faz
+
+- **Aba "Plano sugerido" na ficha** (toda ficha, com ou sem conta): escolhe um plano da lista (os 4 planos e os 10 treinos no estilo de atletas), escreve uma mensagem opcional (até 500 caracteres) e envia. O histórico mostra cada sugestão com o estado em texto (aguardando resposta, aceita, recusada, substituída por outra, cancelada porque o vínculo terminou, registrada na ficha).
+- **Aluno com conta vinculada:** a sugestão fica pendente e o aluno recebe o aviso. **No máximo uma pendente por aluno**: enviar outra troca a anterior (que vira "substituída"); o banco garante isso mesmo com dois pedidos ao mesmo tempo.
+- **Ficha sem conta** (manual ou convidada): a sugestão é só um registro no histórico da ficha. **Ficha encerrada:** o histórico aparece, mas não se sugere (409).
+- **Aba "Alunos" na barra** (ícone `ph-users-three`, entre Progresso e Perfil), só com Cornerman ou Profissional (ou com o pagamento desligado no ambiente). O **selo vermelho** conta os alunos com conta há 7 dias ou mais sem treinar (a mesma regra do status da lista; "9+" acima de 9; o leitor de tela ouve o número exato). Vem de `GET /api/cornerman/alunos/selo`, que usa a mesma função SQL da lista, sem ler fichas nem fotos. Falha na consulta: sem selo, sem erro na tela.
+
+### O que o aluno vê
+
+- **Aviso na tela Hoje**, no alto: "[Nome] sugeriu um plano para você", o plano, a mensagem, "Ver o plano" (nível, duração, resumo), "Aceitar plano" e "Recusar".
+- **Aceitar:** o servidor confirma primeiro (atômico, só para sugestão pendente do vínculo ativo dele); depois o plano passa a valer no aparelho. Se já houver outro plano, pergunta antes de trocar (a semana 1 recomeça); se já está **no mesmo plano**, não pergunta nem reinicia a semana. Se o servidor recusar (já respondida, vínculo desfeito), o erro aparece e o plano **não** é aplicado.
+- **Plano que o nível dele não libera:** sem botão de aceitar, aparece o convite ao plano; a sugestão continua pendente e ele ainda pode recusar. A trava dos planos continua só na tela, como já era.
+- **Selo "Sugerido pelo seu treinador [Nome]"** no plano (Hoje e Plano), quando o plano ativo é o da última sugestão aceita neste vínculo (inclusive quando a pessoa já usava aquele plano e só o aceitou). Limite conhecido: quem escolher o mesmo plano outra vez, por conta própria, depois de aceitar continua vendo o selo.
+
+### Como funciona por baixo
+
+- **SQL** `supabase/cornerman-etapa-4.sql` (e cópia em `schema.sql`): tabela `coach_suggestions` (RLS sem política, revoke de anon e authenticated); índice único parcial de uma pendente por aluno; funções `sugerir_plano`, `sugestoes_do_aluno` e `responder_sugestao` (só para a chave de serviço); e um **gatilho** em `coach_alunos` que, quando a ficha perde a conta (o aluno se desvincula ou o treinador encerra a ficha), cancela a sugestão pendente e marca as aceitas como "de um vínculo que acabou" (`vinculo_encerrado`). Cada sugestão guarda também a conta a quem foi enviada (`aluno_user_id`). Assim nada do vínculo antigo reaparece num vínculo futuro, nem para a mesma conta que volta nem para **outra conta** que aceite um convite novo da mesma ficha (a mensagem pessoal escrita para um aluno nunca chega a outro). O treinador continua vendo tudo no histórico da ficha.
+- **Rotas:** treinador `GET/POST /api/cornerman/alunos/[id]/sugestoes` (plano Cornerman ou Profissional conferido no servidor; ficha de outro treinador, inexistente ou malformada: 404 igual) e `GET /api/cornerman/alunos/selo`; aluno `GET /api/sugestao-do-treinador` e `POST /api/sugestao-do-treinador/[id]/aceitar|recusar` (qualquer plano). As duas consultas feitas em toda abertura de tela (selo e aviso) respondem **200 vazio sem banco** (um 5xx viraria erro de console).
+- **O que sai ao aluno:** só plano, mensagem, data e o **primeiro nome** do treinador, nunca ids internos. Ao treinador: só o histórico da própria ficha.
+- **Mensagem do treinador** (vai para outra pessoa): sem caracteres de controle nem de direção de texto; nenhum erro nem log repete o texto.
+
+### Rulings (o desenho não dizia)
+
+- Planos sugeríveis: os que têm dono no catálogo de assinatura (`RECURSO_DO_PLANO_DE_TREINO`).
+- O treinador **não** tem "retirar sugestão": enviar outra substitui a pendente.
+- O servidor **não** confere o nível da assinatura do aluno ao aceitar (a trava dos planos continua só na tela, como já era em todo o app): um pedido montado à mão pode marcar como aceita uma sugestão de plano que o aluno não tem; nada é liberado por isso.
+- A rota do selo responde 200 `vermelhos: null` também quando o Stripe não responde (é consultada em toda tela).
+- Barra com 7 colunas (botão central de 62 px e rótulos de 10 px): conferida em 360 px, sem sobreposição nem texto cortado.
+- O selo vermelho da barra usa um vermelho mais escuro que o do resto do app (o branco do número precisa de 4,5:1).
+
+### Passo do Renan
+
+Colar `supabase/cornerman-etapa-4.sql` no SQL Editor do Supabase (depois dos das etapas 2 e 3a; é idempotente). Depois, `npm run supabase:fumaca` confere no banco real: uma pendente por aluno (inclusive com quatro pedidos ao mesmo tempo), a troca por "substituída", o isolamento entre treinadores, quem pode responder (e só uma resposta vence), o cancelamento pelo gatilho (aluno que se desvincula e treinador que encerra), o limite de 500 caracteres, o histórico apagado com a ficha e o selo vermelho (hoje o bloco imprime "PULOU"). Sem o SQL, a aba "Plano sugerido" mostra erro ao carregar o histórico, e o aluno simplesmente não vê aviso.

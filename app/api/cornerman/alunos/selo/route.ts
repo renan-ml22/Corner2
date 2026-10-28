@@ -12,7 +12,10 @@ import { getSupabase } from '@/lib/supabase'
  */
 export async function GET(request: Request) {
   const preparo = await prepararRotaDoTreinador(request, { mutavel: false })
-  if (!preparo.ok) return preparo.resposta
+  if (!preparo.ok) {
+    // O Stripe não respondeu (502): por ser consultada em toda tela, a rota não vira erro de console por isso; sem selo.
+    return preparo.resposta.status === 502 ? responder({ vermelhos: null }) : preparo.resposta
+  }
 
   const db = getSupabase()
   if (!db) return responder({ vermelhos: null })
