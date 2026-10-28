@@ -1,12 +1,14 @@
 import type { Page, Route } from '@playwright/test'
 import type { DadosDoAluno } from '../lib/cornerman/aluno-dados'
+import { ehPlanoSugerivel, nomeDoPlanoSugerido, type SugestaoDaFicha } from '../lib/cornerman/sugestao'
 import type { StatusDeTreino } from '../lib/cornerman/status-treino'
 
 // A API /api/cornerman/alunos simulada em memória: os testes de navegador das telas do treinador nunca falam com o banco.
 // Imita as respostas reais (veja app/api/cornerman/alunos): limite de 20 ativas, 404 igual para id que não existe,
 // ordem (ativos primeiro, por nome), 409 ao reabrir com 20 ativas, e o convite (gerar, cancelar, status "convidado",
 // encerrar uma ficha com conta limpa o vínculo, mudar status de ficha convidada é recusado), o status de treino na lista
-// e os dados do aluno com conta (GET /alunos/<id>/dados, 409 sem vínculo).
+// os dados do aluno com conta (GET /alunos/<id>/dados, 409 sem vínculo), as sugestões de plano (GET e POST /alunos/<id>/sugestoes:
+// uma pendente por aluno com conta, ficha sem conta só registra, ficha encerrada 409) e o selo da aba (GET /alunos/selo).
 
 export interface FichaSimulada {
   id: string
@@ -47,6 +49,10 @@ export interface AlunosSimulados {
   convites: Map<string, { expiraEm: string }>
   /** Os links gerados, na ordem. */
   links: string[]
+  /** Histórico de sugestões por id de ficha, da mais nova para a mais antiga. */
+  sugestoes: Map<string, SugestaoDaFicha[]>
+  /** Quantas vezes o selo da aba foi consultado (fora de `pedidos`, porque toda tela consulta). */
+  consultasDoSelo: number
   /** Só os pedidos que mudam algo (POST, PATCH e DELETE). */
   escritas: () => PedidoRegistrado[]
 }
@@ -67,6 +73,12 @@ export async function simularAlunos(
     status?: Record<string, StatusDeTreino>
     /** Dados do aluno por id de ficha (o que não está aqui vem vazio). */
     dados?: Record<string, DadosDoAluno>
+    /** O número do selo vermelho da aba "Alunos" (padrão 0). */
+    vermelhos?: number
+    falhaNoSelo?: boolean
+    /** Histórico de sugestões por id de ficha. */
+    sugestoes?: Record<string, SugestaoDaFicha[]>
+    falhaNasSugestoes?: boolean
   } = {},
 ): Promise<AlunosSimulados> {
   const estado: AlunosSimulados = {
@@ -74,17 +86,26 @@ export async function simularAlunos(
     pedidos: [],
     convites: new Map(),
     links: [],
+    sugestoes: new Map(Object.entries(opcoes.sugestoes ?? {}).map(([id, lista]) => [id, lista.map(s => ({ ...s }))])),
+    consultasDoSelo: 0,
     escritas: () => estado.pedidos.filter(p => p.metodo !== 'GET'),
   }
   // Fichas que já nascem convidadas têm convite pendente.
   for (const f of estado.fichas) if (f.status === 'convidado') estado.convites.set(f.id, { expiraEm: VALIDADE_DO_CONVITE })
   let geradas = 0
 
-  await pagina.route(/\/api\/cornerman\/alunos(\/[^/?]*)?(\/(?:convite|dados))?(\?.*)?$/, async (rota: Route) => {
+  await pagina.route(/\/api\/cornerman\/alunos(\/[^/?]*)?(\/(?:convite|dados|sugestoes))?(\?.*)?$/, async (rota: Route) => {
     const req = rota.request()
     const url = new URL(req.url())
     const [, , , , id = null, sub = null] = url.pathname.split('/') // '', 'api', 'cornerman', 'alunos', id, 'convite'
     const corpo = ['POST', 'PATCH'].includes(req.method()) && req.postData() ? req.postDataJSON() : null
+
+    // O selo da aba é consultado em toda tela: não entra na lista de pedidos dos testes.
+    if (id === 'selo') {
+      estado.consultasDoSelo++
+      if (opcoes.falhaNoSelo) return erro(rota, 502, 'falha_no_banco', 'Não foi possível falar com o banco de dados agora. Tente novamente em instantes.')
+      return rota.fulfill({ status: 200, json: { vermelhos: opcoes.vermelhos ?? 0 } })
+    }
     estado.pedidos.push({ metodo: req.method(), caminho: url.pathname, corpo })
 
     if (opcoes.atrasoMs) await new Promise(r => setTimeout(r, opcoes.atrasoMs))
@@ -121,6 +142,26 @@ export async function simularAlunos(
       if (!atual.comConta || atual.status !== 'ativo') return erro(rota, 409, 'sem_vinculo', 'Este aluno ainda não tem conta vinculada.')
       if (opcoes.falhaNosDados) return erro(rota, 502, 'falha_no_banco', 'Não foi possível falar com o banco de dados agora. Tente novamente em instantes.')
       return rota.fulfill({ status: 200, json: { dados: opcoes.dados?.[atual.id] ?? dadosVazios } })
+    }
+
+    // As sugestões de plano dela
+    if (sub === 'sugestoes') {
+      if (opcoes.falhaNasSugestoes) return erro(rota, 502, 'falha_no_banco', 'Não foi possível falar com o banco de dados agora. Tente novamente em instantes.')
+      const historico = estado.sugestoes.get(atual.id) ?? []
+      if (req.method() === 'GET') return rota.fulfill({ status: 200, json: { sugestoes: historico } })
+      if (req.method() !== 'POST') return erro(rota, 405, 'metodo', 'Método não permitido.')
+      const nova = corpo as { planoId?: unknown; mensagem?: unknown }
+      if (!ehPlanoSugerivel(nova?.planoId)) return erro(rota, 400, 'dado_invalido', 'Escolha um plano da lista.')
+      if (atual.status === 'encerrado') return erro(rota, 409, 'ficha_encerrada', 'Esta ficha está encerrada. Reabra a ficha para sugerir um plano.')
+      const comConta = atual.comConta && atual.status === 'ativo'
+      const trocadas: SugestaoDaFicha[] = comConta ? historico.map(s => (s.status === 'pendente' ? { ...s, status: 'substituida' as const, respondidaEm: '2026-10-28T12:30:00.000Z' } : s)) : historico
+      const criada: SugestaoDaFicha = {
+        id: `sug-${historico.length + 1}`, planoId: nova.planoId, planoNome: nomeDoPlanoSugerido(nova.planoId),
+        mensagem: typeof nova.mensagem === 'string' ? nova.mensagem.trim() : '', status: comConta ? 'pendente' : 'registrada',
+        criadaEm: '2026-10-28T12:00:00.000Z', respondidaEm: null,
+      }
+      estado.sugestoes.set(atual.id, [criada, ...trocadas])
+      return rota.fulfill({ status: 201, json: { status: criada.status, sugestoes: estado.sugestoes.get(atual.id) } })
     }
 
     // O convite dela

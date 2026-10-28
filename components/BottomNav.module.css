@@ -74,7 +74,7 @@
   padding: 0 4px;
   place-items: center;
   border-radius: 99px;
-  background: var(--red);
+  background: oklch(0.48 0.2 25); /* escuro o bastante para o branco do número passar de 4,5:1 */
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
