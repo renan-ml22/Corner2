@@ -221,7 +221,7 @@ function Mostrador({ config, alterar, reiniciar, abrirConfig }: { config: Config
             {andando
               ? <button type="button" className={estilos.encerrar} onClick={encerrar}>Encerrar e ver o resumo</button>
               : <p className={estilos.nota}>{config.segundoPlano
-                ? 'Mantenha o app aberto: a tela fica acesa durante o treino. O som segue com a tela bloqueada (opção ligada nos Ajustes).'
+                ? 'Mantenha o app aberto: a tela fica acesa durante o treino. O som deve seguir com a tela bloqueada (opção ligada nos Ajustes).'
                 : 'Mantenha o app aberto: a tela fica acesa durante o treino. Com a tela bloqueada ou em outro app o sino pode falhar: ligue "Manter o som com a tela bloqueada" nos Ajustes.'}</p>}
           </>
         )}

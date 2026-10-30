@@ -557,6 +557,10 @@ test.describe('timer: manter o som com a tela bloqueada', () => {
 
     await pagina.getByRole('button', { name: 'Encerrar e ver o resumo' }).click()
     await expect(fase(pagina)).toHaveAttribute('data-fase', 'fim')
+    // O sino final ainda está tocando: o áudio de mídia segue por 7 s, para o celular não suspender o áudio e cortá-lo.
+    await avancar(pagina, 6)
+    expect(await midia(pagina)).toMatchObject({ detalhe: 'Fim do treino', estado: 'paused' })
+    await avancar(pagina, 2)
     await expect.poll(() => midia(pagina)).toMatchObject({ detalhe: null, estado: 'none' })
     expect(await pagina.evaluate(() => window.__midia.handlers.pause)).toBeNull()
   })

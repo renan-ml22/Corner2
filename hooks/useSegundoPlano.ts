@@ -5,6 +5,9 @@ import { criarSegundoPlano, type SegundoPlano } from '@/lib/segundo-plano'
 
 const TITULO = 'Corner · Timer'
 
+/** Depois do fim do treino, o áudio de mídia segue por este tempo: o sino final dura até ~5,2 s e não pode ser cortado com a tela bloqueada. */
+const FOLGA_DO_SINO_FINAL_MS = 7000
+
 interface Opcoes {
   /** A opção "manter o som com a tela bloqueada" está ligada */
   ligado: boolean
@@ -36,8 +39,8 @@ export function useSegundoPlano({ ligado, andando, tocando, detalhe, pausar, ret
   }, [ligado])
 
   useEffect(() => {
-    if (andando) sp.current?.atualizar({ titulo: TITULO, detalhe, tocando })
-    else sp.current?.desligar()
+    sp.current?.atualizar({ titulo: TITULO, detalhe, tocando })
+    if (!andando) sp.current?.desligar(FOLGA_DO_SINO_FINAL_MS)
   }, [andando, detalhe, tocando])
 
   useEffect(() => () => sp.current?.desligar(), [])

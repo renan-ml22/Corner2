@@ -262,6 +262,7 @@ describe('detalheDaMidia: o texto do controle de mídia na tela de bloqueio', ()
   it('pausado, avisa', () => {
     expect(detalheDaMidia('round', true, 3, 5)).toBe('Pausado · Round 3 de 5')
     expect(detalheDaMidia('descanso', true, 3, 5)).toBe('Pausado · Descanso')
+    expect(detalheDaMidia('preparo', true, 1, 5)).toBe('Pausado · Preparação')
   })
 
   it('antes de começar e no fim', () => {

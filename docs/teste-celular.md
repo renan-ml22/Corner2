@@ -57,10 +57,35 @@ Depois, **sem fechar o app**, repita um treino e teste:
 - [ ] **Pausar** e **Retomar**: o tempo para e continua de onde parou.
 - [ ] **Pular fase**: vai para a fase seguinte e toca o sino dela.
 - [ ] **Encerrar** pede confirmação e leva ao resumo com os rounds feitos.
-- [ ] **Travar a tela** com o botão lateral por 20 s e destravar: o relógio **continua certo** (conta pelo tempo real, não perde segundos). *Os sons não tocam com a tela travada: isso é esperado.*
+- [ ] **Travar a tela** com o botão lateral por 20 s e destravar: o relógio **continua certo** (conta pelo tempo real, não perde segundos). *Os sons com a tela travada são testados na seção 3b.*
 - [ ] Em "Treino concluído", **Registrar treino** abre o painel já com os rounds e a **duração real**.
 
 > **Vibração no iPhone não existe** (o Safari não permite). Deve só não vibrar, **sem erro**.
+
+## 3b. Timer em segundo plano (sons com a tela bloqueada ou em outro app)
+
+Os sons do Timer são programados de uma vez no início (`docs/plano-timer.md`, "Sons em segundo plano"). Este teste mostra se o seu aparelho os toca com o app fora da tela. **Anote o resultado em cada linha, mesmo quando falhar:** é o que diz se a opção extra precisa virar padrão.
+
+Na aba **Timer**, em **Ajustes**: 2 rounds de 20 s, descanso de 10 s, preparação ligada (total de cerca de 1 min). Deixe **"Manter o som com a tela bloqueada" desligada** nas partes A e B.
+
+**A. Outro app (opção desligada).** Toque em **INICIAR**, vá para outro app (ou outra aba) e fique uns 25 s; volte.
+- [ ] O relógio está **certo** ao voltar (não parou, não atrasou).
+- [ ] Você **ouviu** sino ou bips enquanto estava fora? (sim / não / só alguns)
+- [ ] Ao voltar, **não** tocou um sino velho de uma vez (som atrasado não deve tocar).
+
+**B. Tela travada (opção desligada).** Toque em **INICIAR** e logo trave a tela com o botão lateral; espere o treino todo (cerca de 1 min), sem mexer.
+- [ ] Você ouviu os sinos e os bips na hora certa? (sim / não / só alguns)
+- [ ] Ao destravar, a tela mostra o **fim do treino** (ou o tempo certo, se ainda não acabou).
+
+**C. Com a opção ligada.** Nos Ajustes, ligue **"Manter o som com a tela bloqueada"** e repita A e B.
+- [ ] Os sons tocaram na hora certa com a tela travada? (sim / não / só alguns)
+- [ ] Apareceu o controle de mídia **Corner · Timer** na tela de bloqueio, com o round?
+- [ ] O botão **pausar** do controle de mídia pausou o timer, e **play** retomou?
+- [ ] Se havia música de outro app tocando, ela **parou**? (esperado: pode parar; é o custo da opção)
+- [ ] Ao encerrar ou terminar o treino, o controle de mídia **sumiu**.
+
+**D. Pausa.** Com o timer andando, **pause** por 20 s e retome.
+- [ ] Nenhum som tocou durante a pausa, e os sons seguintes saíram só depois de retomar, no tempo certo.
 
 ## 4. Registrar um treino
 

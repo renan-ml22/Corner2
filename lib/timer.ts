@@ -66,7 +66,7 @@ export const rotuloDaFase = (fase: FaseVisual): string => ROTULO_DA_FASE[fase]
 export function detalheDaMidia(fase: FaseVisual, pausado: boolean, round: number, rounds: number): string {
   if (fase === 'pronto') return 'Pronto para começar'
   if (fase === 'fim') return 'Fim do treino'
-  if (fase === 'preparo') return 'Preparação'
+  if (fase === 'preparo') return pausado ? 'Pausado · Preparação' : 'Preparação'
   const onde = fase === 'descanso' ? 'Descanso' : `Round ${round} de ${rounds}`
   if (pausado) return fase === 'descanso' ? 'Pausado · Descanso' : `Pausado · ${onde}`
   return fase === 'descanso' ? `Descanso · Round ${round} de ${rounds}` : onde

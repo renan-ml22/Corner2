@@ -161,3 +161,87 @@ describe('criarSegundoPlano', () => {
     expect(() => { const sp = criarSegundoPlano(); sp.ligar(controles(), info()); sp.desligar() }).not.toThrow()
   })
 })
+
+describe('criarSegundoPlano: fim do treino e botão play', () => {
+  class AudioFalso {
+    static todos: AudioFalso[] = []
+    loop = false
+    pausado = true
+    src: string
+    plays = 0
+    constructor(src: string) { this.src = src; AudioFalso.todos.push(this) }
+    play() { this.plays++; this.pausado = false; return Promise.resolve() }
+    pause() { this.pausado = true }
+    removeAttribute() { this.src = '' }
+    load() {}
+  }
+  class MetadataFalso { constructor(public dados: { title: string; artist: string }) {} }
+  type Acao = 'play' | 'pause'
+  let sessao: { metadata: MetadataFalso | null; playbackState: string; handlers: Partial<Record<Acao, (() => void) | null>>; setActionHandler(a: Acao, f: (() => void) | null): void }
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    AudioFalso.todos = []
+    sessao = { metadata: null, playbackState: 'none', handlers: {}, setActionHandler(a, f) { this.handlers[a] = f } }
+    vi.stubGlobal('Audio', AudioFalso)
+    vi.stubGlobal('MediaMetadata', MetadataFalso)
+    vi.stubGlobal('navigator', { mediaSession: sessao })
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:falso')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+  })
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  const controles = () => ({ pausar: vi.fn(), retomar: vi.fn() })
+  const info = { titulo: 'Corner · Timer', detalhe: 'Fim do treino', tocando: false }
+
+  it('desligar com atraso: o áudio e o controle seguem até o fim do atraso (o sino final termina de tocar com a tela bloqueada)', () => {
+    const sp = criarSegundoPlano()
+    sp.ligar(controles(), info)
+    sp.desligar(7000)
+    vi.advanceTimersByTime(6999)
+    expect(AudioFalso.todos[0].pausado).toBe(false)
+    expect(sessao.metadata).not.toBeNull()
+    vi.advanceTimersByTime(1)
+    expect(AudioFalso.todos[0].pausado).toBe(true)
+    expect(sessao.metadata).toBeNull()
+  })
+
+  it('desligar de novo durante o atraso não reinicia a contagem', () => {
+    const sp = criarSegundoPlano()
+    sp.ligar(controles(), info)
+    sp.desligar(7000)
+    vi.advanceTimersByTime(5000)
+    sp.desligar(7000)
+    vi.advanceTimersByTime(2000)
+    expect(AudioFalso.todos[0].pausado).toBe(true)
+  })
+
+  it('ligar durante o atraso cancela o desligamento e reaproveita o mesmo áudio', () => {
+    const sp = criarSegundoPlano()
+    sp.ligar(controles(), info)
+    sp.desligar(7000)
+    sp.ligar(controles(), { ...info, detalhe: 'Round 1 de 2', tocando: true })
+    vi.advanceTimersByTime(10_000)
+    expect(AudioFalso.todos).toHaveLength(1)
+    expect(AudioFalso.todos[0].pausado).toBe(false)
+    expect(sessao.metadata?.dados.artist).toBe('Round 1 de 2')
+  })
+
+  it('desligar sem atraso (sair da tela) corta na hora e cancela o atraso pendente', () => {
+    const sp = criarSegundoPlano()
+    sp.ligar(controles(), info)
+    sp.desligar(7000)
+    sp.desligar()
+    expect(AudioFalso.todos[0].pausado).toBe(true)
+    expect(() => vi.advanceTimersByTime(10_000)).not.toThrow()
+  })
+
+  it('o botão play da tela de bloqueio também religa o áudio, se o sistema o tinha pausado', () => {
+    const c = controles()
+    criarSegundoPlano().ligar(c, { ...info, tocando: true })
+    AudioFalso.todos[0].pausado = true // o sistema pausou (ligação, outro app)
+    sessao.handlers.play?.()
+    expect(c.retomar).toHaveBeenCalledTimes(1)
+    expect(AudioFalso.todos[0].plays).toBe(2)
+  })
+})

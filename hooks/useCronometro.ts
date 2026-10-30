@@ -174,10 +174,11 @@ export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREP
         parou = true
       }
     }
-    ctx?.addEventListener('statechange', aoMudarEstado)
+    // Safari antigo (webkitAudioContext) pode não ter addEventListener: sem ele só não acompanha o áudio parar e voltar.
+    ctx?.addEventListener?.('statechange', aoMudarEstado)
     return () => {
       document.removeEventListener('visibilitychange', aoVoltar)
-      ctx?.removeEventListener('statechange', aoMudarEstado)
+      ctx?.removeEventListener?.('statechange', aoMudarEstado)
     }
   }, [exec, sons, total])
 

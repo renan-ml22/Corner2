@@ -1,6 +1,7 @@
 // Sons do Timer, gerados na hora com Web Audio (sem arquivos de áudio e sem biblioteca):
 // o sino de ringue (início do round, fim do round e fim do treino), a contagem 3-2-1 e o aviso dos 10 segundos.
-// O volume é lido na hora de cada aviso, então mudar o controle com o cronômetro rodando vale na hora.
+// O volume é lido na hora de programar cada aviso (o cronômetro programa tudo de uma vez e reprograma o que falta quando
+// o volume ou o mudo mudam).
 
 export interface Bipe {
   /** Hz */

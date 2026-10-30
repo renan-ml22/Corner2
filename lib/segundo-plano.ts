@@ -50,13 +50,23 @@ export interface SegundoPlano {
   /** Começa a manter o áudio vivo. Precisa ser chamado dentro de um toque do usuário (o iPhone exige). */
   ligar(controles: ControlesDaMidia, info: InfoDaMidia): void
   atualizar(info: InfoDaMidia): void
-  desligar(): void
+  /**
+   * Para de manter o áudio vivo. Com `depoisDeMs`, espera esse tempo: no fim do treino o sino final ainda está tocando e,
+   * com a tela bloqueada, o celular pode suspender o áudio assim que a mídia some. Ligar de novo cancela a espera.
+   */
+  desligar(depoisDeMs?: number): void
 }
 
 export function criarSegundoPlano(): SegundoPlano {
   let audio: HTMLAudioElement | null = null
   let url: string | null = null
   let controles: ControlesDaMidia | null = null
+  let espera: ReturnType<typeof setTimeout> | null = null
+
+  const cancelarEspera = () => {
+    if (espera !== null) clearTimeout(espera)
+    espera = null
+  }
 
   const sessao = (): MediaSession | null => (typeof navigator !== 'undefined' && navigator.mediaSession ? navigator.mediaSession : null)
 
@@ -75,6 +85,7 @@ export function criarSegundoPlano(): SegundoPlano {
 
   return {
     ligar(novos, info) {
+      cancelarEspera()
       controles = novos
       if (audio) {
         mostrar(info)
@@ -91,14 +102,24 @@ export function criarSegundoPlano(): SegundoPlano {
         return
       }
       acao('pause', () => controles?.pausar())
-      acao('play', () => controles?.retomar())
+      acao('play', () => {
+        controles?.retomar()
+        // O sistema pode ter pausado o áudio (ligação, outro app): tocar de novo mantém a página viva.
+        void audio?.play().catch(() => undefined)
+      })
       mostrar(info)
     },
     atualizar(info) {
       if (audio) mostrar(info)
     },
-    desligar() {
+    desligar(depoisDeMs = 0) {
       if (!audio) return
+      if (depoisDeMs > 0) {
+        // Já há um desligamento marcado: não reinicia a contagem.
+        espera ??= setTimeout(() => { espera = null; this.desligar() }, depoisDeMs)
+        return
+      }
+      cancelarEspera()
       try {
         audio.pause()
         audio.removeAttribute('src')
