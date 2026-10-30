@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { contraste } from './contraste'
 import {
-  CHAVE_DO_TIMER, CONFIG_PADRAO, configDeTexto, LIMITES, duracaoTotal, formatarTempo, gravarConfig, juntarTempo, lerConfig, minutosDoRound, normalizarConfig,
+  CHAVE_DO_TIMER, CONFIG_PADRAO, configDeTexto, detalheDaMidia, LIMITES, duracaoTotal, formatarTempo, gravarConfig, juntarTempo, lerConfig, minutosDoRound, normalizarConfig,
   rotuloDaFase, rotuloDoDescanso, separarTempo, somarRounds, type ConfigTimer,
 } from '@/lib/timer'
 
@@ -11,7 +11,7 @@ import {
 
 describe('padrão e limites', () => {
   it('começa com 3 rounds de 3 minutos, descanso de 1 minuto, preparo de 10 s ligado, vibração ligada e som no máximo', () => {
-    expect(CONFIG_PADRAO).toEqual({ rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 100, mudo: false })
+    expect(CONFIG_PADRAO).toEqual({ rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 100, mudo: false, segundoPlano: false })
   })
 
   it('rounds de 1 a 20; round de 10 s a 10 min e descanso de 0 a 10 min, os dois de segundo em segundo', () => {
@@ -102,7 +102,7 @@ describe('duracaoTotal', () => {
 
 describe('normalizarConfig: o que vem do aparelho pode estar velho, quebrado ou adulterado', () => {
   it('uma configuração válida passa igual', () => {
-    const c: ConfigTimer = { rounds: 12, roundSeg: 120, descansoSeg: 30, preparo: false, vibracao: false, volume: 35, mudo: true }
+    const c: ConfigTimer = { rounds: 12, roundSeg: 120, descansoSeg: 30, preparo: false, vibracao: false, volume: 35, mudo: true, segundoPlano: true }
     expect(normalizarConfig(c)).toEqual(c)
   })
 
@@ -137,7 +137,7 @@ describe('normalizarConfig: o que vem do aparelho pode estar velho, quebrado ou 
 
   it('o que foi guardado na versão antiga (round de 30 em 30 s, descanso de 30 s a 3 min) continua valendo', () => {
     const antiga = { rounds: 4, roundSeg: 150, descansoSeg: 120, preparo: true, vibracao: true, volume: 80, mudo: false }
-    expect(normalizarConfig(antiga)).toEqual(antiga)
+    expect(normalizarConfig(antiga)).toEqual({ ...antiga, segundoPlano: false })
   })
 
   it('NaN, Infinity e texto nos números voltam ao padrão', () => {
@@ -171,7 +171,7 @@ describe('guardar e ler no aparelho (localStorage)', () => {
 
   it('o que foi gravado volta igual', () => {
     const a = armazemDe()
-    const c: ConfigTimer = { rounds: 8, roundSeg: 150, descansoSeg: 120, preparo: false, vibracao: true, volume: 55, mudo: false }
+    const c: ConfigTimer = { rounds: 8, roundSeg: 150, descansoSeg: 120, preparo: false, vibracao: true, volume: 55, mudo: false, segundoPlano: true }
     gravarConfig(a, c)
     expect(Object.keys(a.dados)).toEqual([CHAVE_DO_TIMER])
     expect(lerConfig(a)).toEqual(c)
@@ -231,5 +231,41 @@ describe('cores das fases: o texto escuro tem contraste suficiente (WCAG 4,5:1) 
 
   it('a fase fim usa a cor neutra do app (var(--color-surface))', () => {
     expect(bloco('fim')).toMatch(/--fundo:\s*var\(--color-surface\)/)
+  })
+})
+
+describe('segundoPlano (manter o som com a tela bloqueada)', () => {
+  it('vem desligado: a opção pode pausar a música de outros apps, então a pessoa escolhe ligar', () => {
+    expect(CONFIG_PADRAO.segundoPlano).toBe(false)
+    expect(normalizarConfig({}).segundoPlano).toBe(false)
+  })
+
+  it('guarda o valor quando é verdadeiro ou falso; qualquer outra coisa volta ao padrão (desligado)', () => {
+    expect(normalizarConfig({ segundoPlano: true }).segundoPlano).toBe(true)
+    expect(normalizarConfig({ segundoPlano: false }).segundoPlano).toBe(false)
+    for (const ruim of ['sim', 1, null, [], {}]) expect(normalizarConfig({ segundoPlano: ruim }).segundoPlano, String(ruim)).toBe(false)
+  })
+
+  it('configuração gravada antes da opção existir continua valendo, com a opção desligada', () => {
+    const antiga = { rounds: 5, roundSeg: 120, descansoSeg: 30, preparo: false, vibracao: false, volume: 35, mudo: true }
+    expect(normalizarConfig(antiga)).toEqual({ ...antiga, segundoPlano: false })
+  })
+})
+
+describe('detalheDaMidia: o texto do controle de mídia na tela de bloqueio', () => {
+  it('diz a fase e o round', () => {
+    expect(detalheDaMidia('round', false, 2, 5)).toBe('Round 2 de 5')
+    expect(detalheDaMidia('descanso', false, 2, 5)).toBe('Descanso · Round 2 de 5')
+    expect(detalheDaMidia('preparo', false, 1, 5)).toBe('Preparação')
+  })
+
+  it('pausado, avisa', () => {
+    expect(detalheDaMidia('round', true, 3, 5)).toBe('Pausado · Round 3 de 5')
+    expect(detalheDaMidia('descanso', true, 3, 5)).toBe('Pausado · Descanso')
+  })
+
+  it('antes de começar e no fim', () => {
+    expect(detalheDaMidia('pronto', false, 1, 5)).toBe('Pronto para começar')
+    expect(detalheDaMidia('fim', false, 5, 5)).toBe('Fim do treino')
   })
 })

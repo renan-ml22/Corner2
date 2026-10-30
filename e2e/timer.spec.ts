@@ -18,6 +18,7 @@ declare global {
     __audio: { criados: number; oscs: Tom[]; desligados: number }
     __vibrou: number[][]
     __wake: number
+    __midia: { plays: number; handlers: Record<string, (() => void) | null | undefined> }
   }
 }
 
@@ -27,6 +28,10 @@ async function espionar(pagina: Page) {
     window.__audio = { criados: 0, oscs: [], desligados: 0 }
     window.__vibrou = []
     window.__wake = 0
+    // "Manter o som com a tela bloqueada": o áudio de mídia inaudível e os botões do controle de mídia.
+    window.__midia = { plays: 0, handlers: {} }
+    HTMLMediaElement.prototype.play = function () { window.__midia.plays++; return Promise.resolve() }
+    navigator.mediaSession.setActionHandler = ((acao: string, f: (() => void) | null) => { window.__midia.handlers[acao] = f }) as typeof navigator.mediaSession.setActionHandler
     const Original = window.AudioContext
     window.AudioContext = class extends Original {
       constructor(...args: ConstructorParameters<typeof AudioContext>) {
@@ -480,6 +485,88 @@ test.describe('timer: sons e vibração', () => {
     await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
     await avancar(pagina, 70)
     expect(await pagina.evaluate(() => window.__vibrou)).toEqual([])
+  })
+})
+
+test.describe('treino do plano: usa o mesmo agendamento de sons', () => {
+  // O treino do plano toca sino e bipe de 880 Hz (lib/som.ts), sem o 3-2-1 no round; o aviso dos 10 s é a matraca (ruído, não oscilador).
+  const SINO_DO_PLANO = [620, 1240, 1711, 3348, 5537]
+  const tom = (t: number) => (f: number): Tom => ({ f, t })
+
+  async function abrirTreino(pagina: Page) {
+    await simularEstado(pagina, SEM_ASSINATURA_TESTE)
+    await espionar(pagina)
+    await pagina.clock.install({ time: AGORA })
+    await pagina.goto('/treino?tipo=tec&rounds=2&min=1&descanso=10')
+    await expect(pagina.getByRole('heading', { level: 1 })).toBeVisible()
+    await pagina.clock.pauseAt(new Date(AGORA.getTime() + 10 * 60_000))
+  }
+
+  test('ao começar, o bipe do preparo e o sino do round 1 já ficam programados; pular a preparação toca o sino do round na hora', async ({ pagina }) => {
+    await abrirTreino(pagina)
+    await pagina.getByRole('button', { name: /Começar/ }).click()
+    await expect.poll(async () => (await oscs(pagina)).slice(0, 8)).toEqual([
+      ...[7, 8, 9].map(t => tom(t)(880)), ...SINO_DO_PLANO.map(tom(10)),
+    ])
+    const antes = (await oscs(pagina)).length
+    await pagina.getByRole('button', { name: 'Pular para a próxima fase' }).click()
+    // O sino do round 1 (segundo 10) agora entra já; os bipes do preparo que ficaram para trás foram cortados.
+    await expect.poll(async () => (await novos(pagina, antes)).slice(0, 5)).toEqual(SINO_DO_PLANO.map(tom(0)))
+    expect(await pagina.evaluate(() => window.__audio.desligados)).toBeGreaterThan(0)
+  })
+})
+
+test.describe('timer: manter o som com a tela bloqueada', () => {
+  const midia = (pagina: Page) => pagina.evaluate(() => ({
+    plays: window.__midia.plays,
+    detalhe: navigator.mediaSession.metadata?.artist ?? null,
+    titulo: navigator.mediaSession.metadata?.title ?? null,
+    estado: navigator.mediaSession.playbackState,
+  }))
+
+  test('vem desligado: nenhum áudio de mídia nem controle na tela de bloqueio', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false })
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await expect.poll(async () => (await oscs(pagina)).length).toBeGreaterThan(0)
+    expect(await midia(pagina)).toMatchObject({ plays: 0, detalhe: null, estado: 'none' })
+  })
+
+  test('a opção fica nos Ajustes, avisa do custo e é guardada neste aparelho', async ({ pagina }) => {
+    await abrirTimer(pagina)
+    await pagina.getByRole('button', { name: 'Ajustes' }).click()
+    const painel = pagina.getByRole('dialog', { name: 'Configurações do timer' })
+    const opcao = painel.getByRole('switch', { name: /Manter o som com a tela bloqueada/ })
+    await expect(opcao).not.toBeChecked()
+    await expect(painel.getByText(/pausar a música de outros apps/)).toBeVisible()
+    await opcao.check()
+    expect((await pagina.evaluate(() => JSON.parse(localStorage.getItem('corner:timer:config')!))).segundoPlano).toBe(true)
+  })
+
+  test('ligada: INICIAR toca o áudio inaudível e mostra o controle de mídia; os botões da tela de bloqueio pausam e retomam; encerrar tira tudo', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false, segundoPlano: true })
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await expect.poll(() => midia(pagina)).toEqual({ plays: 1, titulo: 'Corner · Timer', detalhe: 'Round 1 de 2', estado: 'playing' })
+
+    await pagina.evaluate(() => window.__midia.handlers.pause?.())
+    await expect(pagina.getByRole('button', { name: 'RETOMAR' })).toBeVisible()
+    await expect.poll(() => midia(pagina)).toMatchObject({ detalhe: 'Pausado · Round 1 de 2', estado: 'paused' })
+
+    await pagina.evaluate(() => window.__midia.handlers.play?.())
+    await expect(pagina.getByRole('button', { name: 'PAUSAR' })).toBeVisible()
+    await expect.poll(() => midia(pagina)).toMatchObject({ detalhe: 'Round 1 de 2', estado: 'playing' })
+
+    await pagina.getByRole('button', { name: 'Encerrar e ver o resumo' }).click()
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'fim')
+    await expect.poll(() => midia(pagina)).toMatchObject({ detalhe: null, estado: 'none' })
+    expect(await pagina.evaluate(() => window.__midia.handlers.pause)).toBeNull()
+  })
+
+  test('o texto do controle acompanha a fase (descanso)', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false, segundoPlano: true })
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await avancar(pagina, 61)
+    await expect(fase(pagina)).toHaveAttribute('data-fase', 'descanso')
+    await expect.poll(() => midia(pagina)).toMatchObject({ detalhe: 'Descanso · Round 1 de 2' })
   })
 })
 

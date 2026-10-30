@@ -46,9 +46,18 @@ O sino é sintetizado: 9 tons que não são múltiplos uns dos outros (é o que 
 
 O volume de 100% agora usa a força total (antes parava em 60%) e o sino passa por uma saturação suave (curva `tanh`), que o engorda sem passar do limite do alto-falante. Medido renderizando os sons no Chrome (sem alto-falante): no mesmo volume de 80%, o sino novo tem cerca de **5 dB** a mais de energia que o bipe de 880 Hz de antes (4 dB pesando como o ouvido escuta), e a contagem 3‑2‑1 ficou uns 8 dB acima. Quem já tinha o volume guardado em 80% fica mais alto sem mexer em nada. O aparelho em si ainda manda: o volume de mídia do celular limita tudo, e no iPhone o Safari costuma silenciar sons de páginas web com a chave de silencioso ligada (não dá para o app contornar; só o teste no celular confirma no seu).
 
+## Sons em segundo plano
+
+Relato de usuários: trocando de aba ou minimizando, "o timer para". A contagem em si nunca parou (vem do relógio, `medirRelogio`); o que falhava eram os **sons**, disparados por um cronômetro de JavaScript (200 ms) que o navegador congela com a página em segundo plano. Duas camadas:
+
+1. **Sons programados no relógio do áudio** (sempre ligado). Ao tocar INICIAR, o treino inteiro vira uma lista (`lib/agenda-sons.ts`) e o agendador (`lib/agendador-de-sons.ts`) programa cada som em `AudioContext.currentTime + quanto falta`. O áudio já programado toca no horário mesmo com o JavaScript congelado. Pausar, retomar, pular fase, mudo/volume e a volta à tela cortam o que ainda não tocou e programam de novo a partir do relógio do aparelho. Som atrasado (mais de 0,5 s) não toca: voltar de segundo plano não dispara o sino velho. O agendador só reprograma na volta à tela se o relógio do áudio se descolou do treino (o iPhone para o relógio do áudio com o app em segundo plano).
+2. **"Manter o som com a tela bloqueada"** (Ajustes do Timer, **desligado por padrão**). Toca um áudio de mídia inaudível em repetição (`lib/segundo-plano.ts`) e mostra o controle de mídia na tela de bloqueio (pausar/retomar o timer). É o que mantém a página viva no iPhone e no Android quando a camada 1 sozinha não basta. **Custo:** o celular pode pausar a música de outros apps enquanto o timer anda, e há um pouco mais de bateria; por isso é opção. Vale só para o Timer (o treino do plano não usa).
+
+Não verificado em celular de verdade (o ambiente de teste não tem tela bloqueada nem alto-falante): os testes automáticos conferem que os sons são programados nos horários certos e cortados quando devem, e que o áudio de mídia e o controle da tela de bloqueio são ligados e desligados. Se o som falhar no seu aparelho mesmo com a opção ligada, é o limite do navegador.
+
 ## Limites (honestos)
 
-- **App minimizado ou tela bloqueada:** o tempo segue o relógio do aparelho (não atrasa), mas o **navegador pode silenciar os sons e a vibração** com a página em segundo plano. O app pede para a tela não apagar (`wakeLock`) enquanto o timer anda, onde o aparelho permite. Só o teste no celular real mostra como o seu aparelho se comporta (`docs/teste-celular.md`, seção do cronômetro).
+- **App minimizado ou tela bloqueada:** o tempo segue o relógio do aparelho (não atrasa) e a **vibração não funciona** com a página em segundo plano (nenhum aparelho deixa). O app pede para a tela não apagar (`wakeLock`) enquanto o timer anda, onde o aparelho permite. Os **sons** têm duas camadas (ver "Sons em segundo plano" abaixo). Só o teste no celular real mostra como o seu aparelho se comporta (`docs/teste-celular.md`, seção do cronômetro).
 - **iPhone:** a vibração (`navigator.vibrate`) não existe no Safari; o painel avisa.
 - Fechar a aba com o timer andando pede confirmação ao navegador; recarregar a página perde a contagem (não é guardada).
 

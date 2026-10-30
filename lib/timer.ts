@@ -18,9 +18,11 @@ export interface ConfigTimer {
   /** De 0 a 100. */
   volume: number
   mudo: boolean
+  /** Manter o som e um controle de mídia na tela de bloqueio (toca um áudio inaudível; pode pausar a música de outros apps). */
+  segundoPlano: boolean
 }
 
-export const CONFIG_PADRAO: ConfigTimer = { rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 100, mudo: false }
+export const CONFIG_PADRAO: ConfigTimer = { rounds: 3, roundSeg: 180, descansoSeg: 60, preparo: true, vibracao: true, volume: 100, mudo: false, segundoPlano: false }
 
 const entre = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
@@ -60,6 +62,16 @@ export type FaseVisual = 'pronto' | 'preparo' | 'round' | 'descanso' | 'fim'
 const ROTULO_DA_FASE: Record<FaseVisual, string> = { pronto: 'PRONTO', preparo: 'PREPARAÇÃO', round: 'ROUND', descanso: 'DESCANSO', fim: 'FIM' }
 export const rotuloDaFase = (fase: FaseVisual): string => ROTULO_DA_FASE[fase]
 
+/** O texto do controle de mídia da tela de bloqueio (opção "manter o som com a tela bloqueada"). */
+export function detalheDaMidia(fase: FaseVisual, pausado: boolean, round: number, rounds: number): string {
+  if (fase === 'pronto') return 'Pronto para começar'
+  if (fase === 'fim') return 'Fim do treino'
+  if (fase === 'preparo') return 'Preparação'
+  const onde = fase === 'descanso' ? 'Descanso' : `Round ${round} de ${rounds}`
+  if (pausado) return fase === 'descanso' ? 'Pausado · Descanso' : `Pausado · ${onde}`
+  return fase === 'descanso' ? `Descanso · Round ${round} de ${rounds}` : onde
+}
+
 export const PREPARO_DO_TIMER_SEG = 10
 
 /** Duração total, em segundos: preparo, rounds e descansos (só entre os rounds). */
@@ -93,6 +105,7 @@ export function normalizarConfig(valor: unknown): ConfigTimer {
     vibracao: typeof v.vibracao === 'boolean' ? v.vibracao : padrao.vibracao,
     volume,
     mudo: typeof v.mudo === 'boolean' ? v.mudo : padrao.mudo,
+    segundoPlano: typeof v.segundoPlano === 'boolean' ? v.segundoPlano : padrao.segundoPlano,
   }
 }
 

@@ -6,11 +6,12 @@ import Segmentos from '@/components/sheets/Segmentos'
 import { useHidratado } from '@/hooks/useEntidade'
 import { useConfigTimer } from '@/hooks/useConfigTimer'
 import { useCronometro } from '@/hooks/useCronometro'
+import { useSegundoPlano } from '@/hooks/useSegundoPlano'
 import { definirTimerAndando, useTimerAndando } from '@/hooks/useTimerAndando'
 import { criarSonsDoTimer } from '@/lib/som-timer'
 import { TEXTOS } from '@/lib/textos'
 import {
-  PREPARO_DO_TIMER_SEG, duracaoTotal, formatarTempo, minutosDoRound, rotuloDaFase, rotuloDoDescanso, type ConfigTimer, type FaseVisual,
+  PREPARO_DO_TIMER_SEG, detalheDaMidia, duracaoTotal, formatarTempo, minutosDoRound, rotuloDaFase, rotuloDoDescanso, type ConfigTimer, type FaseVisual,
 } from '@/lib/timer'
 import { CAT_LABELS, TIPOS, type RegType } from '@/lib/tipos'
 import ConfiguracoesDoTimer from './ConfiguracoesDoTimer'
@@ -102,8 +103,20 @@ function Mostrador({ config, alterar, reiniciar, abrirConfig }: { config: Config
   const CIRC = 2 * Math.PI * R
   const completo = c.roundsFeitos >= config.rounds
 
+  const midia = useSegundoPlano({
+    ligado: config.segundoPlano,
+    andando,
+    tocando: c.estado === 'rodando',
+    detalhe: detalheDaMidia(visual, c.estado === 'pausado', roundMostrado, config.rounds),
+    pausar: c.pausar,
+    retomar: c.retomar,
+  })
+
   const principal = () => {
-    if (parado) c.iniciar()
+    if (parado) {
+      midia.ligar() // dentro do toque: o iPhone só libera o áudio de dentro de um toque
+      c.iniciar()
+    }
     else if (c.estado === 'pausado') c.retomar()
     else c.pausar()
   }
@@ -207,7 +220,9 @@ function Mostrador({ config, alterar, reiniciar, abrirConfig }: { config: Config
 
             {andando
               ? <button type="button" className={estilos.encerrar} onClick={encerrar}>Encerrar e ver o resumo</button>
-              : <p className={estilos.nota}>Mantenha o app aberto: a tela fica acesa durante o treino. Em segundo plano, o navegador pode silenciar os sons.</p>}
+              : <p className={estilos.nota}>{config.segundoPlano
+                ? 'Mantenha o app aberto: a tela fica acesa durante o treino. O som segue com a tela bloqueada (opção ligada nos Ajustes).'
+                : 'Mantenha o app aberto: a tela fica acesa durante o treino. Com a tela bloqueada ou em outro app o sino pode falhar: ligue "Manter o som com a tela bloqueada" nos Ajustes.'}</p>}
           </>
         )}
       </div>

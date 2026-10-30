@@ -100,7 +100,7 @@ function Cronometro({ params }: { params: ParamsTreino }) {
         <button type="button" className={`btn-primary ${styles.comecar}`} onClick={c.iniciar}>
           <i className="ph-fill ph-play" aria-hidden="true" /> Começar ({PREPARO_SEG} s de preparo)
         </button>
-        <p className={styles.nota}>Mantenha o app aberto: a tela fica acesa durante o treino. Em segundo plano, o navegador pode silenciar os sons.</p>
+        <p className={styles.nota}>Mantenha o app aberto: a tela fica acesa durante o treino. Com a tela bloqueada ou em outro app, os sons podem falhar em alguns aparelhos.</p>
       </main>
     );
   }

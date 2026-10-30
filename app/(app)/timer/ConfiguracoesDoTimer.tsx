@@ -8,7 +8,7 @@ import estilos from './configuracoes.module.css'
 import TempoEmMinutosESegundos from './TempoEmMinutosESegundos'
 
 interface Linha {
-  id: 'preparo' | 'vibracao'
+  id: 'preparo' | 'vibracao' | 'segundoPlano'
   titulo: string
   detalhe: string
 }
@@ -16,6 +16,7 @@ interface Linha {
 const LINHAS: Linha[] = [
   { id: 'preparo', titulo: 'Preparação de 10 s', detalhe: 'Contagem regressiva antes do 1º round' },
   { id: 'vibracao', titulo: 'Vibração ao trocar de fase', detalhe: 'Só em aparelhos que permitem (não funciona no iPhone)' },
+  { id: 'segundoPlano', titulo: 'Manter o som com a tela bloqueada', detalhe: 'Mostra um controle na tela de bloqueio. Pode pausar a música de outros apps' },
 ]
 
 /** Painel de ajustes do Timer. Cada mudança é guardada na hora, neste aparelho. */
