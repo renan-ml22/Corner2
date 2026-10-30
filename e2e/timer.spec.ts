@@ -10,9 +10,12 @@ import { expect, lerJson, test } from './fixtures'
 const AGORA = new Date('2026-10-14T12:00:00-03:00')
 const CONFIG_CURTA = { rounds: 2, roundSeg: 60, descansoSeg: 30, preparo: true, vibracao: true, volume: 80, mudo: false }
 
+/** Um tom programado: a frequência (Hz) e daqui a quantos segundos (no relógio do áudio) ele começa. */
+interface Tom { f: number; t: number }
+
 declare global {
   interface Window {
-    __audio: { criados: number; oscs: number[] }
+    __audio: { criados: number; oscs: Tom[]; desligados: number }
     __vibrou: number[][]
     __wake: number
   }
@@ -21,7 +24,7 @@ declare global {
 /** Anota o que o app tentaria tocar, vibrar e travar (o navegador de teste não tem alto-falante nem tela para apagar). */
 async function espionar(pagina: Page) {
   await pagina.addInitScript(() => {
-    window.__audio = { criados: 0, oscs: [] }
+    window.__audio = { criados: 0, oscs: [], desligados: 0 }
     window.__vibrou = []
     window.__wake = 0
     const Original = window.AudioContext
@@ -33,10 +36,17 @@ async function espionar(pagina: Page) {
       createOscillator() {
         const o = super.createOscillator()
         const iniciar = o.start.bind(o)
-        o.start = (t?: number) => { window.__audio.oscs.push(o.frequency.value); iniciar(t) }
+        // Os sons são programados no futuro: o que importa é o horário (daqui a quantos segundos), arredondado a 0,1 s.
+        o.start = (t?: number) => {
+          window.__audio.oscs.push({ f: Math.round(o.frequency.value), t: Math.round(((t ?? 0) - o.context.currentTime) * 10) / 10 + 0 })
+          iniciar(t)
+        }
         return o
       }
     }
+    // Cada som passa por uma porta; cortar um som que ainda não tocou é desligar a porta dele.
+    const desligar = AudioNode.prototype.disconnect as (...a: unknown[]) => void
+    AudioNode.prototype.disconnect = function (this: AudioNode, ...a: unknown[]) { window.__audio.desligados++; return desligar.apply(this, a) } as typeof AudioNode.prototype.disconnect
     navigator.vibrate = ((padrao: number | number[]) => { window.__vibrou.push(Array.isArray(padrao) ? padrao : [padrao]); return true }) as typeof navigator.vibrate
     Object.defineProperty(navigator, 'wakeLock', {
       value: { request: async () => { window.__wake++; return { release: async () => undefined, addEventListener() {}, removeEventListener() {} } } },
@@ -69,13 +79,20 @@ async function avancarDevagar(pagina: Page, segundos: number) {
     await pagina.evaluate(() => new Promise<void>(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0) }))
   }
 }
-/** As frequências (Hz, arredondadas) tocadas até agora. */
-const oscs = (pagina: Page) => pagina.evaluate(() => window.__audio.oscs.map(f => Math.round(f)))
-/** O que o sino toca em `batidas` badaladas seguidas: os tons do sino, na ordem, repetidos a cada batida. */
-const sino = (batidas: number) => Array.from({ length: batidas }, () => PARCIAIS_DO_SINO.map(p => Math.round(FREQ_BASE_DO_SINO * p.razao))).flat()
-/** A contagem 3-2-1: um bipe por número, cada vez mais agudo. */
-const CONTAGEM = [1000, 1250, 1600]
-const AVISO_10S = [660]
+/** Os tons programados até agora (ver `espionar`). */
+const oscs = (pagina: Page): Promise<Tom[]> => pagina.evaluate(() => window.__audio.oscs)
+/** Os tons programados depois dos `desde` primeiros: o que o app programou de novo desde a última conferência. */
+const novos = async (pagina: Page, desde: number) => (await oscs(pagina)).slice(desde)
+/** Um sino que entra daqui a `t` segundos; `batidas` são os atrasos de cada badalada (início do round: uma; fim de round: três). */
+const sinoEm = (t: number, batidas: number[] = [0]): Tom[] =>
+  batidas.flatMap(b => PARCIAIS_DO_SINO.map(p => ({ f: Math.round(FREQ_BASE_DO_SINO * p.razao), t: Math.round((t + b) * 10) / 10 })))
+const BADALADAS_DE_INICIO = [0]
+const BADALADAS_DE_FIM_DE_ROUND = [0, 0.5, 1]
+const BADALADAS_DE_FIM_DO_TREINO = [0, 0.5, 1, 1.7]
+/** A contagem 3-2-1 que termina em `t`: um bipe por segundo, cada vez mais agudo. */
+const contagemAte = (t: number): Tom[] => [{ f: 1000, t: t - 3 }, { f: 1250, t: t - 2 }, { f: 1600, t: t - 1 }]
+/** O aviso dos 10 s: 1 bipe de 660 Hz. */
+const avisoEm = (t: number): Tom => ({ f: 660, t })
 
 async function auditar(pagina: Page) {
   // Espera a troca de cor da fase terminar: medir contraste no meio da transição lê uma cor misturada.
@@ -368,40 +385,58 @@ test.describe('timer: sons e vibração', () => {
     await expect.poll(() => pagina.evaluate(() => window.__audio.criados)).toBe(1)
   })
 
-  test('toca o sino no início do round, "ting ting ting" no fim, a contagem 3-2-1 antes de cada troca e o aviso dos 10 s', async ({ pagina }) => {
+  test('ao tocar INICIAR o treino inteiro já fica programado no relógio do áudio: cada som no seu horário (é isso que toca com a aba em segundo plano)', async ({ pagina }) => {
     await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false })
     await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
-    // Início do round 1: uma badalada longa de sino.
-    await expect.poll(() => oscs(pagina)).toEqual(sino(1))
-    await avancar(pagina, 49)
-    await expect(tempo(pagina)).toHaveText('00:11')
-    expect(await oscs(pagina)).toEqual(sino(1))
-    await avancar(pagina, 1)
-    // Faltando 10 s: 1 bipe de 660 Hz.
-    await expect.poll(() => oscs(pagina)).toEqual([...sino(1), ...AVISO_10S])
-    // Últimos 3 s do round: contagem 3-2-1 (um bipe por segundo, cada um mais agudo). Fim do round: "ting ting ting".
-    await avancarDevagar(pagina, 10)
-    await expect.poll(() => oscs(pagina)).toEqual([...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(3)])
-    // Descanso de 30 s: contagem 3-2-1 nos últimos 3 s e, ao acabar, o sino do round 2.
-    await avancarDevagar(pagina, 30)
-    await expect.poll(() => oscs(pagina)).toEqual([...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(3), ...CONTAGEM, ...sino(1)])
-    // Round 2: aviso, contagem e, no fim de tudo, 4 badaladas.
-    await avancarDevagar(pagina, 60)
-    await expect(fase(pagina)).toHaveAttribute('data-fase', 'fim')
     await expect.poll(() => oscs(pagina)).toEqual([
-      ...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(3), ...CONTAGEM, ...sino(1), ...AVISO_10S, ...CONTAGEM, ...sino(4),
+      // Round 1: sino de abertura, aviso dos 10 s, contagem 3-2-1 e "ting ting ting" ao entrar no descanso.
+      ...sinoEm(0, BADALADAS_DE_INICIO), avisoEm(50), ...contagemAte(60), ...sinoEm(60, BADALADAS_DE_FIM_DE_ROUND),
+      // Descanso de 30 s: contagem e sino do round 2.
+      ...contagemAte(90), ...sinoEm(90, BADALADAS_DE_INICIO),
+      // Round 2: aviso, contagem e, no fim de tudo, 4 badaladas.
+      avisoEm(140), ...contagemAte(150), ...sinoEm(150, BADALADAS_DE_FIM_DO_TREINO),
     ])
+    // Nada é programado de novo enquanto o tempo anda e a página fica na tela.
+    const programados = (await oscs(pagina)).length
+    await avancarDevagar(pagina, 5)
+    expect((await oscs(pagina)).length).toBe(programados)
   })
 
   test('a contagem 3-2-1 também toca no fim da preparação de 10 s, antes do sino do round 1', async ({ pagina }) => {
     await abrirTimer(pagina)
     await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
-    await avancarDevagar(pagina, 10)
-    await expect(fase(pagina)).toHaveAttribute('data-fase', 'round')
-    await expect.poll(() => oscs(pagina)).toEqual([...CONTAGEM, ...sino(1)])
+    await expect.poll(async () => (await oscs(pagina)).slice(0, 3 + 9)).toEqual([...contagemAte(10), ...sinoEm(10, BADALADAS_DE_INICIO)])
   })
 
-  test('mudo: o timer anda, mas nenhum som é gerado; ligar o som volta a tocar', async ({ pagina }) => {
+  test('aba em segundo plano: ao voltar, o sino que ficou para trás não toca atrasado e o que falta é programado a partir do relógio', async ({ pagina }) => {
+    await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false })
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await expect.poll(async () => (await oscs(pagina)).length).toBeGreaterThan(0)
+    const antes = (await oscs(pagina)).length
+    // 100 s de segundo plano: o relógio do aparelho andou, o do áudio quase nada (como no iPhone com a tela bloqueada).
+    await pagina.clock.fastForward(100_000)
+    await pagina.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+    await expect.poll(() => novos(pagina, antes)).toEqual([avisoEm(40), ...contagemAte(50), ...sinoEm(50, BADALADAS_DE_FIM_DO_TREINO)])
+  })
+
+  test('pausar corta os sons que ainda não tocaram; retomar programa os que faltam a partir de onde parou', async ({ pagina }) => {
+    await abrirTimer(pagina)
+    await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
+    await expect.poll(async () => (await oscs(pagina)).length).toBeGreaterThan(0)
+    expect(await pagina.evaluate(() => window.__audio.desligados)).toBe(0)
+    await avancar(pagina, 20)
+    await pagina.getByRole('button', { name: 'PAUSAR' }).click()
+    // Os 18 sons do treino (3 de preparo, 1 sino, ...) ainda estavam à frente no relógio do áudio: todos cortados.
+    await expect.poll(() => pagina.evaluate(() => window.__audio.desligados)).toBe(18)
+    const antes = (await oscs(pagina)).length
+    await avancar(pagina, 30)
+    await pagina.getByRole('button', { name: 'RETOMAR' }).click()
+    // O treino parou nos 20 s: o aviso dos 10 s do round 1 (segundo 60) fica 40 s à frente, e o que já passou não volta.
+    await expect.poll(async () => (await novos(pagina, antes)).slice(0, 4)).toEqual([avisoEm(40), ...contagemAte(50)])
+    expect((await novos(pagina, antes)).every(t => t.t >= 40)).toBe(true)
+  })
+
+  test('mudo: o timer anda, mas nenhum som é gerado; ligar o som programa o que ainda falta', async ({ pagina }) => {
     await abrirTimer(pagina, { ...CONFIG_CURTA, preparo: false, mudo: true })
     await expect(pagina.getByRole('button', { name: 'Mudo' })).toHaveAttribute('aria-pressed', 'true')
     await pagina.getByRole('button', { name: 'INICIAR', exact: true }).click()
@@ -410,9 +445,10 @@ test.describe('timer: sons e vibração', () => {
     expect(await oscs(pagina)).toEqual([])
     await pagina.getByRole('button', { name: 'Mudo' }).click()
     await expect(pagina.getByRole('button', { name: 'Mudo' })).toHaveAttribute('aria-pressed', 'false')
-    await avancarDevagar(pagina, 20)
-    // Só o que vem depois de desmutar: a contagem 3-2-1 do descanso e o sino do round 2 (o do descanso não toca de novo).
-    await expect.poll(() => oscs(pagina)).toEqual([...CONTAGEM, ...sino(1)])
+    // Só o que vem depois de desmutar (nos 70 s do treino): o do descanso (segundo 60) não toca atrasado.
+    await expect.poll(() => oscs(pagina)).toEqual([
+      ...contagemAte(20), ...sinoEm(20, BADALADAS_DE_INICIO), avisoEm(70), ...contagemAte(80), ...sinoEm(80, BADALADAS_DE_FIM_DO_TREINO),
+    ])
     expect((await pagina.evaluate(() => JSON.parse(localStorage.getItem('corner:timer:config')!))).mudo).toBe(false)
   })
 

@@ -1,18 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { agendaDeSons, numeroDaContagem, type FaseCrono, type SonsDoCronometro } from '@/lib/agenda-sons'
+import { criarAgendador, type Agendador } from '@/lib/agendador-de-sons'
 import { criarAudio, tocarBip, tocarMatraca, tocarSino, vibrar } from '@/lib/som'
 
 export const PREPARO_SEG = 10
 
-export interface FaseCrono {
-  tipo: 'preparo' | 'round' | 'descanso'
-  /** Round a que a fase pertence (no preparo, o primeiro; no descanso, o que acabou de terminar) */
-  round: number
-  duracao: number
-  /** Segundo, desde o início, em que a fase começa */
-  inicio: number
-}
+export type { FaseCrono, SonsDoCronometro }
+export { numeroDaContagem }
 
 export function montarFases(rounds: number, roundSeg: number, descansoSeg: number, preparoSeg: number = PREPARO_SEG): FaseCrono[] {
   const fases: FaseCrono[] = []
@@ -43,27 +39,6 @@ export interface Execucao {
   /** Segundos pulados pelo usuário ao avançar de fase */
   adiantado: number
   fimEm: number | null
-}
-
-/** Os avisos sonoros do cronômetro. Cada tela escolhe os seus (o treino do plano usa o sino; o Timer usa bipes). */
-export interface SonsDoCronometro {
-  inicioRound: (ctx: AudioContext | null) => void
-  inicioDescanso: (ctx: AudioContext | null) => void
-  /** Faltam 10 segundos para o fim do round */
-  aviso: (ctx: AudioContext | null) => void
-  /** Contagem dos últimos 3 segundos: `restante` é 3, 2 ou 1 */
-  contagem: (ctx: AudioContext | null, restante: number) => void
-  fim: (ctx: AudioContext | null) => void
-}
-
-/**
- * O número (3, 2 ou 1) da contagem regressiva a tocar agora, ou null. O preparo e o descanso sempre contam; o round só
- * se `contagemNoRound`. Numa fase curta, a contagem não começa no primeiro segundo (o sino de início ainda está soando).
- */
-export function numeroDaContagem(fase: Pick<FaseCrono, 'tipo' | 'duracao'>, restante: number, contagemNoRound: boolean): 1 | 2 | 3 | null {
-  if (fase.tipo === 'round' && !contagemNoRound) return null
-  if (restante < 1 || restante > 3 || restante >= fase.duracao) return null
-  return restante as 1 | 2 | 3
 }
 
 export const SONS_DO_TREINO: SonsDoCronometro = {
@@ -111,9 +86,11 @@ interface Opcoes {
  */
 export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREPARO_SEG, sons = SONS_DO_TREINO, contagemNoRound = false, vibracao = true }: Opcoes) {
   const [fases] = useState(() => montarFases(rounds, roundSeg, descansoSeg, preparoSeg))
+  const eventos = useMemo(() => agendaDeSons(fases, contagemNoRound), [fases, contagemNoRound])
   const [exec, setExec] = useState<Execucao | null>(null)
   const [agora, setAgora] = useState(0)
   const audioRef = useRef<AudioContext | null>(null)
+  const agendadorRef = useRef<Agendador | null>(null)
   const disparados = useRef(new Set<string>())
 
   const total = fases[fases.length - 1].inicio + fases[fases.length - 1].duracao
@@ -164,10 +141,49 @@ export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREP
     }
   }, [ativo])
 
-  // Sons e vibração, uma vez por evento.
+  // Os sons são programados no relógio do áudio, e não disparados por este componente: assim tocam no horário mesmo com a
+  // página em segundo plano (o navegador congela o JavaScript, o áudio já programado não). Tudo o que ainda não tocou é
+  // programado de novo a cada pausa, retomada, pulo de fase, mudança de volume e quando a página volta à tela ou o áudio
+  // volta a rodar (o iPhone para o relógio do áudio com o app em segundo plano).
   useEffect(() => {
-    if (estado === 'pronto' || estado === 'pausado') return
+    const agendador = agendadorRef.current
+    if (!agendador || !exec) return
+    const sincronizar = (soSeDescolou: boolean) => {
+      if (exec.fimEm !== null) agendador.encerrar(sons)
+      else if (exec.pausadoEm !== null) agendador.cancelarPendentes()
+      else {
+        const decorrido = medirRelogio(exec, Date.now(), total).decorrido
+        if (soSeDescolou) agendador.ressincronizar(decorrido, sons)
+        else agendador.sincronizar(decorrido, sons)
+      }
+    }
+    sincronizar(false)
+    const aoVoltar = () => sincronizar(true)
+    document.addEventListener('visibilitychange', aoVoltar)
+    // O áudio que voltou a rodar depois de parado pelo aparelho (ligação, outro app): o relógio dele ficou para trás.
+    // A primeira partida do áudio (suspenso -> rodando) não conta: ele ainda não tinha tocado nada.
     const ctx = audioRef.current
+    let rodou = ctx?.state === 'running'
+    let parou = false
+    const aoMudarEstado = () => {
+      if (ctx?.state === 'running') {
+        if (rodou && parou) aoVoltar()
+        rodou = true
+        parou = false
+      } else if (rodou) {
+        parou = true
+      }
+    }
+    ctx?.addEventListener('statechange', aoMudarEstado)
+    return () => {
+      document.removeEventListener('visibilitychange', aoVoltar)
+      ctx?.removeEventListener('statechange', aoMudarEstado)
+    }
+  }, [exec, sons, total])
+
+  // Vibração, uma vez por evento (só com a página aberta: nenhum aparelho vibra em segundo plano).
+  useEffect(() => {
+    if (!vibracao || estado === 'pronto' || estado === 'pausado') return
     const disparar = (nome: string, fn: () => void) => {
       const chave = `${idx}:${nome}`
       if (disparados.current.has(chave)) return
@@ -175,22 +191,24 @@ export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREP
       fn()
     }
     if (estado === 'fim') {
-      disparar('fim', () => { sons.fim(ctx); if (vibracao) vibrar([300, 100, 300]) })
+      disparar('fim', () => vibrar([300, 100, 300]))
       return
     }
-    // Voltar de segundo plano no meio de uma fase não toca o sino de início atrasado.
+    // Voltar de segundo plano no meio de uma fase não vibra o início atrasado.
     const atrasada = decorrido - fase.inicio > 2
-    if (fase.tipo === 'round') disparar('inicio', () => { if (atrasada) return; sons.inicioRound(ctx); if (vibracao) vibrar(250) })
-    if (fase.tipo === 'descanso') disparar('inicio', () => { if (atrasada) return; sons.inicioDescanso(ctx); if (vibracao) vibrar([120, 80, 120]) })
+    if (fase.tipo === 'round') disparar('inicio', () => { if (!atrasada) vibrar(250) })
+    if (fase.tipo === 'descanso') disparar('inicio', () => { if (!atrasada) vibrar([120, 80, 120]) })
     if (fase.tipo === 'round' && fase.duracao > 25 && restante <= 10 && restante > 0) {
-      disparar('aviso', () => { sons.aviso(ctx); if (vibracao) vibrar([80, 60, 80]) })
+      disparar('aviso', () => vibrar([80, 60, 80]))
     }
-    const contagem = numeroDaContagem(fase, restante, contagemNoRound)
-    if (contagem) disparar(`c${contagem}`, () => sons.contagem(ctx, contagem))
-  }, [estado, idx, fase, restante, decorrido, sons, contagemNoRound, vibracao])
+  }, [estado, idx, fase, restante, decorrido, vibracao])
 
   // O áudio é fechado ao sair da tela (com uma folga para o som do fim terminar de tocar) e ao iniciar de novo: o Safari limita quantos ficam abertos.
-  useEffect(() => () => fecharAudio(audioRef.current, 3000), [])
+  // Os sons que ainda não começaram são cortados: sair da tela com o treino andando não pode deixar sino programado para depois.
+  useEffect(() => () => {
+    agendadorRef.current?.cancelarPendentes()
+    fecharAudio(audioRef.current, 3000)
+  }, [])
 
   // Bloquear a tela suspende o áudio no iPhone: ao voltar, religa.
   useEffect(() => {
@@ -200,13 +218,15 @@ export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREP
   }, [])
 
   const iniciar = useCallback(() => {
+    agendadorRef.current?.cancelarPendentes()
     fecharAudio(audioRef.current, 0)
     audioRef.current = criarAudio() // precisa nascer de um toque do usuário
+    agendadorRef.current = criarAgendador(audioRef.current, eventos)
     const t = Date.now()
     disparados.current.clear()
     setExec({ inicio: t, pausadoEm: null, pausadoTotal: 0, adiantado: 0, fimEm: null })
     setAgora(t)
-  }, [])
+  }, [eventos])
 
   const pausar = useCallback(() => {
     const t = Date.now()
@@ -221,9 +241,16 @@ export function useCronometro({ rounds, roundSeg, descansoSeg, preparoSeg = PREP
   }, [])
 
   const pular = useCallback(() => {
-    const falta = fase.inicio + fase.duracao - decorrido
-    setExec(e => (e && e.fimEm === null ? { ...e, adiantado: e.adiantado + Math.max(0, falta) + 0.01 } : e))
-  }, [fase, decorrido])
+    // Mede pelo relógio no instante do toque (e não pelo último desenho da tela, até 0,2 s atrasado): o pulo cai logo
+    // depois da virada, e os sons da fase nova (que começam na virada) entram na tolerância do agendador.
+    setExec(e => {
+      if (!e || e.fimEm !== null) return e
+      const { decorrido: agoraDecorrido } = medirRelogio(e, Date.now(), total)
+      const atual = fases.find(f => agoraDecorrido < f.inicio + f.duracao) ?? fases[fases.length - 1]
+      const falta = atual.inicio + atual.duracao - agoraDecorrido
+      return { ...e, adiantado: e.adiantado + Math.max(0, falta) + 0.01 }
+    })
+  }, [fases, total])
 
   const encerrar = useCallback(() => {
     const t = Date.now()
